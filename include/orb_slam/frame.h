@@ -2,11 +2,15 @@
  * Defines the Frame class.
  */
 
+#include <array>
 #include <shared_ptr.hpp>
 #include <orb_slam/geometry/camera.h>
 #include <orb_slam/geometry/orb_extractor.h>
 
 namespace orb_slam {
+
+template<class T>
+using Grid = std::vector<std::vector<T>>;
 
 class Frame {
 public:
@@ -24,7 +28,7 @@ public:
     /**
      * Sets up the uniform key points extractor
      */
-    static void setupUniformKeyPointsExtractor(const ros::NodeHandle& nh);
+    static void setupGrid(const ros::NodeHandle& nh);
 
     /**
      * Extracts orb features from the frame image
@@ -32,9 +36,22 @@ public:
     virtual void extractFeatures() = 0;
 
     /**
+     * Sets the frame to be the first and act as reference
+     */
+    virtual void setupFirstFrame();
+
+    /**
      * Getters
      */
     cv::Mat getWorldToCamT() { return c_T_w_; }
+    const int& nFeatures() const { return key_points.size(); }
+    const std::vector<cv::KeyPoint>& features() const
+        { return key_points; }
+    const int& nFeaturesUndist() const { return undist_key_points.size(); }
+    const std::vector<cv::KeyPoint>& featuresUndist() const
+        { return undist_key_points; }
+    const cv::Mat& descriptorsUndist() const { return undist_descriptors_; }
+    const int& nDescriptorsUnDist() const { return undist_descriptors_.rows; }
 
     /**
      * Setters
@@ -50,23 +67,40 @@ protected:
      *
      * @param key_points: Input key points that are updated in place according
      *     to uniform extraction parameters
+     * @param grid: Input grid to be updated
      */
-    static void extractUniformKeyPointsInGrid(
-        std::vector<cv::KeyPoint>& key_points);
+    static void assignFeaturesToGrid(
+        std::vector<cv::KeyPoint>& key_points,
+        Grid<std::vector<size_t>>& grid);
 
+    /**
+     * Finds the location of a key point in grid
+     * @param key_point: Input key point
+     * @param int: x location
+     * @param int: y location
+     *
+     * @return True if the point lies within the grid, false otherwise
+     */
+    static bool pointInGrid(
+        const cv::KeyPoint& key_point, int& pos_x, int& pos_y);
+
+    // frame info
     int id_; // frame id
     ros::Time time_stamp_; // frame time stamp
-
     cv::Mat c_T_w_; // world to camera transformation matrix
+    std::vector<cv::KeyPoint> key_points;
+    std::vector<cv::KeyPoint> undist_key_points;
+    cv::Mat undist_descriptors_;
+    cv::Mat undist_intrinsic_matrix;
 
+    // static class pointers
     static geometry::CameraPtr<float> camera_; // camera info
     static geometry::ORBExtractorPtr orb_extractor_; // orb features extractor
 
     // uniform points extraction parameters
-    static int extract_uniform_key_points_;
-    static int max_key_points_;
-    static int uniform_key_points_grid_size_;
-    static int max_key_points_per_grid_;
+    Grid<std::vector<size_t>> grid_;
+    static int grid_size_x_;
+    static int grid_size_y_;
     static int grid_rows_;
     static int grid_cols_;
 
