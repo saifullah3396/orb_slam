@@ -10,9 +10,9 @@ namespace orb_slam {
 int Frame::id_global_ = 0;
 geometry::CameraPtr<float> Frame::camera_;
 geometry::ORBExtractorPtr Frame::orb_extractor_;
-int Frame::max_key_points_;
+int Frame::total_max_key_points_;
 int Frame::uniform_key_points_grid_size_;
-int Frame::max_key_points_per_grid_;
+int Frame::total_max_key_points_per_grid_;
 int Frame::grid_rows_;
 int Frame::grid_cols_;
 
@@ -27,48 +27,61 @@ Frame::~Frame()
 {
 }
 
-void Frame::setupUniformKeyPointsExtractor(const ros::NodeHandle& nh)
-{
-    nh.getParam("extract_uniform_key_points", extract_uniform_key_points_);
-    if (extract_uniform_key_points_) {
-        nh.getParam("max_key_points", max_key_points_);
-        nh.getParam(
-            "uniform_key_points_grid_size", uniform_key_points_grid_size_);
-        nh.getParam("max_key_points_per_grid", max_key_points_per_grid_);
-        grid_rows_ = camera_->height() / uniform_key_points_grid_size_;
-        grid_cols_ = camera_->width() / uniform_key_points_grid_size_;
-    }
+void Frame::setupFirstFrame() {
+    // since this is the first frame it acts as reference for others
+    // there we set it as identity matrix
+    c_T_w_ = cv::Mat::eye(4, 4, CV_64F);
 }
 
-void Frame::extractUniformKeyPointsInGrid(
-    std::vector<cv::KeyPoint>& key_points)
+void Frame::setupGrid(const ros::NodeHandle& nh)
+{
+    nh.getParam("grid_rows", grid_rows_);
+    nh.getParam("grid_cols", grid_cols_);
+    grid_size_x_ = camera_->undistWidth() / grid_cols_;
+    grid_size_y_ = camera_->undistHeight() / grid_rows_;
+}
+
+void Frame::assignFeaturesToGrid(
+    std::vector<cv::KeyPoint>& key_points,
+    Grid<std::vector<size_t>>& grid)
 {
     // Create an empty grid
-    static cv::Mat grid = cv::Mat::zeros(grid_rows_, grid_cols_, CV_8UC1);
-
-    // set grid to zero
-    grid = cv::Scalar(0);
+    int n_reserve = 0.5f * key_points.size() / (grid_cols_ * grid_rows_);
+    for(unsigned int i = 0; i < grid_cols_; i++)
+        for (unsigned int j = 0; j < grid_rows_; j++)
+            grid[i][j].reserve(n_reserve);
 
     // Insert keypoints to grid. If not full, insert this cv::KeyPoint to result
-    std::vector<cv::KeyPoint> extracted_key_points;
-    int total_count = 0;
-    for (const auto& key_point : key_points)
-    {
-        auto row = ((int) key_point.pt.y) / uniform_key_points_grid_size_;
-        auto col = ((int) key_point.pt.x) / uniform_key_points_grid_size_;
-        auto& count = grid.at<int>(row, col);
-        if (count < max_key_points_per_grid_)
-        {
-            extracted_key_points.push_back(key_point);
-            count = count + 1;
-            total_count++;
-            if (total_count > max_key_points_)
-                break;
+    std::vector<cv::KeyPoint> filt_key_points;
+    int count = 0;
+    for (int i = 0; i < key_points.size(); ++i) {
+        const auto& key_point = key_points[i];
+        int row, col;
+        if (pointInGrid(key_point, row, col)) {
+            filt_key_points.push_back(key_point);
+            // stores indices to filt_key_points
+            grid[row][col].push_back(count++);
         }
     }
 
-    // return
-    key_points = extracted_key_points;
+    // removes the key points that are not in grid
+    key_points = filt_key_points;
+}
+
+bool Frame::pointInGrid(
+    const cv::KeyPoint& key_point, int& pos_x, int& pos_y)
+{
+    auto row = (int)((key_point.pt.y - camera_->minY()) / grid_size_y_);
+    auto col = (int)((key_point.pt.x - camera_->minX()) / grid_size_x_);
+    if(
+        row < 0 ||
+        row >= grid_rows_ ||
+        col < 0 ||
+        col >= grid_cols_)
+    {
+        return false;
+    }
+    return true;
 }
 
 MonoFrame::MonoFrame(const ros::Time& time_stamp) : Frame(time_stamp)
@@ -88,17 +101,16 @@ void MonoFrame::extractFeatures() {
 
     // undistort key points so they are the in the correct positions
     camera_->undistortPoints(
-        key_points);
-        std::vector<cv::KeyPoint>& key_points,
-    std::vector<cv::KeyPoint>& undist_key_points,
-    cv::Mat& undist_intrinsic_matrix)
-
+        key_points, undist_key_points, undist_intrinsic_matrix);
 
     // update the key points so that they are uniformly accumulated over
-    // the image
-    if (extract_uniform_key_points_)
-        extractUniformKeyPointsInGrid(key_points);
+    // the image. Note that the points are undistorted and the grid is also
+    // within non-black region of the undisorted image.
+    assignFeaturesToGrid(undist_key_points, grid_);
 
+    // find the orb descriptors for undistorted points
+    orb_extractor_->compute(
+        camera_->image(), undist_key_points, undist_descriptors_);
 }
 
 geometry::MonoCameraPtr<float> MonoFrame::camera()
