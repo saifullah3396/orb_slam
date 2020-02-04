@@ -2,6 +2,8 @@
  * Declares the Tracker class.
  */
 
+#include <memory.h>
+
 namespace orb_slam
 {
 
@@ -13,7 +15,12 @@ namespace geometry {
 
     class ORBExtractor;
     using ORBExtractorPtr = std::shared_ptr<ORBExtractor>;
+    class ORBMatcher;
+    using ORBMatcherPtr = std::shared_ptr<ORBMatcher>;
 }
+
+class Initializer;
+using InitializerPtr = std::unique_ptr<Initializer>;
 
 class Tracker
 {
@@ -25,6 +32,19 @@ public:
 
 private:
     cv::Mat getLatestImage();
+    void trackFrame();
+    void monocularInitialization();
+
+    // latest frame
+    FramePtr current_frame_;
+
+    // monocular initialization
+    FramePtr ref_frame_;
+    FramePtr last_frame_;
+    std::vector<int> v_ini_last_matches_;
+    std::vector<int> v_ini_matches_;
+    std::vector<cv::Point2f> vb_prev_matched_;
+    InitializerPtr initializer_;
 
     // ros node handle
     ros::NodeHandle nh_;
@@ -32,6 +52,18 @@ private:
     // pointer to camera
     geometry::CameraPtr<float> camera_;
     geometry::ORBExtractorPtr orb_extractor_;
+    geometry::ORBMatcherPtr orb_matcher_;
+
+    // Tracking states same as in original orb slam package
+    enum TrackingState {
+        SYSTEM_NOT_READY = -1,
+        NO_IMAGES_YET = 0,
+        NOT_INITIALIZED = 1,
+        OK = 2,
+        LOST = 3
+    };
+    TrackingState state_;
+    TrackingState last_proc_state_;
 };
 
 } // namespace orb_slam
