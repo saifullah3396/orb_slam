@@ -7,8 +7,10 @@
 #include <opencv2/core/core.hpp>
 #include "orb_slam/frame.h"
 #include "orb_slam/tracker.h"
+#include "orb_slam/initializer.h"
 #include "orb_slam/geometry/camera.h"
 #include "orb_slam/geometry/orb_extractor.h"
+#include "orb_slam/geometry/orb_matcher.h"
 
 namespace orb_slam
 {
@@ -19,9 +21,11 @@ Tracker::Tracker(const ros::NodeHandle& nh) : nh_(nh)
     camera_ = geometry::CameraPtr<float>(new geometry::MonoCamera<float>(nh_));
     orb_extractor_ =
         geometry::ORBExtractorPtr(new geometry::ORBExtractor(nh_));
+    orb_matcher_ =
+        geometry::ORBMatcherPtr(new geometry::ORBMatcher(nh_));
     Frame::setCamera(camera_);
     Frame::setORBExtractor(orb_extractor_);
-    Frame::setupUniformKeyPointsExtractor(nh_);
+    Frame::setupGrid(nh_);
 }
 
 Tracker::~Tracker()
@@ -29,20 +33,95 @@ Tracker::~Tracker()
 
 }
 
-void Tracker::run() {
+void Tracker::run()
+{
     std::vector<cv::Mat> camera_pose_history;
     while (true) {
-        // create a key frame from the image
-        FramePtr frame =
-            FramePtr(new MonoFrame(camera_, orb_extractor_, ros::Time::now()));
-        frame->extractFeatures();
-        camera_pose_history.push_back(frame->getWorldToCamT().clone());
+        // create a frame from the image
+        current_frame_ =
+            FramePtr(new MonoFrame(ros::Time::now()));
+
+        // extract features from the frame
+        current_frame_->extractFeatures();
+
+        // track the frame
+        trackFrame();
+        camera_pose_history.push_back(current_frame_->getWorldToCamT().clone());
     }
 }
 
 cv::Mat Tracker::getLatestImage()
 {
     return cv::Mat();
+}
+
+void Tracker::trackFrame()
+{
+    // means first image is yet to be processed
+    if (state_ == NO_IMAGES_YET) {
+        state_ = NOT_INITIALIZED;
+    }
+    last_proc_state_ = state_;
+
+    if(state_ == NOT_INITIALIZED) {
+        if (camera_->type() == CameraType::MONO) {
+            monocularInitialization();
+        }
+
+        if(state_ != OK)
+            return;
+    }
+}
+
+void Tracker::monocularInitialization()
+{
+    if(!initializer_) { // if no initializer, set the frame as reference
+        ROS_INFO("Initializing the SLAM system with monocular camera...");
+        // if enough features are available
+        if(current_frame_->nFeatures() > 100)
+        {
+            // set is reference frame
+            current_frame_->setupFirstFrame();
+            // assign first and last frame as current frame for initialization
+            ref_frame_ = last_frame_ = current_frame_;
+            const auto& key_points = current_frame_->featuresUndist();
+
+            // set all key points to prev matched points ?
+            vb_prev_matched_.resize(key_points.size());
+            for(size_t i = 0; i < key_points.size(); i++)
+                vb_prev_matched_[i] = key_points[i].pt;
+
+            // reset the initializer with current frame
+            initializer_ =
+                InitializerPtr(new Initializer(current_frame_, 1.0, 200));
+
+            // reset the initial matches ?
+            std::fill(v_ini_matches_.begin(), v_ini_matches_.end(), -1);
+            return;
+        } else {
+            ROS_WARN("Not enough features to initialize. Resetting...");
+        }
+    } else { // now we have the reference frame so try to initialize the map
+        ROS_INFO("Matching first frame with a reference frame...");
+        // Try to initialize with the current frame, here we will already have
+        // a reference frame assigned.
+        if(current_frame_->nFeatures() <= 100) {// not enough key points?
+            ROS_WARN(
+                "Not enough features between first frame and reference frame");
+            // discard the initializer so that we can retry
+            initializer_.reset();
+
+            // reset the initial matches ?
+            std::fill(v_ini_matches_.begin(), v_ini_matches_.end(), -1);
+            return;
+        }
+
+        // Find correspondences between current frame and first reference frame
+        std::vector<cv::DMatch> matches;
+        orb_matcher_->match(current_frame_, ref_frame_, matches);
+
+        // 
+    }
 }
 
 } // namespace orb_slam
