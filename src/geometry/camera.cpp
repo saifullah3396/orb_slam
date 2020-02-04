@@ -41,7 +41,6 @@ void Camera<T>::setup()
     inv_focal_y_ = 1.0 / focal_y_;
     nh_.getParam(prefix + "center_x", center_x_);
     nh_.getParam(prefix + "center_y", center_y_);
-    nh_.getParam(prefix + "dist_coeffs", center_x_);
 
     // read dist coefficients list
     std::vector<T> dist_coeffs;
@@ -54,6 +53,9 @@ void Camera<T>::setup()
 
     // update the intrinsic matrix
     updateIntrinsicMatrix();
+
+    // compute the image bounds for given distortion
+    computeImageBounds();
 }
 
 template <typename T>
@@ -86,12 +88,49 @@ void Camera<T>::undistortPoints(
     undist_key_points.resize(size);
     for(int i = 0; i < size; i++) {
         undist_key_points[i] =
-            cv::KeyPoint(mat.at<float>(i, 0), mat.at<float>(i, 1))
+            cv::KeyPoint(mat.at<T>(i, 0), mat.at<T>(i, 1))
     }
 }
 
-template struct Camera<float>;
-template struct Camera<double>;
+template <typename T>
+void Camera<T>::computeImageBounds()
+{
+    // actually distorted right now
+    undist_bounds =
+        (
+            cv::Mat_<T>(4, 2, CV_32F) <<
+                0.0,    0.0,
+                width_, 0.0,
+                0.0,    height_,
+                width_, height_
+        );
+
+    if(dist_coeffs_.at<T>(0) != 0.0)
+    {
+        // perform undistortion
+        //mat=mat.reshape(2);
+        cv::undistortPoints(
+            undist_bounds,
+            undist_bounds,
+            intrinsic_matrix_,
+            dist_coeffs_,
+            cv::Mat(),
+            intrinsic_matrix_);
+        //mat=mat.reshape(1);
+    }
+
+    min_x_ =
+        min(undist_bounds.at<T>(0,0), undist_bounds.at<T>(2,0));
+    max_x_ =
+        max(undist_bounds.at<T>(1,0), undist_bounds.at<T>(3,0));
+    min_y_ =
+        min(undist_bounds.at<T>(0,1), undist_bounds.at<T>(1,1));
+    max_y_ =
+        max(undist_bounds.at<T>(2,1), mundist_boundsat.at<T>(3,1));
+
+    undist_width_ = max_x_ - min_x_;
+    undist_height_ = max_y_ - min_y_;
+}
 
 template <typename T>
 MonoCamera<T>::MonoCamera(const ros::NodeHandle& nh) :
@@ -103,6 +142,9 @@ template <typename T>
 MonoCamera<T>::~MonoCamera()
 {
 }
+
+template class MonoCamera<float>;
+template class MonoCamera<double>;
 
 } // namespace geometry
 
