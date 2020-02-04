@@ -1,0 +1,115 @@
+/**
+ * This file declares the ORBExtractor class.
+ *
+ * @author <A href="mailto:saifullah3396@gmail.com">Saifullah</A>
+ */
+
+#pragma once
+
+#include <iostream>
+#include <ros/ros.h>
+#include <string>
+#include <opencv2/core/core.hpp>
+#include <opencv2/features2d.hpp>
+
+namespace orb_slam
+{
+
+namespace geometry
+{
+
+/**
+ * @struct ORBExtractor
+ * @brief The class that is used to extract orb features from an image
+ */
+class ORBExtractor
+{
+public:
+    ORBExtractor(const ros::NodeHandle& nh): nh_(nh) {
+        std::string prefix = "orb_slam/orb_extractor/";
+        nh_.getParam(prefix + "n_key_points", n_key_points_);
+        nh_.getParam(prefix + "scale_factor", scale_factor_);
+        nh_.getParam(prefix + "level_pyramid", level_pyramid_);
+        nh_.getParam(prefix + "score_threshold", score_threshold_);
+
+        // initialize the detector
+        cv_orb_detector_ =
+            cv::ORB::create(
+                n_key_points_,
+                scale_factor_,
+                level_pyramid_,
+                edge_threshold_,
+                first_level_,
+                wta_k_,
+                score_type_,
+                patch_size_,
+                score_threshold_);
+
+        // initialize the descriptor
+        cv_orb_descriptor_ =
+            cv::ORB::create(
+                n_key_points_,
+                scale_factor_,
+                level_pyramid_,
+                edge_threshold_,
+                first_level_,
+                wta_k_,
+                score_type_,
+                patch_size_,
+                score_threshold_);
+    }
+
+    /**
+     * Extracts orb features from the input image
+     *
+     * @param image: Input image
+     * @param key_points: Output feature points
+     */
+    void detect(const cv::Mat& image, std::vector<cv::KeyPoint>& key_points) {
+        cv_orb_detector_->detect(image, key_points);
+    }
+
+    /**
+     * Computres orb descriptors from the input image and key points
+     *
+     * @param image: Input image
+     * @param key_points: Input feature points
+     * @param descriptors: Output descriptors
+     */
+    void compute(
+        const cv::Mat& image,
+        std::vector<cv::KeyPoint>& key_points,
+        cv::Mat& descriptors)
+    {
+        cv_orb_descriptor_->compute(image, key_points, descriptors);
+    }
+
+    ~ORBExtractor() {
+
+    }
+
+private:
+    //! ros node handle for reading parameters
+    ros::NodeHandle nh_;
+
+    //! orb extractor parameters
+    int n_key_points_; // number of key points to extract
+    int scale_factor_; // feature scale factor
+    int level_pyramid_; // image pyramid level
+    int edge_threshold_ = {31}; // edge threshold
+    int first_level_ = {0}; // first level
+    int wta_k_ = {2}; // wta_k
+    int score_type_ = {cv::ORB::HARRIS_SCORE}; // score type
+    int patch_size_ = {31}; // patch size
+    int score_threshold_; // score threshold
+
+    //! opencv orb extractors
+    cv::Ptr<cv::ORB> cv_orb_detector_;
+    cv::Ptr<cv::ORB> cv_orb_descriptor_;
+};
+
+using ORBExtractorPtr = std::shared_ptr<ORBExtractor>;
+
+} // namespace geometry
+
+} // namespace orb_slam
