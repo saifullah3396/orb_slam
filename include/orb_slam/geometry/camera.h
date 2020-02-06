@@ -81,13 +81,13 @@ public:
     const T& invFocalY() const { return focal_y_inv_; }
     const T& center() const { return center_x_; }
     const T& center() const { return center_y_; }
-    virtual cv::Mat image() = 0;
-    virtual CameraType type() = 0;
-    virtual cv::Mat imageL() = 0;
-    virtual cv::Mat imageR() = 0;
-    virtual cv::Mat imageDepth() = 0;
-    cv::Mat distCoeffs() { return dist_coeffs_; }
-    cv::Mat intrinsicMatrix() { return intrinsic_matrix_; }
+    virtual const cv::Mat& image() = 0;
+    virtual const CameraType& type() = 0;
+    virtual const cv::Mat& imageL() = 0;
+    virtual const cv::Mat& imageR() = 0;
+    virtual const cv::Mat& imageDepth() = 0;
+    const cv::Mat& distCoeffs() { return dist_coeffs_; }
+    const cv::Mat& intrinsicMatrix() { return intrinsic_matrix_; }
 
 private:
     /**
@@ -152,17 +152,17 @@ public:
      */
     ~MonoCamera();
 
-    cv::Mat image() { return image_; }
-    CameraType type() { return CameraType::MONO; }
-    cv::Mat imageL() {
+    const cv::Mat& image() { return image_; }
+    const CameraType& type() { return CameraType::MONO; }
+    const cv::Mat& imageL() {
         throw std::runtime_error(
             "imageL() is undefined for monocular camera.");
     }
-    cv::Mat imageR() {
+    const cv::Mat& imageR() {
         throw std::runtime_error(
             "imageR() is undefined for monocular camera.");
     }
-    cv::Mat imageDepth() {
+    const cv::Mat& imageDepth() {
         throw std::runtime_error(
             "imageDepth() is undefined for monocular camera.");
     }
