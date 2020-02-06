@@ -107,6 +107,58 @@ void computeFundamentalMat(
     f_mat = u * cv::Mat::diag(w) * vt;
 }
 
+/**
+ * Computes the homography matrix using 8-point algorithm.
+ *
+ * @param h_mat: Output fundamental matrix
+ * @param points: Input points in the first frame
+ * @param ref_points: Input points in reference frame
+ */
+void computeHomographyMat(
+    cv::Mat& h_mat,
+    const std::vector<cv::Point2f> &points,
+    const std::vector<cv::Point2f> &ref_points)
+{
+    const int n = points.size();
+
+    // construct A matrix
+    cv::Mat A(2 * n, 9, CV_32F);
+    for(int i = 0; i < n; i++) {
+        const float u1 = points[i].x;
+        const float v1 = points[i].y;
+        const float u2 = ref_points[i].x;
+        const float v2 = ref_points[i].y;
+
+        A.at<float>(2*i,0) = 0.0;
+        A.at<float>(2*i,1) = 0.0;
+        A.at<float>(2*i,2) = 0.0;
+        A.at<float>(2*i,3) = -u1;
+        A.at<float>(2*i,4) = -v1;
+        A.at<float>(2*i,5) = -1;
+        A.at<float>(2*i,6) = v2*u1;
+        A.at<float>(2*i,7) = v2*v1;
+        A.at<float>(2*i,8) = v2;
+
+        A.at<float>(2*i+1,0) = u1;
+        A.at<float>(2*i+1,1) = v1;
+        A.at<float>(2*i+1,2) = 1;
+        A.at<float>(2*i+1,3) = 0.0;
+        A.at<float>(2*i+1,4) = 0.0;
+        A.at<float>(2*i+1,5) = 0.0;
+        A.at<float>(2*i+1,6) = -u2*u1;
+        A.at<float>(2*i+1,7) = -u2*v1;
+        A.at<float>(2*i+1,8) = -u2;
+
+    }
+
+    // perform SVD
+    cv::Mat u, w, vt;
+    cv::SVDecomp(A,w,u,vt,cv::SVD::MODIFY_A | cv::SVD::FULL_UV);
+
+    // entries of F are elements of column v for least singular values
+    h_mat = vt.row(8).reshape(0, 3);
+}
+
 } // namespace geometry
 
 } // namespace orb_slam
