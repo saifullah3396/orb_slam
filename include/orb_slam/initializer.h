@@ -111,8 +111,10 @@ public:
         // try to reconstruct from homography or fundamental depending
         // on the ratio (0.40-0.45)
         if(r_score > 0.40) {
+            // find R-t using the epipolar geometry with 2d-2d correspondences
             // reconstruct h
         } else { //if(pF_HF>0.6)
+            // find R-t using the epipolar geometry with 2d-2d correspondences
             // reconstruct f
         }
     }
