@@ -56,6 +56,57 @@ void normalizePoints(
     T.at<float>(1,2) = -mean_y * s_y;
 }
 
+/**
+ * Computes the fundamental matrix using 8-point algorithm.
+ *
+ * @param f_mat: Output fundamental matrix
+ * @param points: Input points in the first frame
+ * @param ref_points: Input points in reference frame
+ */
+void computeFundamentalMat(
+    cv::Mat& f_mat,
+    const std::vector<cv::Point2f>& points,
+    const std::vector<cv::Point2f>& ref_points)
+{
+    const int n = points.size();
+    // see http://www.cs.cmu.edu/~16385/s17/Slides/12.4_8Point_Algorithm.pdf
+    cv::Mat A(n, 9,CV_32F);
+
+    // create an n x 9 matrix filled with the points
+    // step 1: Construct A
+    for(int i = 0; i< n; i++) {
+        const auto& u1 = points[i].x;
+        const auto& v1 = points[i].y;
+        const auto& u2 = ref_points[i].x;
+        const auto& v2 = ref_points[i].y;
+
+        A.at<float>(i,0) = u2*u1;
+        A.at<float>(i,1) = u2*v1;
+        A.at<float>(i,2) = u2;
+        A.at<float>(i,3) = v2*u1;
+        A.at<float>(i,4) = v2*v1;
+        A.at<float>(i,5) = v2;
+        A.at<float>(i,6) = u1;
+        A.at<float>(i,7) = v1;
+        A.at<float>(i,8) = 1;
+    }
+
+    // compute SVD and take the last row of vt
+    // step 2: compute SVD of A'A
+    cv::Mat u, w, vt;
+    cv::SVDecomp(A,w,u,vt,cv::SVD::MODIFY_A | cv::SVD::FULL_UV);
+
+    // step 3: Entries of F are elements of column v for least singular values
+    cv::Mat Fpre = vt.row(8).reshape(0, 3);
+
+    // step 4: Enforce constraint of rank 2
+    cv::SVDecomp(Fpre,w,u,vt,cv::SVD::MODIFY_A | cv::SVD::FULL_UV);
+    // set the last eigen value to 0. This make the matrix of rank 2
+    w.at<float>(2) = 0;
+    // remake the matrix with rank 2
+    f_mat = u * cv::Mat::diag(w) * vt;
+}
+
 } // namespace geometry
 
 } // namespace orb_slam
