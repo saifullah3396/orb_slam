@@ -7,6 +7,8 @@
 #include <orb_slam/geometry/camera.h>
 #include <orb_slam/geometry/orb_extractor.h>
 #include <orb_slam/geometry/orb_matcher.h>
+#include <opencv2/core/core.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
 
 namespace orb_slam {
 
@@ -29,7 +31,7 @@ public:
     /**
      * Sets up the uniform key points extractor
      */
-    static void setupGrid(const ros::NodeHandle& nh);
+    static void setupGrid();
 
     /**
      * Extracts orb features from the frame image
@@ -42,17 +44,26 @@ public:
     virtual void setupFirstFrame();
 
     /**
+     * Matches the frame with a reference frame using the orb feature matcher.
+     *
+     * @param ref_frame: Frame to matche with
+     */
+    void match(const std::shared_ptr<Frame>& ref_frame);
+
+    /**
      * Getters
      */
-    cv::Mat getWorldToCamT() { return c_T_w_; }
-    const int& nFeatures() const { return key_points.size(); }
+    const cv::Mat& getWorldToCamT() const { return c_T_w_; }
+    const int nFeatures() const { return key_points.size(); }
     const std::vector<cv::KeyPoint>& features() const
         { return key_points; }
-    const int& nFeaturesUndist() const { return undist_key_points.size(); }
+    const int nFeaturesUndist() const { return undist_key_points.size(); }
     const std::vector<cv::KeyPoint>& featuresUndist() const
         { return undist_key_points; }
     const cv::Mat& descriptorsUndist() const { return undist_descriptors_; }
-    const int& nDescriptorsUnDist() const { return undist_descriptors_.rows; }
+    const int nDescriptorsUnDist() const { return undist_descriptors_.rows; }
+    const std::vector<cv::DMatch> matches() const { return matches_; }
+    const int nMatches() const { return matches_.size(); }
 
     /**
      * Setters
@@ -63,6 +74,8 @@ public:
         { orb_extractor_ = orb_extractor; }
     static void setORBMatcher(const geometry::ORBMatcherPtr& orb_matcher)
         { orb_matcher_ = orb_matcher; }
+    static void setROSNodeHandle(const ros::NodeHandle& nh)
+        { nh_ = nh; }
 
 protected:
     /**
@@ -113,6 +126,9 @@ protected:
     static int grid_cols_;
 
     static int id_global_; // global ids accumulator
+
+    // ros node handle for reading parameters
+    static ros::NodeHandle nh_;
 };
 
 class MonoFrame : public Frame {
