@@ -23,9 +23,12 @@ Tracker::Tracker(const ros::NodeHandle& nh) : nh_(nh)
         geometry::ORBExtractorPtr(new geometry::ORBExtractor(nh_));
     orb_matcher_ =
         geometry::ORBMatcherPtr(new geometry::ORBMatcher(nh_));
+    Initializer::setROSNodeHandle(nh_);
+    Frame::setROSNodeHandle(nh_);
     Frame::setCamera(camera_);
     Frame::setORBExtractor(orb_extractor_);
-    Frame::setupGrid(nh_);
+    Frame::setORBMatcher(orb_matcher_);
+    Frame::setupGrid();
 }
 
 Tracker::~Tracker()
@@ -78,7 +81,7 @@ void Tracker::monocularInitialization()
     if(!initializer_) { // if no initializer, set the frame as reference
         ROS_INFO("Initializing the SLAM system with monocular camera...");
         // if enough features are available
-        if(current_frame_->nFeatures() > 100)
+        if(current_frame_->nFeatures() > MIN_REQ_MATCHES)
         {
             // set is reference frame
             current_frame_->setupFirstFrame();
@@ -103,9 +106,9 @@ void Tracker::monocularInitialization()
         }
     } else { // now we have the reference frame so try to initialize the map
         ROS_INFO("Matching first frame with a reference frame...");
-        // Try to initialize with the current frame, here we will already have
+        // try to initialize with the current frame, here we will already have
         // a reference frame assigned.
-        if(current_frame_->nFeatures() <= 100) {// not enough key points?
+        if(current_frame_->nFeatures() <= MIN_REQ_MATCHES) {// not enough key points?
             ROS_WARN(
                 "Not enough features between first frame and reference frame");
             // discard the initializer so that we can retry
@@ -116,11 +119,20 @@ void Tracker::monocularInitialization()
             return;
         }
 
-        // Find correspondences between current frame and first reference frame
-        std::vector<cv::DMatch> matches;
-        orb_matcher_->match(current_frame_, ref_frame_, matches);
+        // find correspondences between current frame and first reference frame
+        current_frame_->match(ref_frame_);
 
-        // 
+        // check if there are enough matches
+        if(current_frame_->nMatches() < MIN_REQ_MATCHES)
+        {
+            // not enough matches, retry
+            initializer_.reset();
+            return;
+        }
+
+        // try to initialize the monocular slam with current frame and already
+        // assigned reference frame
+        initializer_->tryToInitialize(current_frame_);
     }
 }
 
