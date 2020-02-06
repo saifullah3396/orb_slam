@@ -57,8 +57,8 @@ struct BruteForceWithRadiusMatcher {
             n == frame->nDescriptorsUnDist() &&
             n_ref == ref_frame->nDescriptorsUnDist());
 
-        const auto& key_points = frame->features();
-        const auto& ref_key_points = ref_frame->features();
+        const auto& key_points = frame->featuresUndist();
+        const auto& ref_key_points = ref_frame->featuresUndist();
         const auto& descriptors = frame->descriptorsUndist();
         const auto& ref_descriptors = ref_frame->descriptorsUndist();
         for (int i = 0; i < n; i++) {
