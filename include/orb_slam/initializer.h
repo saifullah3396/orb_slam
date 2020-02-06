@@ -193,17 +193,11 @@ private:
     cv::Mat fundamental_mat_; // fundamental matrix
     std::vector<bool> inliers_f_; // inliers found by RANSAC while finding fmat.
     double f_score_; // fundamental matrix score as in orb-slam paper
-    // maximum pixel distance for considering point as inlier
-    static double inlier_match_max_pixel_dist_;
-    // minimum confidence probability for fundamental matrix accuracy
-    static double fundamental_mat_prob_;
 
     // homography matrix required for finding R-t directly from 2d-2d points
     cv::Mat homography_mat_; // homography matrix
     std::vector<bool> inliers_h_; // inliers found by RANSAC while finding hmat.
     double h_score_; // homography matrix score as in orb-slam paper
-    // reprojection threshold for ransac applied for finding homography
-    static double ransac_reproj_threshold_;
 
     // ros node for parameters
     static ros::NodeHandle nh_;
