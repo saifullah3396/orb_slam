@@ -6,6 +6,7 @@
 #include <shared_ptr.hpp>
 #include <orb_slam/geometry/camera.h>
 #include <orb_slam/geometry/orb_extractor.h>
+#include <orb_slam/geometry/orb_matcher.h>
 
 namespace orb_slam {
 
@@ -60,6 +61,8 @@ public:
         { camera_ = camera; }
     static void setORBExtractor(const geometry::ORBExtractorPtr& orb_extractor)
         { orb_extractor_ = orb_extractor; }
+    static void setORBMatcher(const geometry::ORBMatcherPtr& orb_matcher)
+        { orb_matcher_ = orb_matcher; }
 
 protected:
     /**
@@ -93,9 +96,14 @@ protected:
     cv::Mat undist_descriptors_;
     cv::Mat undist_intrinsic_matrix;
 
+    // frame matching info
+    std::shared_ptr<Frame> ref_frame_;
+    std::vector<cv::DMatch> matches_;
+
     // static class pointers
     static geometry::CameraPtr<float> camera_; // camera info
     static geometry::ORBExtractorPtr orb_extractor_; // orb features extractor
+    static geometry::ORBMatcherPtr orb_matcher_; // orb features extractor
 
     // uniform points extraction parameters
     Grid<std::vector<size_t>> grid_;

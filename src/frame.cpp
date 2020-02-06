@@ -10,9 +10,7 @@ namespace orb_slam {
 int Frame::id_global_ = 0;
 geometry::CameraPtr<float> Frame::camera_;
 geometry::ORBExtractorPtr Frame::orb_extractor_;
-int Frame::total_max_key_points_;
-int Frame::uniform_key_points_grid_size_;
-int Frame::total_max_key_points_per_grid_;
+geometry::ORBMatcherPtr Frame::orb_matcher_;
 int Frame::grid_rows_;
 int Frame::grid_cols_;
 
