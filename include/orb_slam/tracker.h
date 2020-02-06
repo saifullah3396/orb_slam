@@ -22,6 +22,8 @@ namespace geometry {
 class Initializer;
 using InitializerPtr = std::unique_ptr<Initializer>;
 
+#define MIN_REQ_MATCHES 100
+
 class Tracker
 {
 public:
