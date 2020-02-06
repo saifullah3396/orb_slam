@@ -3,6 +3,7 @@
  */
 
 #include <orb_slam/frame.h>
+#include <thread>
 
 namespace orb_slam {
 
@@ -11,6 +12,9 @@ int Frame::id_global_ = 0;
 geometry::CameraPtr<float> Frame::camera_;
 geometry::ORBExtractorPtr Frame::orb_extractor_;
 geometry::ORBMatcherPtr Frame::orb_matcher_;
+ros::NodeHandle Frame::nh_;
+
+// grid
 int Frame::grid_rows_;
 int Frame::grid_cols_;
 
@@ -31,7 +35,7 @@ void Frame::setupFirstFrame() {
     c_T_w_ = cv::Mat::eye(4, 4, CV_64F);
 }
 
-void Frame::setupGrid(const ros::NodeHandle& nh)
+void Frame::setupGrid()
 {
     nh.getParam("grid_rows", grid_rows_);
     nh.getParam("grid_cols", grid_cols_);
@@ -80,6 +84,12 @@ bool Frame::pointInGrid(
         return false;
     }
     return true;
+}
+
+void Frame::match(const std::shared_ptr<Frame>& ref_frame)
+{
+    ref_frame_ = ref_frame;
+    orb_matcher_->match(FramePtr(this), ref_frame_, matches_);
 }
 
 MonoFrame::MonoFrame(const ros::Time& time_stamp) : Frame(time_stamp)
