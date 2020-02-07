@@ -36,8 +36,9 @@ void normalizePoints(
     float mean_dev_x = 0;
     float mean_dev_y = 0;
     for (int i = 0; i < n; i++) {
-        normalized[i].x = points.x - mean_x;
-        normalized[i].y = points.y - mean_y;
+        const auto& p = points[i];
+        normalized[i].x = p.x - mean_x;
+        normalized[i].y = p.y - mean_y;
         mean_dev_x += fabs(normalized[i].x);
         mean_dev_y += fabs(normalized[i].y);
     }
@@ -46,8 +47,9 @@ void normalizePoints(
     float s_x = 1.0 / mean_dev_x;
     float s_y = 1.0 / mean_dev_y;
     for (int i = 0; i < n; i++) {
-        normalized[i].x = normalized[i].x * s_x;
-        normalized[i].y = normalized[i].y * s_y;
+        auto& n = normalized[i];
+        n.x *= s_x;
+        n.y *= s_y;
     }
     T = cv::Mat::eye(3, 3, CV_32F);
     T.at<float>(0,0) = s_x;
