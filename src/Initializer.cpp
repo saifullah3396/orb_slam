@@ -9,13 +9,6 @@
 
 namespace orb_slam {
 
-// fundamental matrix
-double Initializer::inlier_match_max_pixel_dist_;
-double Initializer::fundamental_mat_prob_;
-
-// homography matrix
-double Initializer::ransac_reproj_threshold_;
-
 Initializer::Initializer(
     const FramePtr& ref_frame,
     double sigma = 1.0,
