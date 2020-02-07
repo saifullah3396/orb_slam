@@ -318,6 +318,8 @@ void Initializer::findHomographyMat(
 }
 
 double Initializer::checkHomographyScore(
+    const std::vector<cv::Point2f>& points,
+    const std::vector<cv::Point2f>& ref_points,
     const cv::Mat& h_mat,
     const cv::Mat& h_mat_inv,
     std::vector<bool>& inliers)
@@ -355,13 +357,13 @@ double Initializer::checkHomographyScore(
     for(int i = 0; i < n; i++) {
         bool good_point = true;
 
-        const cv::Point2f &p1 = points[i];
-        const cv::Point2f &p2 = ref_points[i];
+        const auto& p1 = points[i];
+        const auto& p2 = ref_points[i];
 
-        const float u1 = kp1.pt.x;
-        const float v1 = kp1.pt.y;
-        const float u2 = kp2.pt.x;
-        const float v2 = kp2.pt.y;
+        const auto& u1 = kp1.pt.x;
+        const auto&  v1 = kp1.pt.y;
+        const auto&  u2 = kp2.pt.x;
+        const auto&  v2 = kp2.pt.y;
 
         // Reprojection error in first image
         // x2in1 = H12*x2
@@ -369,9 +371,7 @@ double Initializer::checkHomographyScore(
         const float w2in1inv = 1.0/(h31inv*u2+h32inv*v2+h33inv);
         const float u2in1 = (h11inv*u2+h12inv*v2+h13inv)*w2in1inv;
         const float v2in1 = (h21inv*u2+h22inv*v2+h23inv)*w2in1inv;
-
         const float squareDist1 = (u1-u2in1)*(u1-u2in1)+(v1-v2in1)*(v1-v2in1);
-
         const float chiSquare1 = squareDist1*invSigmaSquare;
 
         if(chiSquare1 > th) {
