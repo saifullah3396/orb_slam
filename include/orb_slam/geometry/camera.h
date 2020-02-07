@@ -18,6 +18,13 @@ namespace geometry
 {
 
 /**
+ * Camera type
+ */
+enum class CameraType {
+    MONO
+};
+
+/**
  * @struct Camera
  * @brief Holds information about a single camera
  */
@@ -26,17 +33,10 @@ class Camera
 {
 public:
     /**
-     * Camera type
-     */
-    enum class CameraType {
-        MONO
-    };
-
-    /**
      * @brief Camera Constructor
      * @param nh ROS node handle
      */
-    Camera(const ros::NodeHandle& nh)
+    Camera(const ros::NodeHandle& nh);
 
     /**
      * @brief ~Camera Destructor
@@ -69,20 +69,20 @@ public:
     const int& height() { return height_; }
     const int& undistWidth() { return undist_width_; }
     const int& undistHeight() { return undist_height_; }
-    const int& minX() const { return min_x_; }
-    const int& minY() const { return min_y_; }
-    const int& maxX() const { return max_x_; }
-    const int& maxY() const { return max_y_; }
+    const T& minX() const { return min_x_; }
+    const T& minY() const { return min_y_; }
+    const T& maxX() const { return max_x_; }
+    const T& maxY() const { return max_y_; }
     const T& fovX() const { return fov_x_; }
     const T& fovY() const { return fov_y_; }
     const T& focalX() const { return focal_x_; }
     const T& focalY() const { return focal_y_; }
     const T& invFocalX() const { return focal_x_inv_; }
     const T& invFocalY() const { return focal_y_inv_; }
-    const T& center() const { return center_x_; }
-    const T& center() const { return center_y_; }
+    const T& centerX() const { return center_x_; }
+    const T& centerY() const { return center_y_; }
     virtual const cv::Mat& image() = 0;
-    virtual const CameraType& type() = 0;
+    virtual const CameraType type() = 0;
     virtual const cv::Mat& imageL() = 0;
     virtual const cv::Mat& imageR() = 0;
     virtual const cv::Mat& imageDepth() = 0;
@@ -102,13 +102,13 @@ private:
      */
     void updateIntrinsicMatrix();
 
-    CameraType type; //! Camera type
-    int  fps_ = {30}; //! Frames per second for the video
-    int  width_ = {0}; //! Image width
-    int  height_ = {0}; //! Image height
+    CameraType type_; //! Camera type
+    int fps_ = {30}; //! Frames per second for the video
+    int width_ = {0}; //! Image width
+    int height_ = {0}; //! Image height
     int undist_width_ = {0}; //! Width after distortion is removed
     int undist_height_ = {0}; //! Height after distortion is removed
-    cv::Mat undist_bounds = {cv::Mat_<T>(4, 2, CV_32F)};
+    cv::Mat undist_bounds_ = {cv::Mat_<T>(4, 2, CV_32F)};
     T min_x_; //! Min x after removed distortion
     T max_x_; //! Max x after removed distortion
     T min_y_; //! Min y after removed distortion
@@ -153,7 +153,7 @@ public:
     ~MonoCamera();
 
     const cv::Mat& image() { return image_; }
-    const CameraType& type() { return CameraType::MONO; }
+    const CameraType type() { return CameraType::MONO; }
     const cv::Mat& imageL() {
         throw std::runtime_error(
             "imageL() is undefined for monocular camera.");
