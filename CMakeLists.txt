@@ -131,8 +131,8 @@ include
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 FILE(GLOB SRC
-    src/*.cpp
-    src/geometry/*.cpp)
+    "src/*.cpp"
+    "src/geometry/*.cpp")
 add_executable(tracking_node ${SRC})
 
 ## Rename C++ executable without prefix
