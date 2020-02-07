@@ -12,7 +12,6 @@ int Frame::id_global_ = 0;
 geometry::CameraPtr<float> Frame::camera_;
 geometry::ORBExtractorPtr Frame::orb_extractor_;
 geometry::ORBMatcherPtr Frame::orb_matcher_;
-ros::NodeHandle Frame::nh_;
 
 // grid
 int Frame::grid_rows_;
@@ -37,10 +36,10 @@ void Frame::setupFirstFrame() {
     c_T_w_ = cv::Mat::eye(4, 4, CV_64F);
 }
 
-void Frame::setupGrid()
+void Frame::setupGrid(const ros::NodeHandle& nh)
 {
-    nh_.getParam("grid_rows", grid_rows_);
-    nh_.getParam("grid_cols", grid_cols_);
+    nh.getParam("grid_rows", grid_rows_);
+    nh.getParam("grid_cols", grid_cols_);
     grid_size_x_ = camera_->undistWidth() / grid_cols_;
     grid_size_y_ = camera_->undistHeight() / grid_rows_;
 }

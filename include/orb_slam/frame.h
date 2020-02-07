@@ -31,7 +31,7 @@ public:
     /**
      * Sets up the uniform key points extractor
      */
-    static void setupGrid();
+    static void setupGrid(const ros::NodeHandle& nh);
 
     /**
      * Extracts orb features from the frame image
@@ -74,8 +74,6 @@ public:
         { orb_extractor_ = orb_extractor; }
     static void setORBMatcher(const geometry::ORBMatcherPtr& orb_matcher)
         { orb_matcher_ = orb_matcher; }
-    static void setROSNodeHandle(const ros::NodeHandle& nh)
-        { nh_ = nh; }
 
 protected:
     /**
@@ -126,9 +124,6 @@ protected:
     static int grid_cols_;
 
     static int id_global_; // global ids accumulator
-
-    // ros node handle for reading parameters
-    static ros::NodeHandle nh_;
 };
 
 class MonoFrame : public Frame {
