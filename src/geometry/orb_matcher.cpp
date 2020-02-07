@@ -4,8 +4,6 @@
  * @author <A href="mailto:saifullah3396@gmail.com">Saifullah</A>
  */
 
-#pragma once
-
 #include <orb_slam/frame.h>
 
 namespace orb_slam
