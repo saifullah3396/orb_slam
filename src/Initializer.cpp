@@ -306,7 +306,8 @@ void Initializer::findHomographyMat(
         h_mat = ref_T_inv * h_normalized * T;
         cv::Mat h_mat_inv = h_mat.inv();
         current_score =
-            checkHomographyScore(h_mat, h_mat_inv, current_inliers);
+            checkHomographyScore(
+                points, ref_points, h_mat, h_mat_inv, current_inliers);
 
         if(current_score > f_score_) {
             // set best f_mat to fundamental_mat

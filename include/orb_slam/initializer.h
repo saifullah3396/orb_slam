@@ -99,11 +99,15 @@ private:
      * Checks the score of the homography matrix as done in orb-slam paper.
      * Taken directly from orb-slam repository.
      *
+     * @param points: Points of current frame
+     * @param ref_points: Points in reference frame
      * @param h_mat: Homography matrix
      * @param h_mat_inv: The inverse homography matrix
      * @param inliers: Inliers as found while computing score
      */
     double checkHomographyScore(
+        const std::vector<cv::Point2f>& points,
+        const std::vector<cv::Point2f>& ref_points,
         const cv::Mat& h_mat,
         const cv::Mat& h_mat_inv,
         std::vector<bool>& inliers);
