@@ -121,13 +121,13 @@ void Camera<T>::computeImageBounds()
     }
 
     min_x_ =
-        min(undist_bounds_.at<T>(0,0), undist_bounds_.at<T>(2,0));
+        std::min(undist_bounds_.at<T>(0,0), undist_bounds_.at<T>(2,0));
     max_x_ =
-        max(undist_bounds_.at<T>(1,0), undist_bounds_.at<T>(3,0));
+        std::max(undist_bounds_.at<T>(1,0), undist_bounds_.at<T>(3,0));
     min_y_ =
-        min(undist_bounds_.at<T>(0,1), undist_bounds_.at<T>(1,1));
+        std::min(undist_bounds_.at<T>(0,1), undist_bounds_.at<T>(1,1));
     max_y_ =
-        max(undist_bounds_.at<T>(2,1), undist_bounds_.at<T>(3,1));
+        std::max(undist_bounds_.at<T>(2,1), undist_bounds_.at<T>(3,1));
 
     undist_width_ = max_x_ - min_x_;
     undist_height_ = max_y_ - min_y_;
