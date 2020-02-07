@@ -12,7 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 ## System dependencies are found with CMake's conventions
-find_package(OpenCV 3.4.9 REQUIRED COMPONENTS core calib3d features2d)
+find_package(OpenCV 3.4.9 REQUIRED COMPONENTS core calib3d features2d imgproc)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
