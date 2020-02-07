@@ -37,8 +37,8 @@ void Frame::setupFirstFrame() {
 
 void Frame::setupGrid()
 {
-    nh.getParam("grid_rows", grid_rows_);
-    nh.getParam("grid_cols", grid_cols_);
+    nh_.getParam("grid_rows", grid_rows_);
+    nh_.getParam("grid_cols", grid_cols_);
     grid_size_x_ = camera_->undistWidth() / grid_cols_;
     grid_size_y_ = camera_->undistHeight() / grid_rows_;
 }
