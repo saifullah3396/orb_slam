@@ -15,9 +15,8 @@ namespace geometry
 {
 
 template <typename T>
-Camera<T>::Camera(const ros::NodeHandle& nh) : nh_(nh)
+Camera<T>::Camera()
 {
-    setup();
 }
 
 template <typename T>
@@ -26,32 +25,36 @@ Camera<T>::~Camera()
 }
 
 template <typename T>
-void Camera<T>::setup()
+void Camera<T>::readParams(const ros::NodeHandle& nh)
 {
     std::string prefix = "orb_slam/camera/";
 
     // read all the camera parameters
-    nh_.getParam(prefix + "fps", fps_);
-    nh_.getParam(prefix + "width", width_);
-    nh_.getParam(prefix + "height", height_);
-    nh_.getParam(prefix + "fov_x", fov_x_);
-    nh_.getParam(prefix + "fov_y", fov_y_);
-    nh_.getParam(prefix + "focal_x", focal_x_);
-    nh_.getParam(prefix + "focal_y", focal_y_);
+    nh.getParam(prefix + "fps", fps_);
+    nh.getParam(prefix + "width", width_);
+    nh.getParam(prefix + "height", height_);
+    nh.getParam(prefix + "fov_x", fov_x_);
+    nh.getParam(prefix + "fov_y", fov_y_);
+    nh.getParam(prefix + "focal_x", focal_x_);
+    nh.getParam(prefix + "focal_y", focal_y_);
     focal_x_inv_ = 1.0 / focal_x_;
     focal_y_inv_ = 1.0 / focal_y_;
-    nh_.getParam(prefix + "center_x", center_x_);
-    nh_.getParam(prefix + "center_y", center_y_);
+    nh.getParam(prefix + "center_x", center_x_);
+    nh.getParam(prefix + "center_y", center_y_);
 
     // read dist coefficients list
     std::vector<T> dist_coeffs;
-    nh_.getParam(prefix + "dist_coeffs", dist_coeffs);
+    nh.getParam(prefix + "dist_coeffs", dist_coeffs);
     dist_coeffs_.at<T>(0, 0) = dist_coeffs[0];
     dist_coeffs_.at<T>(0, 1) = dist_coeffs[1];
     dist_coeffs_.at<T>(0, 2) = dist_coeffs[2];
     dist_coeffs_.at<T>(0, 3) = dist_coeffs[3];
     dist_coeffs_.at<T>(0, 4) = dist_coeffs[4];
+}
 
+template <typename T>
+void Camera<T>::setup()
+{
     // update the intrinsic matrix
     updateIntrinsicMatrix();
 
@@ -139,8 +142,7 @@ template class Camera<float>;
 template class Camera<double>;
 
 template <typename T>
-MonoCamera<T>::MonoCamera(const ros::NodeHandle& nh) :
-    Camera<T>(nh)
+MonoCamera<T>::MonoCamera() : Camera<T>()
 {
 }
 

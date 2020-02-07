@@ -34,9 +34,8 @@ class Camera
 public:
     /**
      * @brief Camera Constructor
-     * @param nh ROS node handle
      */
-    Camera(const ros::NodeHandle& nh);
+    Camera();
 
     /**
      * @brief ~Camera Destructor
@@ -91,8 +90,13 @@ public:
 
 private:
     /**
-     * @brief setup Reads the camera parameters from ros parameter server and
-     *     updates them in class
+     * @brief readParams Reads the camera para
+     * @param nh: ROS node handle
+     */
+    void readParams(const ros::NodeHandle& nh);
+
+    /**
+     * @brief setup Sets up the camera variables.
      */
     void setup();
 
@@ -128,9 +132,6 @@ private:
     //! [0 fy cy]
     //! [0  0  1]
     cv::Mat intrinsic_matrix_ = {cv::Mat_<T>(3, 3)};
-
-    //! ros node handle for reading parameters
-    ros::NodeHandle nh_;
 };
 
 /**
@@ -143,9 +144,8 @@ class MonoCamera : public Camera<T>
 public:
     /**
      * @brief Camera Constructor
-     * @param nh ROS node handle
      */
-    MonoCamera(const ros::NodeHandle& nh);
+    MonoCamera();
 
     /**
      * @brief ~Camera Destructor
