@@ -88,8 +88,10 @@ void Camera<T>::undistortPoints(
     auto size = key_points.size();
     undist_key_points.resize(size);
     for(int i = 0; i < size; i++) {
-        undist_key_points[i] =
-            cv::KeyPoint(mat.at<T>(i, 0), mat.at<T>(i, 1));
+        auto kp = key_points[i]; // copy the point
+        kp.pt.x = mat.at<T>(i, 0);
+        kp.pt.y = mat.at<T>(i, 1);
+        undist_key_points[i] = kp;
     }
 }
 
@@ -132,6 +134,9 @@ void Camera<T>::computeImageBounds()
     undist_width_ = max_x_ - min_x_;
     undist_height_ = max_y_ - min_y_;
 }
+
+template class Camera<float>;
+template class Camera<double>;
 
 template <typename T>
 MonoCamera<T>::MonoCamera(const ros::NodeHandle& nh) :
