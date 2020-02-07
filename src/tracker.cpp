@@ -23,12 +23,10 @@ Tracker::Tracker(const ros::NodeHandle& nh) : nh_(nh)
         geometry::ORBExtractorPtr(new geometry::ORBExtractor(nh_));
     orb_matcher_ =
         geometry::ORBMatcherPtr(new geometry::ORBMatcher(nh_));
-    Initializer::setROSNodeHandle(nh_);
-    Frame::setROSNodeHandle(nh_);
     Frame::setCamera(camera_);
     Frame::setORBExtractor(orb_extractor_);
     Frame::setORBMatcher(orb_matcher_);
-    Frame::setupGrid();
+    Frame::setupGrid(nh_);
 }
 
 Tracker::~Tracker()
