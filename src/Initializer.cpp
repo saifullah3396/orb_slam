@@ -224,11 +224,13 @@ double Initializer::checkFundamentalScore(
     {
         bool good_point = true;
 
-        const cv::Point2f &p1 = points[i];
-        const cv::Point2f &p2 = ref_points[i];
+        const auto& p1 = points[i];
+        const auto& p2 = ref_points[i];
 
-        const double u1 = p1.x, v1 = p1.y;
-        const double u2 = p2.x, v2 = p2.y;
+        const auto& u1 = p1.x;
+        const auto& v1 = p1.y;
+        const auto& u2 = p2.x;
+        const auto& v2 = p2.y;
 
         // Reprojection error in second image == Epipolar constraint error
         // l2=F21x1=(a2,b2,c2)
@@ -361,10 +363,10 @@ double Initializer::checkHomographyScore(
         const auto& p1 = points[i];
         const auto& p2 = ref_points[i];
 
-        const auto& u1 = kp1.pt.x;
-        const auto&  v1 = kp1.pt.y;
-        const auto&  u2 = kp2.pt.x;
-        const auto&  v2 = kp2.pt.y;
+        const auto& u1 = p1.x;
+        const auto& v1 = p1.y;
+        const auto& u2 = p2.x;
+        const auto& v2 = p2.y;
 
         // Reprojection error in first image
         // x2in1 = H12*x2
