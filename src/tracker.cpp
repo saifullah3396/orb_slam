@@ -67,7 +67,7 @@ void Tracker::trackFrame()
     last_proc_state_ = state_;
 
     if(state_ == NOT_INITIALIZED) {
-        if (camera_->type() == CameraType::MONO) {
+        if (camera_->type() == geometry::CameraType::MONO) {
             monocularInitialization();
         }
 
@@ -132,7 +132,9 @@ void Tracker::monocularInitialization()
 
         // try to initialize the monocular slam with current frame and already
         // assigned reference frame
-        initializer_->tryToInitialize(current_frame_);
+        cv::Mat best_rot_mat, best_trans_mat;
+        initializer_->tryToInitialize(
+            current_frame_, best_rot_mat, best_trans_mat);
     }
 }
 
