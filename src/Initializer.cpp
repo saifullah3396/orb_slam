@@ -11,8 +11,8 @@ namespace orb_slam {
 
 Initializer::Initializer(
     const FramePtr& ref_frame,
-    double sigma = 1.0,
-    int iterations = 200) :
+    double sigma,
+    int iterations) :
     ref_frame_(ref_frame), sigma_(sigma), iterations_(iterations)
 {
     sigma_squared_ = sigma * sigma;
@@ -64,8 +64,6 @@ void Initializer::tryToInitialize(
             std::vector<size_t>(
                 all_indices.begin(), all_indices.begin() + 8));
     }
-
-    const int n = frame_->nMatches();
 
     // see http://www.cs.cmu.edu/~16385/s17/Slides/12.4_8Point_Algorithm.pdf
     // for details on fundamental matrix computation
@@ -126,10 +124,10 @@ void Initializer::tryToInitialize(
             inlier_ref_points,
             sols);
 
-        if (!sols.empty())
+        if (!sols.empty()) {
             int idx = sols.at<int>(0, 0);
             best_rot_mat = rot_mats[idx];
-            best_tran_mat = trans_mats[idx];
+            best_trans_mat = trans_mats[idx];
         }
     } else { //if(pF_HF>0.6)
         const auto& K = camera_->intrinsicMatrix();
