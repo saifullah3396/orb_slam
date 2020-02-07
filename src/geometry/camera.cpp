@@ -5,6 +5,7 @@
  * @author <A href="mailto:saifullah3396@gmail.com">Saifullah</A>
  */
 
+#include <opencv2/imgproc/imgproc.hpp>
 #include "orb_slam/geometry/camera.h"
 
 namespace orb_slam
@@ -37,14 +38,14 @@ void Camera<T>::setup()
     nh_.getParam(prefix + "fov_y", fov_y_);
     nh_.getParam(prefix + "focal_x", focal_x_);
     nh_.getParam(prefix + "focal_y", focal_y_);
-    inv_focal_x_ = 1.0 / focal_x_;
-    inv_focal_y_ = 1.0 / focal_y_;
+    focal_x_inv_ = 1.0 / focal_x_;
+    focal_y_inv_ = 1.0 / focal_y_;
     nh_.getParam(prefix + "center_x", center_x_);
     nh_.getParam(prefix + "center_y", center_y_);
 
     // read dist coefficients list
     std::vector<T> dist_coeffs;
-    nh_.getParam(prefix + "dist_coeffs", dist_coeffs)
+    nh_.getParam(prefix + "dist_coeffs", dist_coeffs);
     dist_coeffs_.at<T>(0, 0) = dist_coeffs[0];
     dist_coeffs_.at<T>(0, 1) = dist_coeffs[1];
     dist_coeffs_.at<T>(0, 2) = dist_coeffs[2];
@@ -60,7 +61,7 @@ void Camera<T>::setup()
 
 template <typename T>
 void Camera<T>::updateIntrinsicMatrix() {
-    intrinsic_matrix =
+    intrinsic_matrix_ =
         (
             cv::Mat_<T>(3, 3) <<
                 focal_x_, 0, center_x_,
@@ -88,7 +89,7 @@ void Camera<T>::undistortPoints(
     undist_key_points.resize(size);
     for(int i = 0; i < size; i++) {
         undist_key_points[i] =
-            cv::KeyPoint(mat.at<T>(i, 0), mat.at<T>(i, 1))
+            cv::KeyPoint(mat.at<T>(i, 0), mat.at<T>(i, 1));
     }
 }
 
@@ -96,7 +97,7 @@ template <typename T>
 void Camera<T>::computeImageBounds()
 {
     // actually distorted right now
-    undist_bounds =
+    undist_bounds_ =
         (
             cv::Mat_<T>(4, 2, CV_32F) <<
                 0.0,    0.0,
@@ -110,8 +111,8 @@ void Camera<T>::computeImageBounds()
         // perform undistortion
         //mat=mat.reshape(2);
         cv::undistortPoints(
-            undist_bounds,
-            undist_bounds,
+            undist_bounds_,
+            undist_bounds_,
             intrinsic_matrix_,
             dist_coeffs_,
             cv::Mat(),
@@ -120,13 +121,13 @@ void Camera<T>::computeImageBounds()
     }
 
     min_x_ =
-        min(undist_bounds.at<T>(0,0), undist_bounds.at<T>(2,0));
+        min(undist_bounds_.at<T>(0,0), undist_bounds_.at<T>(2,0));
     max_x_ =
-        max(undist_bounds.at<T>(1,0), undist_bounds.at<T>(3,0));
+        max(undist_bounds_.at<T>(1,0), undist_bounds_.at<T>(3,0));
     min_y_ =
-        min(undist_bounds.at<T>(0,1), undist_bounds.at<T>(1,1));
+        min(undist_bounds_.at<T>(0,1), undist_bounds_.at<T>(1,1));
     max_y_ =
-        max(undist_bounds.at<T>(2,1), mundist_boundsat.at<T>(3,1));
+        max(undist_bounds_.at<T>(2,1), undist_bounds_.at<T>(3,1));
 
     undist_width_ = max_x_ - min_x_;
     undist_height_ = max_y_ - min_y_;
