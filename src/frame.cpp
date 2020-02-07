@@ -17,6 +17,8 @@ ros::NodeHandle Frame::nh_;
 // grid
 int Frame::grid_rows_;
 int Frame::grid_cols_;
+int Frame::grid_size_x_;
+int Frame::grid_size_y_;
 
 Frame::Frame(
     const ros::Time& time_stamp) :
