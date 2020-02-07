@@ -9,6 +9,10 @@
 
 namespace orb_slam {
 
+// static variable definitions
+ros::NodeHandle Initializer::nh_;
+geometry::CameraPtr<float> Initializer::camera_;
+
 Initializer::Initializer(
     const FramePtr& ref_frame,
     double sigma,
