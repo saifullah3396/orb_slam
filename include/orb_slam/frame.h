@@ -3,7 +3,7 @@
  */
 
 #include <array>
-#include <shared_ptr.hpp>
+#include <memory>
 #include <orb_slam/geometry/camera.h>
 #include <orb_slam/geometry/orb_extractor.h>
 #include <orb_slam/geometry/orb_matcher.h>
