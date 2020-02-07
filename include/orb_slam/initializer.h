@@ -6,6 +6,7 @@
 #include <random>
 #include <thread>
 #include <orb_slam/frame.h>
+#include <orb_slam/geometry/camera.h>
 #include <orb_slam/geometry/utils.h>
 
 namespace orb_slam {
@@ -34,8 +35,13 @@ public:
      * reference frame. This is based on the orb-slam repository.
      *
      * @param frame: The second frame that is matched with reference frame
+     * @param best_rot_mat: The best rotation matrix from this frame to
+     *     reference frame
+     * @param best_trans_mat: The best translation matrix from this frame to
+     *     reference frame
      */
-    void tryToInitialize(const FramePtr& frame)
+    void tryToInitialize(
+        const FramePtr& frame, cv::Mat& best_rot_mat, cv::Mat& best_trans_mat)
     {
         frame_ = frame;
         if (!ref_frame_) {
@@ -52,9 +58,6 @@ public:
             ref_points[i] = undist_ref_key_points[matches[i].trainIdx].pt;
             points[i] = undist_key_points[matches[i].queryIdx].pt;
         }
-
-        nh_.getParam("inlier_match_max_pixel_dist", inlier_match_max_pixel_dist_);
-        nh_.getParam("fundamental_mat_prob", fundamental_mat_prob_);
 
         // generate sets of 8 points for each RANSAC iteration
         // since F and H are to be compared, same set of randomized points are
@@ -105,25 +108,74 @@ public:
         computeF.join();
         computeH.join();
 
+        std::vector<cv::Point2f> inlier_points, inlier_ref_points;
+        for (int i = 0; i < n; ++i) {
+            if (!inliers_h_[i])
+                continue;
+            inlier_points.push_back(points[i]);
+            inlier_ref_points.push_back(ref_points[i]);
+        }
+
         // compute ratio of scores
         float r_score = h_score_/(h_score_ + f_score_);
 
         // try to reconstruct from homography or fundamental depending
         // on the ratio (0.40-0.45)
         if(r_score > 0.40) {
-            // find R-t using the epipolar geometry with 2d-2d correspondences
-            // reconstruct h
+            // find R-t from homography matrix
+            std::vector<cv::Mat> rot_mats;
+            std::vector<cv::Mat> trans_mats;
+            std::vector<cv::Mat> normals;
+            decomposeHomographyMat(
+                homography_mat_,
+                camera_->intrinsicMatrix(),
+                rot_mats,
+                trans_mats,
+                normals);
+
+            // Remove wrong rotations and translations
+            // R, t is wrong if a point ends up behind the camera
+            std::vector<cv::Mat> res_Rs, res_ts, res_normals;
+            cv::Mat sols;
+            filterHomographyDecompByVisibleRefpoints(
+                rot_mats,
+                normals,
+                inlier_points,
+                inlier_ref_points,
+                sols);
+
+            if (!sols.empty())
+                int idx = sols.at<int>(0, 0);
+                best_rot_mat = rot_mats[idx];
+                best_tran_mat = trans_mats[idx];
+            }
         } else { //if(pF_HF>0.6)
-            // find R-t using the epipolar geometry with 2d-2d correspondences
-            // reconstruct f
+            const auto& K = camera_->intrinsicMatrix();
+            auto principal_point =
+                cv::Point2f(camera_->centerX(), camera_->centerY());
+            double focal_length =
+                (camera_->focalX() + camera_->focalY()) / 2;
+
+            cv::Mat essential_mat = K.t() * fundamental_mat_ * K;
+            // Recover R,t from essential matrix
+            recoverPose(
+                essential_mat,
+                inlier_points,
+                inlier_ref_points,
+                best_rot_mat,
+                best_trans_mat,
+                focal_length,
+                principal_point);
         }
     }
 
     /**
-     * Getters
+     * setters
      */
     static void setROSNodeHandle(const ros::NodeHandle& nh)
         { nh_ = nh; }
+    static void setCamera(const geometry::CameraPtr<float>& camera)
+        { camera_ = camera; }
 
 private:
     /**
@@ -203,6 +255,7 @@ private:
 
     // ros node for parameters
     static ros::NodeHandle nh_;
+    static geometry::CameraPtr<float> camera_;
 };
 
 // fundamental matrix
@@ -248,7 +301,7 @@ void Initializer::findFundamentalMat(
         current_score =
             checkFundamentalScore(f_mat, points, ref_points, current_inliers);
 
-        if(current_score > f_score_) {
+        if (current_score > f_score_) {
             // set best f_mat to fundamental_mat
             fundamental_mat_ = f_mat.clone();
             inliers_f_ = current_inliers;
