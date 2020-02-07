@@ -2,15 +2,16 @@
  * Declares the Tracker class.
  */
 
+#include <opencv2/core/core.hpp>
 #include <memory.h>
 
 namespace orb_slam
 {
 
 namespace geometry {
-    template <typename T = float>
+    template <typename T>
     class Camera;
-    template <typename T = float>
+    template <typename T>
     using CameraPtr = std::shared_ptr<Camera<T>>;
 
     class ORBExtractor;
@@ -22,10 +23,12 @@ namespace geometry {
 class Initializer;
 using InitializerPtr = std::unique_ptr<Initializer>;
 
+class Frame;
+using FramePtr = std::shared_ptr<Frame>;
+
 #define MIN_REQ_MATCHES 100
 
-class Tracker
-{
+class Tracker {
 public:
     Tracker(const ros::NodeHandle& nh);
     ~Tracker();
