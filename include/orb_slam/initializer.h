@@ -46,8 +46,6 @@ public:
     /**
      * setters
      */
-    static void setROSNodeHandle(const ros::NodeHandle& nh)
-        { nh_ = nh; }
     static void setCamera(const geometry::CameraPtr<float>& camera)
         { camera_ = camera; }
 
@@ -131,8 +129,6 @@ private:
     std::vector<bool> inliers_h_; // inliers found by RANSAC while finding hmat.
     double h_score_; // homography matrix score as in orb-slam paper
 
-    // ros node for parameters
-    static ros::NodeHandle nh_;
     static geometry::CameraPtr<float> camera_;
 };
 
