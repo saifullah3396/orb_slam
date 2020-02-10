@@ -27,10 +27,14 @@ class ORBExtractor
 public:
     ORBExtractor(const ros::NodeHandle& nh): nh_(nh) {
         std::string prefix = "orb_slam/orb_extractor/";
-        nh_.getParam(prefix + "n_key_points", n_key_points_);
-        nh_.getParam(prefix + "scale_factor", scale_factor_);
-        nh_.getParam(prefix + "level_pyramid", level_pyramid_);
-        nh_.getParam(prefix + "score_threshold", score_threshold_);
+        nh_.param<int>(prefix + "n_key_points", n_key_points_, 8000);
+        nh_.param<float>(prefix + "scale_factor", scale_factor_, 1.200000048F);
+        nh_.param<int>(prefix + "level_pyramid", level_pyramid_, 4);
+        nh_.param<int>(prefix + "edge_threshold", edge_threshold_, 31);
+        nh_.param<int>(prefix + "first_level", first_level_, 0);
+        nh_.param<int>(prefix + "wta_k", wta_k_, 2);
+        nh_.param<int>(prefix + "patch_size", patch_size_, 31);
+        nh_.param<int>(prefix + "score_threshold", score_threshold_, 20);
 
         // initialize the detector
         cv_orb_detector_ =
@@ -94,7 +98,7 @@ private:
 
     //! orb extractor parameters
     int n_key_points_; // number of key points to extract
-    int scale_factor_; // feature scale factor
+    float scale_factor_; // feature scale factor
     int level_pyramid_; // image pyramid level
     int edge_threshold_ = {31}; // edge threshold
     int first_level_ = {0}; // first level
