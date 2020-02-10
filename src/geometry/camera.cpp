@@ -143,13 +143,17 @@ template <typename T>
 MonoCamera<T>::MonoCamera(const ros::NodeHandle& nh) : Camera<T>(nh)
 {
     #ifdef ROS_CAMERA_STREAM
-    std::string prefix = "/orb_slam/camera/", topic;
+    std::string prefix = "/orb_slam/camera/", rgb_topic;
 
     // read all the camera parameters
-    nh_.param<int>("/orb_slam/camera/topic", topic, 30);
+    nh.param<std::string>(prefix + "rgb_topic", rgb_topic, "/image/raw");
 
-    image_transport = image_transport::ImageTransport(nh);
-    rgb_image_subscriber_ = it.subscribe(topic, 1, imageCb);
+    image_transport =
+        std::shared_ptr<image_transport::ImageTransport>(
+            new image_transport::ImageTransport(nh));
+    rgb_image_subscriber_ =
+        image_transport->subscribeCamera(
+            rgb_topic, 1, &MonoCamera<T>::imageCb, this);
     #endif
 }
 
@@ -160,11 +164,14 @@ MonoCamera<T>::~MonoCamera()
 
 #ifdef ROS_CAMERA_STREAM
 template <typename T>
-void MonoCamera<T>::imageCb(const sensor_msgs::ImageConstPtr& msg)
+void MonoCamera<T>::imageCb(
+    const sensor_msgs::ImageConstPtr& image_msg,
+    const sensor_msgs::CameraInfoConstPtr& camera_info_msg)
 {
-    auto cv_ptr = cv_bridge::toCvCopy(msg);
-    last_timestamp_ = cv_ptr->header.stamp;
+    auto cv_ptr = cv_bridge::toCvShare(image_msg);
+    this->last_timestamp_ = cv_ptr->header.stamp;
     image_ = cv_ptr->image;
+    rgb_image_info_ = *camera_info_msg;
     onImageReceived();
 }
 #endif
@@ -174,8 +181,8 @@ void MonoCamera<T>::onImageReceived()
 {
     #ifdef ROS_CAMERA_STREAM
     // updates the tracker on every new image update
-    if (tracker) {
-        tracker_->update();
+    if (this->tracker_) {
+        this->tracker_->update();
     }
     #endif
 }

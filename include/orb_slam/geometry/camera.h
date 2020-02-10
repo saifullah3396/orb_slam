@@ -122,7 +122,7 @@ public:
     const cv::Mat_<T>& distCoeffs() { return dist_coeffs_; }
     const cv::Mat_<T>& intrinsicMatrix() { return intrinsic_matrix_; }
 
-private:
+protected:
     /**
      * @brief updateIntrinsicMatrix Updates the intrinsic matrix of the camera
      *     from current known parameters
@@ -210,10 +210,13 @@ private:
     virtual const bool subscribed() {
         return rgb_image_subscriber_.getNumPublishers() > 0;
     }
-    void imageCb(const sensor_msgs::ImageConstPtr& msg);
+    void imageCb(
+        const sensor_msgs::ImageConstPtr& image_msg,
+        const sensor_msgs::CameraInfoConstPtr& camera_info_msg);
 
-    image_transport::Subscriber rgb_image_subscriber_;
-    image_transport::ImageTransport image_transport;
+    sensor_msgs::CameraInfo rgb_image_info_;
+    image_transport::CameraSubscriber rgb_image_subscriber_;
+    std::shared_ptr<image_transport::ImageTransport> image_transport;
     #endif
     cv::Mat image_; //! Camera image
 };
