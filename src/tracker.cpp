@@ -38,7 +38,6 @@ Tracker::~Tracker()
 
 void Tracker::update()
 {
-    std::vector<cv::Mat> camera_pose_history;
     // create a frame from the image
     current_frame_ =
         FramePtr(new MonoFrame(ros::Time::now()));
@@ -48,7 +47,7 @@ void Tracker::update()
 
     // track the frame
     trackFrame();
-    camera_pose_history.push_back(current_frame_->getWorldToCamT().clone());
+    camera_pose_history_.push_back(current_frame_->getWorldToCamT().clone());
 }
 
 void Tracker::trackFrame()

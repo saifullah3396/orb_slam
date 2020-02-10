@@ -52,6 +52,7 @@ private:
 
     // latest frame
     FramePtr current_frame_;
+    std::vector<cv::Mat> camera_pose_history_; // vector of poses
 
     // monocular initialization
     FramePtr ref_frame_;
