@@ -18,18 +18,27 @@ namespace orb_slam
 Tracker::Tracker(const ros::NodeHandle& nh) : nh_(nh)
 {
     // initialize the camera
+    ROS_INFO("Initializing camera...");
     camera_ = geometry::CameraPtr<float>(new geometry::MonoCamera<float>(nh_));
     camera_->readParams();
     camera_->setup();
+    camera_->setupCameraStream();
     camera_->setTracker(TrackerPtr(this));
+
+    ROS_INFO("Initializing orb features extractor...");
     orb_extractor_ =
         geometry::ORBExtractorPtr(new geometry::ORBExtractor(nh_));
+
+    ROS_INFO("Initializing orb features matcher...");
     orb_matcher_ =
         geometry::ORBMatcherPtr(new geometry::ORBMatcher(nh_));
+
+    ROS_INFO("Initializing frame base variables...");
     Frame::setCamera(camera_);
     Frame::setORBExtractor(orb_extractor_);
     Frame::setORBMatcher(orb_matcher_);
     Frame::setupGrid(nh_);
+    ROS_INFO("Tracker node successfully initialized...");
 }
 
 Tracker::~Tracker()
