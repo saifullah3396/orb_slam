@@ -34,24 +34,21 @@ Tracker::Tracker(const ros::NodeHandle& nh) : nh_(nh)
 
 Tracker::~Tracker()
 {
-
 }
 
 void Tracker::update()
 {
     std::vector<cv::Mat> camera_pose_history;
-    while (true) {
-        // create a frame from the image
-        current_frame_ =
-            FramePtr(new MonoFrame(ros::Time::now()));
+    // create a frame from the image
+    current_frame_ =
+        FramePtr(new MonoFrame(ros::Time::now()));
 
-        // extract features from the frame
-        current_frame_->extractFeatures();
+    // extract features from the frame
+    current_frame_->extractFeatures();
 
-        // track the frame
-        trackFrame();
-        camera_pose_history.push_back(current_frame_->getWorldToCamT().clone());
-    }
+    // track the frame
+    trackFrame();
+    camera_pose_history.push_back(current_frame_->getWorldToCamT().clone());
 }
 
 void Tracker::trackFrame()
