@@ -9,10 +9,12 @@ add_compile_options(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  roslib
 )
 
 ## System dependencies are found with CMake's conventions
-find_package(OpenCV 3.4.9 REQUIRED COMPONENTS core calib3d features2d imgproc)
+find_package(OpenCV 3.4.9 REQUIRED
+    COMPONENTS core calib3d features2d imgproc highgui)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -196,14 +198,17 @@ target_link_libraries(tracking_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 #if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
-  add_rostest_gtest(camera_tests
-    tests/geometry/camera_tests.test
-    src/geometry/tests/camera_tests.cpp)
-  target_link_libraries(camera_tests
-    ${catkin_LIBRARIES}
-    ${OpenCV_LIBRARIES}
-    ${GTEST_LIBRARIES}
-    ${PROJECT_NAME})
+  set(TESTS camera_tests orb_extractor_tests orb_matcher_tests)
+  foreach(test ${TESTS})
+    add_rostest_gtest(${test}
+        tests/geometry/${test}.test
+        src/geometry/tests/${test}.cpp)
+    target_link_libraries(${test}
+        ${catkin_LIBRARIES}
+        ${OpenCV_LIBRARIES}
+        ${GTEST_LIBRARIES}
+        ${PROJECT_NAME})
+  endforeach()
 #endif()
 
 ## Add folders to be run by python nosetests
