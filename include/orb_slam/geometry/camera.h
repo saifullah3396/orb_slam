@@ -43,6 +43,17 @@ public:
     virtual ~Camera();
 
     /**
+     * @brief readParams Reads the camera para
+     * @param nh: ROS node handle
+     */
+    void readParams(const ros::NodeHandle& nh);
+
+    /**
+     * @brief setup Sets up the camera variables.
+     */
+    void setup();
+
+    /**
      * @brief undistortPoints Performs undistortion operation on array of key
      *     points
      * @param key_points: Input distorted key points
@@ -85,21 +96,10 @@ public:
     virtual const cv::Mat& imageL() = 0;
     virtual const cv::Mat& imageR() = 0;
     virtual const cv::Mat& imageDepth() = 0;
-    const cv::Mat& distCoeffs() { return dist_coeffs_; }
-    const cv::Mat& intrinsicMatrix() { return intrinsic_matrix_; }
+    const cv::Mat_<T>& distCoeffs() { return dist_coeffs_; }
+    const cv::Mat_<T>& intrinsicMatrix() { return intrinsic_matrix_; }
 
 private:
-    /**
-     * @brief readParams Reads the camera para
-     * @param nh: ROS node handle
-     */
-    void readParams(const ros::NodeHandle& nh);
-
-    /**
-     * @brief setup Sets up the camera variables.
-     */
-    void setup();
-
     /**
      * @brief updateIntrinsicMatrix Updates the intrinsic matrix of the camera
      *     from current known parameters
@@ -112,7 +112,7 @@ private:
     int height_ = {0}; //! Image height
     int undist_width_ = {0}; //! Width after distortion is removed
     int undist_height_ = {0}; //! Height after distortion is removed
-    cv::Mat undist_bounds_ = {cv::Mat_<T>(4, 2, CV_32F)};
+    std::vector<cv::Point2f> undist_bounds_;
     T min_x_; //! Min x after removed distortion
     T max_x_; //! Max x after removed distortion
     T min_y_; //! Min y after removed distortion
@@ -126,12 +126,12 @@ private:
     T center_x_ = {0}; //! Camera center offset X
     T center_y_ = {0}; //! Camera center offset Y
     cv::Mat image_; //! Camera image
-    cv::Mat dist_coeffs_ = {cv::Mat_<T>(1, 5)}; //! Distortion coefficients
+    cv::Mat_<T> dist_coeffs_ = {cv::Mat_<T>(1, 5)}; //! Distortion coefficients
     //! Camera intrinsic matrix of the form
     //! [fx 0 cx]
     //! [0 fy cy]
     //! [0  0  1]
-    cv::Mat intrinsic_matrix_ = {cv::Mat_<T>(3, 3)};
+    cv::Mat_<T> intrinsic_matrix_ = {cv::Mat_<T>(3, 3)};
 };
 
 /**
