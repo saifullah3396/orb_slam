@@ -8,11 +8,18 @@
 
 #include <iostream>
 #include <opencv2/core/core.hpp>
-#include <ros/ros.h>
 #include <string>
+#include <ros/ros.h>
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
+
+#define ROS_CAMERA_STREAM 1
 
 namespace orb_slam
 {
+
+class Tracker;
+using TrackerPtr = std::shared_ptr<Tracker>;
 
 namespace geometry
 {
@@ -52,6 +59,11 @@ public:
      * @brief setup Sets up the camera variables.
      */
     void setup();
+
+    /**
+     * Calls this function after image is received and allocated to camera
+     */
+    void onImageReceived() {}
 
     /**
      * @brief undistortPoints Performs undistortion operation on array of key
@@ -156,6 +168,21 @@ public:
      */
     ~MonoCamera();
 
+    /**
+     * Updates the image in the camera
+     */
+    void onImageReceived();
+
+    /**
+     * Setters
+     */
+    void setTracker(const TrackerPtr& tracker) {
+        tracker_ = tracker;
+    }
+
+    /**
+     * Getters
+     */
     const cv::Mat& image() { return image_; }
     const CameraType type() { return CameraType::MONO; }
     const cv::Mat& imageL() {
@@ -172,7 +199,16 @@ public:
     }
 
 private:
+    void imageCb(const sensor_msgs::ImageConstPtr& msg);
+
+    #ifdef ROS_CAMERA_STREAM
+    image_transport::Subscriber rgb_image_subscriber_;
+    image_transport::ImageTransport image_transport;
+    #endif
     cv::Mat image_; //! Camera image
+    ros::Time last_timestamp_; // Latest image update timestamp
+
+    TrackerPtr tracker_; // Pointer to the tracker class
 };
 
 template <typename T = float>
