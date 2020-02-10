@@ -84,6 +84,13 @@ public:
     void computeImageBounds();
 
     /**
+     * Setters
+     */
+    void setTracker(const TrackerPtr& tracker) {
+        tracker_ = tracker;
+    }
+
+    /**
      * Getters
      */
     const int& fps() { return fps_; }
@@ -147,6 +154,8 @@ private:
 
     // ROS node handle for image streaming
     ros::NodeHandle nh_;
+
+    TrackerPtr tracker_; // Pointer to the tracker class
 };
 
 /**
@@ -172,13 +181,6 @@ public:
      * Updates the image in the camera
      */
     void onImageReceived();
-
-    /**
-     * Setters
-     */
-    void setTracker(const TrackerPtr& tracker) {
-        tracker_ = tracker;
-    }
 
     /**
      * Getters
@@ -207,8 +209,6 @@ private:
     ros::Time last_timestamp_; // Latest image update timestamp
     #endif
     cv::Mat image_; //! Camera image
-
-    TrackerPtr tracker_; // Pointer to the tracker class
 };
 
 template <typename T = float>

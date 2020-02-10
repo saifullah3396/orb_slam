@@ -6,7 +6,8 @@
  */
 
 #include <opencv2/imgproc/imgproc.hpp>
-#include "orb_slam/geometry/camera.h"
+#include <orb_slam/geometry/camera.h>
+#include <orb_slam/tracker.h>
 
 namespace orb_slam
 {
