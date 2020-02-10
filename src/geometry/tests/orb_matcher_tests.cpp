@@ -38,10 +38,20 @@ TEST (ORBExtractorTester, TestFeatureMatching) {
     orb_matcher.match(key_points_1, key_points_2, d_1, d_2, matches, false);
     EXPECT_TRUE(matches.size() >= 4500);
     orb_matcher.filterMatches(d_1, matches);
-    EXPECT_TRUE((matches.size() >= 890) && (matches.size() <= 930));
+    EXPECT_TRUE((matches.size() >= 750) && (matches.size() <= 800));
     cv::Mat image_match;
     drawMatches(
         image_1, key_points_1, image_2, key_points_2, matches, image_match);
+
+    int duplicates = 0;
+    for (int i = 0; i < matches.size(); ++i) {
+        for (int j = 0; j < matches.size(); ++j) {
+            if (j == i) continue;
+            if (matches[i].trainIdx == matches[j].trainIdx) duplicates++;
+        }
+    }
+    EXPECT_TRUE(duplicates == 0);
+
     cv::imshow("Good matches", image_match);
     cv::waitKey(0);
 }
