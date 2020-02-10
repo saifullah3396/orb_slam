@@ -15,11 +15,6 @@ int main(int argc, char** argv)
     ros::NodeHandle nh;
     auto tracker =
         std::unique_ptr<Tracker>(new Tracker(nh));
-    auto rate = ros::Rate(1000);
-    while (ros::ok()) {
-        tracker->run();
-        ros::spinOnce();
-        rate.sleep();
-    }
+    ros::spin();
     return 0;
 }
