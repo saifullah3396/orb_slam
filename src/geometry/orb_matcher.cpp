@@ -13,7 +13,7 @@ namespace geometry
 {
 
 BruteForceWithRadiusMatcher::BruteForceWithRadiusMatcher(const ros::NodeHandle& nh) {
-    std::string prefix = "orb_slam/brute_force_width_radius/";
+    std::string prefix = "orb_slam/brute_force_with_radius/";
     nh.getParam(
         prefix + "max_matching_pixel_dist", max_matching_pixel_dist_);
     max_matching_pixel_dist_sqrd_ =
@@ -21,23 +21,21 @@ BruteForceWithRadiusMatcher::BruteForceWithRadiusMatcher(const ros::NodeHandle& 
 }
 
 void BruteForceWithRadiusMatcher::match(
-    const FramePtr& frame,
-    const FramePtr& ref_frame,
+    const std::vector<cv::KeyPoint>& key_points,
+    const std::vector<cv::KeyPoint>& ref_key_points,
+    const cv::Mat& descriptors,
+    const cv::Mat& ref_descriptors,
     std::vector<cv::DMatch>& matches)
 {
     // get undistorted key points
-    const auto& n = frame->nFeaturesUndist();
-    const auto& n_ref = ref_frame->nFeaturesUndist();
+    const auto& n = key_points.size(); // frame->nFeaturesUndist();
+    const auto& n_ref = ref_key_points.size(); // ref_frame->nFeaturesUndist();
 
     // undistorted key points size == undistored descriptors size
     assert(
-        n == frame->nDescriptorsUnDist() &&
-        n_ref == ref_frame->nDescriptorsUnDist());
+        n == descriptors.rows &&
+        n_ref == ref_descriptors.rows);
 
-    const auto& key_points = frame->featuresUndist();
-    const auto& ref_key_points = ref_frame->featuresUndist();
-    const auto& descriptors = frame->descriptorsUndist();
-    const auto& ref_descriptors = ref_frame->descriptorsUndist();
     for (int i = 0; i < n; i++) {
         const auto& kp = key_points[i];
         auto matched = false;
@@ -64,26 +62,66 @@ void BruteForceWithRadiusMatcher::match(
                 }
             }
         }
-        if (matched)
+
+        if (matched) {
             matches.push_back(
                 cv::DMatch(
                     i, matched_id, static_cast<float>(min_feature_dist)));
+        }
     }
+}
+
+CVORBMatcher::CVORBMatcher(const ros::NodeHandle& nh) {
+    std::string prefix = "orb_slam/cv_orb_matcher/";
+    std::string matcher_type;
+    nh.getParam(
+        prefix + "type", matcher_type);
+    matcher_ = cv::DescriptorMatcher::create(matcher_type);
+}
+
+void CVORBMatcher::match(
+    const std::vector<cv::KeyPoint>& key_points,
+    const std::vector<cv::KeyPoint>& ref_key_points,
+    const cv::Mat& descriptors,
+    const cv::Mat& ref_descriptors,
+    std::vector<cv::DMatch>& matches)
+{
+    matcher_->match(descriptors, ref_descriptors, matches);
 }
 
 ORBMatcher::ORBMatcher(const ros::NodeHandle& nh): nh_(nh) {
     std::string prefix = "orb_slam/orb_matcher/";
     nh_.getParam(prefix + "method", method_);
-    if (method_ == "bruteForce") {
+    if (method_ == "cv_orb_matcher") {
         using namespace std::placeholders;
-        auto matcher = BruteForceWithRadiusMatcher(nh_);
+        matcher_ = std::shared_ptr<MatcherBase>(new CVORBMatcher(nh_));
+        match_ =
+            std::bind(
+                &CVORBMatcher::match,
+                std::static_pointer_cast<CVORBMatcher>(matcher_),
+                std::placeholders::_1,
+                std::placeholders::_2,
+                std::placeholders::_3,
+                std::placeholders::_4,
+                std::placeholders::_5);
+    } else if (method_ == "brute_force_with_radius") {
+        using namespace std::placeholders;
+        matcher_ =
+            std::shared_ptr<MatcherBase>(new BruteForceWithRadiusMatcher(nh_));
         match_ =
             std::bind(
                 &BruteForceWithRadiusMatcher::match,
-                &matcher,
+                std::static_pointer_cast<BruteForceWithRadiusMatcher>(matcher_),
                 std::placeholders::_1,
                 std::placeholders::_2,
-                std::placeholders::_3);
+                std::placeholders::_3,
+                std::placeholders::_4,
+                std::placeholders::_5);
+    }
+
+    if (match_ == nullptr) {
+        throw std::runtime_error(
+            "Please set an orb matcher in cfg/orb_matcher.yaml.");
     }
 }
 
@@ -94,9 +132,51 @@ ORBMatcher::~ORBMatcher() {
 void ORBMatcher::match(
     const FramePtr& frame,
     const FramePtr& ref_frame,
+    std::vector<cv::DMatch>& matches,
+    bool filter_matches)
+{
+    match(
+        frame->featuresUndist(),
+        ref_frame->featuresUndist(),
+        frame->descriptorsUndist(),
+        ref_frame->descriptorsUndist(),
+        matches,
+        filter_matches);
+}
+
+void ORBMatcher::match(
+    const std::vector<cv::KeyPoint>& key_points,
+    const std::vector<cv::KeyPoint>& ref_key_points,
+    const cv::Mat& descriptors,
+    const cv::Mat& ref_descriptors,
+    std::vector<cv::DMatch>& matches,
+    bool filter_matches)
+{
+    match_(key_points, ref_key_points, descriptors, ref_descriptors, matches);
+    if (filter_matches) {
+        filterMatches(descriptors, matches);
+    }
+}
+
+void ORBMatcher::filterMatches(
+    const cv::Mat& descriptors,
     std::vector<cv::DMatch>& matches)
 {
-    match_(frame, ref_frame, matches);
+    auto min_max =
+        minmax_element(
+            matches.begin(), matches.end(),
+            [](const cv::DMatch &m1, const cv::DMatch &m2)
+            { return m1.distance < m2.distance; });
+    double min_dist = min_max.first->distance;
+    double max_dist = min_max.second->distance;
+
+    std::vector<cv::DMatch> good_matches;
+    for (int i = 0; i < descriptors.rows; i++) {
+        if (matches[i].distance <= std::max(2 * min_dist, 30.0)) {
+            good_matches.push_back(matches[i]);
+        }
+    }
+    matches = good_matches;
 }
 
 } // namespace geometry
