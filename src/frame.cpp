@@ -2,6 +2,9 @@
  * Implements the Frame class.
  */
 
+#ifdef DEBUG
+#include <opencv2/highgui/highgui.hpp>
+#endif
 #include <orb_slam/frame.h>
 #include <thread>
 
@@ -105,18 +108,46 @@ MonoFrame::~MonoFrame()
 void MonoFrame::extractFeatures() {
     // find orb features in the image
     orb_extractor_->detect(camera_->image(), key_points);
+    #ifdef DEBUG
+    ROS_DEBUG_STREAM("Number of features extracted: " << key_points.size());
+    cv::Mat draw_image = camera_->image().clone();
+    cv::drawKeypoints(
+        camera_->image(),
+        key_points,
+        draw_image,
+        cv::Scalar(255, 0, 0),
+        cv::DrawMatchesFlags::DEFAULT);
+    cv::imshow("key_points", draw_image);
+    cv::waitKey(0);
+    #endif
 
     if (key_points.empty())
         return;
 
     // undistort key points so they are the in the correct positions
     camera_->undistortPoints(
-        key_points, undist_key_points, undist_intrinsic_matrix);
+        key_points, undist_key_points);
+
+    #ifdef DEBUG
+    ROS_DEBUG_STREAM(
+        "Number of undistorted features: " << undist_key_points.size());
+    ROS_DEBUG_STREAM(
+        "undist_intrinsic_matrix:\n" << undist_intrinsic_matrix);
+    cv::drawKeypoints(
+        draw_image,
+        undist_key_points,
+        draw_image,
+        cv::Scalar(0, 0, 255),
+        cv::DrawMatchesFlags::DEFAULT);
+    cv::imshow("undist_key_points", draw_image);
+    cv::waitKey(0);
+    #endif
 
     // update the key points so that they are uniformly accumulated over
     // the image. Note that the points are undistorted and the grid is also
     // within non-black region of the undisorted image.
     assignFeaturesToGrid(undist_key_points, grid_);
+    ROS_INFO("5");
 
     // find the orb descriptors for undistorted points
     orb_extractor_->compute(
