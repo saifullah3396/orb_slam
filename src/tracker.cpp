@@ -18,27 +18,27 @@ namespace orb_slam
 Tracker::Tracker(const ros::NodeHandle& nh) : nh_(nh)
 {
     // initialize the camera
-    ROS_INFO("Initializing camera...");
+    ROS_DEBUG("Initializing camera...");
     camera_ = geometry::CameraPtr<float>(new geometry::MonoCamera<float>(nh_));
     camera_->readParams();
     camera_->setup();
     camera_->setupCameraStream();
     camera_->setTracker(TrackerPtr(this));
 
-    ROS_INFO("Initializing orb features extractor...");
+    ROS_DEBUG("Initializing orb features extractor...");
     orb_extractor_ =
         geometry::ORBExtractorPtr(new geometry::ORBExtractor(nh_));
 
-    ROS_INFO("Initializing orb features matcher...");
+    ROS_DEBUG("Initializing orb features matcher...");
     orb_matcher_ =
         geometry::ORBMatcherPtr(new geometry::ORBMatcher(nh_));
 
-    ROS_INFO("Initializing frame base variables...");
+    ROS_DEBUG("Initializing frame base variables...");
     Frame::setCamera(camera_);
     Frame::setORBExtractor(orb_extractor_);
     Frame::setORBMatcher(orb_matcher_);
     Frame::setupGrid(nh_);
-    ROS_INFO("Tracker node successfully initialized...");
+    ROS_DEBUG("Tracker node successfully initialized...");
 }
 
 Tracker::~Tracker()
@@ -47,13 +47,18 @@ Tracker::~Tracker()
 
 void Tracker::update()
 {
+    ROS_DEBUG("Updating tracking...");
+
     // create a frame from the image
+    ROS_DEBUG("Creating frame...");
     current_frame_ =
         FramePtr(new MonoFrame(ros::Time::now()));
 
+    ROS_DEBUG("Extracting features from frame...");
     // extract features from the frame
     current_frame_->extractFeatures();
 
+    ROS_DEBUG("Tracking frame...");
     // track the frame
     trackFrame();
     camera_pose_history_.push_back(current_frame_->getWorldToCamT().clone());
@@ -80,7 +85,7 @@ void Tracker::trackFrame()
 void Tracker::monocularInitialization()
 {
     if(!initializer_) { // if no initializer, set the frame as reference
-        ROS_INFO("Initializing the SLAM system with monocular camera...");
+        ROS_DEBUG("Initializing the SLAM system with monocular camera...");
         // if enough features are available
         if(current_frame_->nFeatures() > MIN_REQ_MATCHES)
         {
@@ -106,7 +111,7 @@ void Tracker::monocularInitialization()
             ROS_WARN("Not enough features to initialize. Resetting...");
         }
     } else { // now we have the reference frame so try to initialize the map
-        ROS_INFO("Matching first frame with a reference frame...");
+        ROS_DEBUG("Matching first frame with a reference frame...");
         // try to initialize with the current frame, here we will already have
         // a reference frame assigned.
         if(current_frame_->nFeatures() <= MIN_REQ_MATCHES) {// not enough key points?
