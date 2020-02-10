@@ -141,11 +141,42 @@ template class Camera<double>;
 template <typename T>
 MonoCamera<T>::MonoCamera(const ros::NodeHandle& nh) : Camera<T>(nh)
 {
+    #ifdef ROS_CAMERA_STREAM
+    std::string prefix = "/orb_slam/camera/", topic;
+
+    // read all the camera parameters
+    nh_.param<int>("/orb_slam/camera/topic", topic, 30);
+
+    image_transport = image_transport::ImageTransport(nh);
+    rgb_image_subscriber_ = it.subscribe("topic", 1, imageCb);
+    #endif
 }
 
 template <typename T>
 MonoCamera<T>::~MonoCamera()
 {
+}
+
+#ifdef ROS_CAMERA_STREAM
+template <typename T>
+void MonoCamera<T>::imageCb(const sensor_msgs::ImageConstPtr& msg)
+{
+    auto cv_ptr = cv_bridge::toCvCopy(msg);
+    last_timestamp_ = cv_ptr->header.stamp;
+    image_ = cv_ptr->image;
+    onImageReceived();
+}
+#endif
+
+template <typename T>
+void MonoCamera<T>::onImageReceived()
+{
+    #ifdef ROS_CAMERA_STREAM
+    // updates the tracker on every new image update
+    if (tracker) {
+        tracker_->update();
+    }
+    #endif
 }
 
 template class MonoCamera<float>;
