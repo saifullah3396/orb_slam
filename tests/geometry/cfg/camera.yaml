@@ -1,0 +1,20 @@
+# taken from https://vision.in.tum.de/data/datasets/rgbd-dataset/file_formats
+# freiburg #1
+orb_slam:
+  camera:
+    fps: 30
+    width: 640
+    height: 480
+    fov_x: 518 # example
+    fov_y: 519 # example
+    focal_x: 517.3
+    focal_y: 516.5
+    center_x: 318.6
+    center_y: 255.3
+    dist_coeffs: [
+      0.2624,
+      -0.9531,
+      -0.0054,
+      0.0026,
+      1.1633
+    ]
