@@ -199,9 +199,9 @@ public:
     }
 
 private:
+    #ifdef ROS_CAMERA_STREAM
     void imageCb(const sensor_msgs::ImageConstPtr& msg);
 
-    #ifdef ROS_CAMERA_STREAM
     image_transport::Subscriber rgb_image_subscriber_;
     image_transport::ImageTransport image_transport;
     ros::Time last_timestamp_; // Latest image update timestamp
