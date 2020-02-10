@@ -149,7 +149,7 @@ MonoCamera<T>::MonoCamera(const ros::NodeHandle& nh) : Camera<T>(nh)
     nh_.param<int>("/orb_slam/camera/topic", topic, 30);
 
     image_transport = image_transport::ImageTransport(nh);
-    rgb_image_subscriber_ = it.subscribe("topic", 1, imageCb);
+    rgb_image_subscriber_ = it.subscribe(topic, 1, imageCb);
     #endif
 }
 
