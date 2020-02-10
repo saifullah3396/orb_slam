@@ -38,6 +38,8 @@ Tracker::Tracker(const ros::NodeHandle& nh) : nh_(nh)
     Frame::setORBExtractor(orb_extractor_);
     Frame::setORBMatcher(orb_matcher_);
     Frame::setupGrid(nh_);
+
+    state_ = NO_IMAGES_YET;
     ROS_DEBUG("Tracker node successfully initialized...");
 }
 
@@ -95,42 +97,34 @@ void Tracker::monocularInitialization()
             ref_frame_ = last_frame_ = current_frame_;
             const auto& key_points = current_frame_->featuresUndist();
 
-            // set all key points to prev matched points ?
-            vb_prev_matched_.resize(key_points.size());
-            for(size_t i = 0; i < key_points.size(); i++)
-                vb_prev_matched_[i] = key_points[i].pt;
-
             // reset the initializer with current frame
             initializer_ =
                 InitializerPtr(new Initializer(current_frame_, 1.0, 200));
-
-            // reset the initial matches ?
-            std::fill(v_ini_matches_.begin(), v_ini_matches_.end(), -1);
             return;
         } else {
             ROS_WARN("Not enough features to initialize. Resetting...");
         }
     } else { // now we have the reference frame so try to initialize the map
-        ROS_DEBUG("Matching first frame with a reference frame...");
         // try to initialize with the current frame, here we will already have
         // a reference frame assigned.
         if(current_frame_->nFeatures() <= MIN_REQ_MATCHES) {// not enough key points?
             ROS_WARN(
-                "Not enough features between first frame and reference frame");
+                "Not enough features between in first frame \
+                    after initialization");
             // discard the initializer so that we can retry
             initializer_.reset();
-
-            // reset the initial matches ?
-            std::fill(v_ini_matches_.begin(), v_ini_matches_.end(), -1);
             return;
         }
 
+        ROS_DEBUG("Matching first frame with the reference frame...");
         // find correspondences between current frame and first reference frame
         current_frame_->match(ref_frame_);
 
         // check if there are enough matches
         if(current_frame_->nMatches() < MIN_REQ_MATCHES)
         {
+            ROS_DEBUG("Not enough matches between first and reference frame");
+
             // not enough matches, retry
             initializer_.reset();
             return;
@@ -139,6 +133,7 @@ void Tracker::monocularInitialization()
         // try to initialize the monocular slam with current frame and already
         // assigned reference frame
         cv::Mat best_rot_mat, best_trans_mat;
+        ROS_DEBUG("Trying to initialize between first and reference frame...");
         initializer_->tryToInitialize(
             current_frame_, best_rot_mat, best_trans_mat);
     }
