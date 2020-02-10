@@ -78,13 +78,13 @@ void Frame::assignFeaturesToGrid(
 bool Frame::pointInGrid(
     const cv::KeyPoint& key_point, int& pos_x, int& pos_y)
 {
-    auto row = (int)((key_point.pt.y - camera_->minY()) / grid_size_y_);
-    auto col = (int)((key_point.pt.x - camera_->minX()) / grid_size_x_);
+    pos_y = (key_point.pt.y - camera_->minY()) / grid_size_y_;
+    pos_x = (key_point.pt.x - camera_->minX()) / grid_size_x_;
     if(
-        row < 0 ||
-        row >= grid_rows_ ||
-        col < 0 ||
-        col >= grid_cols_)
+        pos_y < 0 ||
+        pos_y >= grid_rows_ ||
+        pos_x < 0 ||
+        pos_x >= grid_cols_)
     {
         return false;
     }
@@ -99,6 +99,9 @@ void Frame::match(const std::shared_ptr<Frame>& ref_frame)
 
 MonoFrame::MonoFrame(const ros::Time& time_stamp) : Frame(time_stamp)
 {
+    grid_.resize(grid_cols_);
+    for(unsigned int i = 0; i < grid_cols_; i++)
+        grid_[i].resize(grid_rows_);
 }
 
 MonoFrame::~MonoFrame()
@@ -108,7 +111,7 @@ MonoFrame::~MonoFrame()
 void MonoFrame::extractFeatures() {
     // find orb features in the image
     orb_extractor_->detect(camera_->image(), key_points);
-    #ifdef DEBUG
+    #ifdef HARD_DEBUG
     ROS_DEBUG_STREAM("Number of features extracted: " << key_points.size());
     cv::Mat draw_image = camera_->image().clone();
     cv::drawKeypoints(
@@ -128,7 +131,7 @@ void MonoFrame::extractFeatures() {
     camera_->undistortPoints(
         key_points, undist_key_points);
 
-    #ifdef DEBUG
+    #ifdef HARD_DEBUG
     ROS_DEBUG_STREAM(
         "Number of undistorted features: " << undist_key_points.size());
     ROS_DEBUG_STREAM(
@@ -147,8 +150,8 @@ void MonoFrame::extractFeatures() {
     // the image. Note that the points are undistorted and the grid is also
     // within non-black region of the undisorted image.
     assignFeaturesToGrid(undist_key_points, grid_);
-    ROS_INFO("5");
 
+    ROS_DEBUG_STREAM("Finding orb features...");
     // find the orb descriptors for undistorted points
     orb_extractor_->compute(
         camera_->image(), undist_key_points, undist_descriptors_);
