@@ -93,6 +93,9 @@ public:
     /**
      * Getters
      */
+    #ifdef ROS_CAMERA_STREAM
+    virtual const bool subscribed() = 0;
+    #endif
     const ros::Time& last_timestamp() { return last_timestamp_; }
     const int& fps() { return fps_; }
     const int& width() { return width_; }
@@ -204,6 +207,9 @@ public:
 
 private:
     #ifdef ROS_CAMERA_STREAM
+    virtual const bool subscribed() {
+        return rgb_image_subscriber_.getNumPublishers() > 0;
+    }
     void imageCb(const sensor_msgs::ImageConstPtr& msg);
 
     image_transport::Subscriber rgb_image_subscriber_;
