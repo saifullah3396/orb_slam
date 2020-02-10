@@ -162,6 +162,7 @@ void ORBMatcher::filterMatches(
     const cv::Mat& descriptors,
     std::vector<cv::DMatch>& matches)
 {
+    // filter out based on distance
     auto min_max =
         minmax_element(
             matches.begin(), matches.end(),
@@ -176,7 +177,21 @@ void ORBMatcher::filterMatches(
             good_matches.push_back(matches[i]);
         }
     }
-    matches = good_matches;
+
+    sort(good_matches.begin(), good_matches.end(),
+        [](const cv::DMatch &m1, const cv::DMatch &m2) {
+            return m1.trainIdx < m2.trainIdx;
+        });
+
+    std::vector<cv::DMatch> removed_duplicates;
+    if (!good_matches.empty())
+        removed_duplicates.push_back(matches[0]);
+    for (int i = 1; i < good_matches.size(); i++) {
+        if (good_matches[i].trainIdx != good_matches[i - 1].trainIdx) {
+            removed_duplicates.push_back(good_matches[i]);
+        }
+    }
+    removed_duplicates.swap(matches);
 }
 
 } // namespace geometry
