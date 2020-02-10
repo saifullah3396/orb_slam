@@ -30,13 +30,23 @@ using FramePtr = std::shared_ptr<Frame>;
 
 class Tracker {
 public:
+    /**
+     * Constructor
+     * @param nh: ROS node handle
+     */
     Tracker(const ros::NodeHandle& nh);
+
+    /**
+     * Destructor
+     */
     ~Tracker();
 
-    void run();
+    /**
+     * Updates the visual odometry tracking
+     */
+    void update();
 
 private:
-    cv::Mat getLatestImage();
     void trackFrame();
     void monocularInitialization();
 

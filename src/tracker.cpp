@@ -37,7 +37,7 @@ Tracker::~Tracker()
 
 }
 
-void Tracker::run()
+void Tracker::update()
 {
     std::vector<cv::Mat> camera_pose_history;
     while (true) {
@@ -52,11 +52,6 @@ void Tracker::run()
         trackFrame();
         camera_pose_history.push_back(current_frame_->getWorldToCamT().clone());
     }
-}
-
-cv::Mat Tracker::getLatestImage()
-{
-    return cv::Mat();
 }
 
 void Tracker::trackFrame()
