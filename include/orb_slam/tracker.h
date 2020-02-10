@@ -70,5 +70,6 @@ private:
     TrackingState state_;
     TrackingState last_proc_state_;
 };
+using TrackerPtr = std::shared_ptr<Tracker>;
 
 } // namespace orb_slam
