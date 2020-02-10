@@ -116,10 +116,15 @@ TEST (MonoCameraTester, TestMonoCameraSubscription) {
         CameraPtr<double>(new MonoCamera<double>(nh));
     camera->readParams();
     camera->setup();
+    camera->setupCameraStream();
+    ros::spinOnce();
+    ros::Rate(1).sleep();
     EXPECT_TRUE(camera->subscribed());
 }
+
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     ros::init(argc, argv, "camera_tests");
+    ros::NodeHandle nh;
     return RUN_ALL_TESTS();
 }
