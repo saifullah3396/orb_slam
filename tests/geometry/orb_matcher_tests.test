@@ -1,0 +1,15 @@
+<launch>
+    <rosparam
+        command="load"
+        file="$(find orb_slam)/tests/geometry/cfg/orb_extractor.yaml" />
+
+    <rosparam
+        command="load"
+        file="$(find orb_slam)/tests/geometry/cfg/orb_matcher.yaml" />
+
+    <test
+        test-name="orb_matcher_tests"
+        pkg="orb_slam"
+        type="orb_matcher_tests" />
+    <!-- launch-prefix="xterm -e /usr/bin/gdb -args" -->
+</launch>
