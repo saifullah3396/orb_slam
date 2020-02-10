@@ -1,0 +1,12 @@
+# taken from https://vision.in.tum.de/data/datasets/rgbd-dataset/file_formats
+# freiburg #1
+orb_slam:
+  orb_extractor:
+    n_key_points: 8000
+    scale_factor: 1.2
+    level_pyramid: 8
+    edge_threshold: 31
+    first_level: 0
+    wta_k: 2
+    patch_size: 31
+    score_threshold: 20
