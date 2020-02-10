@@ -1,0 +1,28 @@
+<launch>
+    <arg
+        name="video_bag_file"
+        default="$(find orb_slam)/dataset/rgbd_dataset_freiburg1_rpy.bag"/>
+    <node
+        pkg="rosbag"
+        type="play"
+        name="player"
+        args="--clock $(arg video_bag_file)" />
+
+    <!-- load camera paramters -->
+    <rosparam
+        command="load"
+        file="$(find orb_slam)/tests/geometry/cfg/camera.yaml" />
+
+    <!-- load orb_extractor paramters -->
+    <rosparam
+        command="load"
+        file="$(find orb_slam)/tests/geometry/cfg/orb_extractor.yaml" />
+
+    <!-- load orb_matcher paramters -->
+    <rosparam
+        command="load"
+        file="$(find orb_slam)/tests/geometry/cfg/orb_matcher.yaml" />
+
+    <node
+        pkg="orb_slam" name="tracker_node" type="tracker_node" output="screen"/>
+</launch>
