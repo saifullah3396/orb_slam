@@ -11,17 +11,22 @@
     <!-- load camera paramters -->
     <rosparam
         command="load"
-        file="$(find orb_slam)/tests/geometry/cfg/camera.yaml" />
+        file="$(find orb_slam)/cfg/camera.yaml" />
 
     <!-- load orb_extractor paramters -->
     <rosparam
         command="load"
-        file="$(find orb_slam)/tests/geometry/cfg/orb_extractor.yaml" />
+        file="$(find orb_slam)/cfg/orb_extractor.yaml" />
 
     <!-- load orb_matcher paramters -->
     <rosparam
         command="load"
-        file="$(find orb_slam)/tests/geometry/cfg/orb_matcher.yaml" />
+        file="$(find orb_slam)/cfg/orb_matcher.yaml" />
+
+    <!-- load tracker paramters -->
+    <rosparam
+        command="load"
+        file="$(find orb_slam)/cfg/tracker.yaml" />
 
     <node
         pkg="orb_slam" name="tracker_node" type="tracker_node" output="screen"/>
