@@ -61,6 +61,11 @@ public:
     void setup();
 
     /**
+     * @brief setup Sets up the camera image streaming
+     */
+    virtual void setupCameraStream() {}
+
+    /**
      * Calls this function after image is received and allocated to camera
      */
     void onImageReceived() {}
@@ -186,6 +191,11 @@ public:
      * Updates the image in the camera
      */
     void onImageReceived();
+
+    /**
+     * @brief setup Sets up the camera image streaming
+     */
+    virtual void setupCameraStream();
 
     /**
      * Getters
