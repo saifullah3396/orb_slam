@@ -78,24 +78,27 @@ void Camera<T>::updateIntrinsicMatrix() {
 template <typename T>
 void Camera<T>::undistortPoints(
     std::vector<cv::KeyPoint>& key_points,
-    std::vector<cv::KeyPoint>& undist_key_points,
-    cv::Mat& undist_intrinsic_matrix)
+    std::vector<cv::KeyPoint>& undist_key_points)
 {
     std::vector<cv::Point2f> points;
     for(auto it = key_points.begin(); it != key_points.end(); it++) {
         points.push_back(it->pt);
     }
-    cv::Mat mat(points);
+    // perform undistortion
     cv::undistortPoints(
-        mat, mat, intrinsic_matrix_, dist_coeffs_, undist_intrinsic_matrix);
+        points,
+        points,
+        intrinsic_matrix_,
+        dist_coeffs_,
+        cv::Mat(),
+        intrinsic_matrix_);
 
     // Fill undistorted keypoint vector
     auto size = key_points.size();
     undist_key_points.resize(size);
     for(int i = 0; i < size; i++) {
         auto kp = key_points[i]; // copy the point
-        kp.pt.x = mat.at<T>(i, 0);
-        kp.pt.y = mat.at<T>(i, 1);
+        kp.pt = points[i];
         undist_key_points[i] = kp;
     }
 }
@@ -155,9 +158,8 @@ void MonoCamera<T>::imageCb(
     const sensor_msgs::ImageConstPtr& image_msg,
     const sensor_msgs::CameraInfoConstPtr& camera_info_msg)
 {
-    ROS_INFO("In callback()");
     auto cv_ptr = cv_bridge::toCvShare(image_msg);
-    this->last_timestamp_ = cv_ptr->header.stamp;
+    this->last_timestamp_ = ros::Time::now();
     image_ = cv_ptr->image;
     rgb_image_info_ = *camera_info_msg;
     onImageReceived();
@@ -178,7 +180,7 @@ void MonoCamera<T>::setupCameraStream()
             new image_transport::ImageTransport(this->nh_));
     rgb_image_subscriber_ =
         image_transport->subscribeCamera(
-            rgb_topic, 10, &MonoCamera<T>::imageCb, this);
+            rgb_topic, 1, &MonoCamera<T>::imageCb, this);
     #endif
 }
 

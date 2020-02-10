@@ -75,12 +75,10 @@ public:
      *     points
      * @param key_points: Input distorted key points
      * @param undist_key_points: Output undistorted key points
-     * @param undist_intrinsic_matrix: The output undistorted intrinsic matrix
      */
     void undistortPoints(
         std::vector<cv::KeyPoint>& key_points,
-        std::vector<cv::KeyPoint>& undist_key_points,
-        cv::Mat& undist_intrinsic_matrix);
+        std::vector<cv::KeyPoint>& undist_key_points);
 
     /**
      * @brief computeImageBounds Computes the image bounds while taking into
