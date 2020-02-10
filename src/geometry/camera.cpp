@@ -15,7 +15,7 @@ namespace geometry
 {
 
 template <typename T>
-Camera<T>::Camera()
+Camera<T>::Camera(const ros::NodeHandle& nh): nh_(nh)
 {
 }
 
@@ -25,26 +25,26 @@ Camera<T>::~Camera()
 }
 
 template <typename T>
-void Camera<T>::readParams(const ros::NodeHandle& nh)
+void Camera<T>::readParams()
 {
     std::string prefix = "/orb_slam/camera/";
 
     // read all the camera parameters
-    nh.param<int>("/orb_slam/camera/fps", fps_, 30);
-    nh.param<int>(prefix + "width", width_, 0);
-    nh.param<int>(prefix + "height", height_, 0);
-    nh.param<T>(prefix + "fov_x", fov_x_, 0.0);
-    nh.param<T>(prefix + "fov_y", fov_y_, 0.0);
-    nh.param<T>(prefix + "focal_x", focal_x_, 0.0);
-    nh.param<T>(prefix + "focal_y", focal_y_, 0.0);
+    nh_.param<int>("/orb_slam/camera/fps", fps_, 30);
+    nh_.param<int>(prefix + "width", width_, 0);
+    nh_.param<int>(prefix + "height", height_, 0);
+    nh_.param<T>(prefix + "fov_x", fov_x_, 0.0);
+    nh_.param<T>(prefix + "fov_y", fov_y_, 0.0);
+    nh_.param<T>(prefix + "focal_x", focal_x_, 0.0);
+    nh_.param<T>(prefix + "focal_y", focal_y_, 0.0);
     focal_x_inv_ = 1.0 / focal_x_;
     focal_y_inv_ = 1.0 / focal_y_;
-    nh.param<T>(prefix + "center_x", center_x_, 0.0);
-    nh.param<T>(prefix + "center_y", center_y_, 0.0);
+    nh_.param<T>(prefix + "center_x", center_x_, 0.0);
+    nh_.param<T>(prefix + "center_y", center_y_, 0.0);
 
     // read dist coefficients list
     std::vector<T> dist_coeffs;
-    nh.param<std::vector<T>>(
+    nh_.param<std::vector<T>>(
         prefix + "dist_coeffs", dist_coeffs, dist_coeffs);
     dist_coeffs_(0, 0) = dist_coeffs[0];
     dist_coeffs_(0, 1) = dist_coeffs[1];

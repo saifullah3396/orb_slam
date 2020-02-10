@@ -34,8 +34,9 @@ class Camera
 public:
     /**
      * @brief Camera Constructor
+     * @param nh: ROS node handle
      */
-    Camera();
+    Camera(const ros::NodeHandle& nh);
 
     /**
      * @brief ~Camera Destructor
@@ -43,10 +44,9 @@ public:
     virtual ~Camera();
 
     /**
-     * @brief readParams Reads the camera para
-     * @param nh: ROS node handle
+     * @brief readParams Reads the camera parameters
      */
-    void readParams(const ros::NodeHandle& nh);
+    void readParams();
 
     /**
      * @brief setup Sets up the camera variables.
@@ -132,6 +132,9 @@ private:
     //! [0 fy cy]
     //! [0  0  1]
     cv::Mat_<T> intrinsic_matrix_ = {cv::Mat_<T>(3, 3)};
+
+    // ROS node handle for image streaming
+    ros::NodeHandle nh_;
 };
 
 /**
