@@ -50,10 +50,11 @@ void Initializer::tryToInitialize(
     // the procedure is homogenous.
     std::vector<size_t> all_indices;
     all_indices.reserve(n);
-    std::generate(
-        all_indices.begin(),
-        all_indices.end(), [value = 0]() mutable { return value++; });
+    for (int i = 0; i < n; ++i) {
+        all_indices[i] = i;
+    }
 
+    ROS_DEBUG("Generating 8-point sets for RANSAC iterations...");
     ransac_sets_ =
         std::vector<std::vector<size_t>>(
             iterations_, std::vector<size_t>(8, 0));
@@ -71,26 +72,29 @@ void Initializer::tryToInitialize(
     // see http://www.cs.cmu.edu/~16385/s17/Slides/12.4_8Point_Algorithm.pdf
     // for details on fundamental matrix computation
 
+    ROS_DEBUG("Normalizing points and reference points...");
     // normalize the points
     std::vector<cv::Point2f> points_norm, ref_points_norm;
     cv::Mat T, ref_T;
     geometry::normalizePoints(points, points_norm, T);
     geometry::normalizePoints(ref_points, ref_points_norm, ref_T);
 
+    ROS_DEBUG("Computing fundamental and homography matrices...");
     // find fundamental matrix using RANSAC
     std::thread computeF(
         [&] {
             findFundamentalMat(points_norm, ref_points_norm, T, ref_T); });
 
     // find homography matrix
-    std::thread computeH(
-        [&] {
-            findHomographyMat(points_norm, ref_points_norm, T, ref_T); });
+    //std::thread computeH(
+    //    [&] {
+    //        findHomographyMat(points_norm, ref_points_norm, T, ref_T); });
 
     // wait for both threads to finish...
     computeF.join();
-    computeH.join();
+    //computeH.join();
 
+    ROS_DEBUG("Getting inlier points...");
     std::vector<cv::Point2f> inlier_points, inlier_ref_points;
     for (int i = 0; i < n; ++i) {
         if (!inliers_h_[i])
