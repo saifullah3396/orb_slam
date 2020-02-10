@@ -1,0 +1,16 @@
+# taken from https://vision.in.tum.de/data/datasets/rgbd-dataset/file_formats
+# freiburg #1
+orb_slam:
+  orb_matcher:
+    method: "cv_orb_matcher"
+
+  brute_force_with_radius:
+      max_matching_pixel_dist: 100
+
+  cv_orb_matcher:
+    type: "BruteForce-Hamming"
+    #BruteForce
+    #BruteForce-L1
+    #BruteForce-Hamming
+    #BruteForce-Hamming(2)
+    #FlannBased
