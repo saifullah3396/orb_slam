@@ -110,6 +110,14 @@ TEST (MonoCameraTester, TestMonoCameraDoubleSetup) {
         int(camera->maxY() - camera->minY()));
 }
 
+TEST (MonoCameraTester, TestMonoCameraSubscription) {
+    ros::NodeHandle nh;
+    auto camera =
+        CameraPtr<double>(new MonoCamera<double>(nh));
+    camera->readParams();
+    camera->setup();
+    EXPECT_TRUE(camera->subscribed());
+}
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     ros::init(argc, argv, "camera_tests");
