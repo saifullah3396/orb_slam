@@ -2,7 +2,7 @@
 # freiburg #1
 orb_slam:
   camera:
-    rgb_topic: "/image/raw"
+    rgb_topic: "/camera/rgb/image_color"
     fps: 30
     width: 640
     height: 480
