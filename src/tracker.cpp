@@ -21,6 +21,7 @@ Tracker::Tracker(const ros::NodeHandle& nh) : nh_(nh)
     camera_ = geometry::CameraPtr<float>(new geometry::MonoCamera<float>(nh_));
     camera_->readParams();
     camera_->setup();
+    camera_->setTracker(TrackerPtr(this));
     orb_extractor_ =
         geometry::ORBExtractorPtr(new geometry::ORBExtractor(nh_));
     orb_matcher_ =
