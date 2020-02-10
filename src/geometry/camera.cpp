@@ -27,29 +27,30 @@ Camera<T>::~Camera()
 template <typename T>
 void Camera<T>::readParams(const ros::NodeHandle& nh)
 {
-    std::string prefix = "orb_slam/camera/";
+    std::string prefix = "/orb_slam/camera/";
 
     // read all the camera parameters
-    nh.getParam(prefix + "fps", fps_);
-    nh.getParam(prefix + "width", width_);
-    nh.getParam(prefix + "height", height_);
-    nh.getParam(prefix + "fov_x", fov_x_);
-    nh.getParam(prefix + "fov_y", fov_y_);
-    nh.getParam(prefix + "focal_x", focal_x_);
-    nh.getParam(prefix + "focal_y", focal_y_);
+    nh.param<int>("/orb_slam/camera/fps", fps_, 30);
+    nh.param<int>(prefix + "width", width_, 0);
+    nh.param<int>(prefix + "height", height_, 0);
+    nh.param<T>(prefix + "fov_x", fov_x_, 0.0);
+    nh.param<T>(prefix + "fov_y", fov_y_, 0.0);
+    nh.param<T>(prefix + "focal_x", focal_x_, 0.0);
+    nh.param<T>(prefix + "focal_y", focal_y_, 0.0);
     focal_x_inv_ = 1.0 / focal_x_;
     focal_y_inv_ = 1.0 / focal_y_;
-    nh.getParam(prefix + "center_x", center_x_);
-    nh.getParam(prefix + "center_y", center_y_);
+    nh.param<T>(prefix + "center_x", center_x_, 0.0);
+    nh.param<T>(prefix + "center_y", center_y_, 0.0);
 
     // read dist coefficients list
     std::vector<T> dist_coeffs;
-    nh.getParam(prefix + "dist_coeffs", dist_coeffs);
-    dist_coeffs_.at<T>(0, 0) = dist_coeffs[0];
-    dist_coeffs_.at<T>(0, 1) = dist_coeffs[1];
-    dist_coeffs_.at<T>(0, 2) = dist_coeffs[2];
-    dist_coeffs_.at<T>(0, 3) = dist_coeffs[3];
-    dist_coeffs_.at<T>(0, 4) = dist_coeffs[4];
+    nh.param<std::vector<T>>(
+        prefix + "dist_coeffs", dist_coeffs, dist_coeffs);
+    dist_coeffs_(0, 0) = dist_coeffs[0];
+    dist_coeffs_(0, 1) = dist_coeffs[1];
+    dist_coeffs_(0, 2) = dist_coeffs[2];
+    dist_coeffs_(0, 3) = dist_coeffs[3];
+    dist_coeffs_(0, 4) = dist_coeffs[4];
 }
 
 template <typename T>
@@ -102,19 +103,14 @@ template <typename T>
 void Camera<T>::computeImageBounds()
 {
     // actually distorted right now
-    undist_bounds_ =
-        (
-            cv::Mat_<T>(4, 2, CV_32F) <<
-                0.0,    0.0,
-                width_, 0.0,
-                0.0,    height_,
-                width_, height_
-        );
+    undist_bounds_.push_back(cv::Point2f(0.0, 0.0));
+    undist_bounds_.push_back(cv::Point2f(width_, 0.0));
+    undist_bounds_.push_back(cv::Point2f(0.0, height_));
+    undist_bounds_.push_back(cv::Point2f(width_, height_));
 
-    if(dist_coeffs_.at<T>(0) != 0.0)
+    if(dist_coeffs_(0, 0) != 0.0)
     {
         // perform undistortion
-        //mat=mat.reshape(2);
         cv::undistortPoints(
             undist_bounds_,
             undist_bounds_,
@@ -122,17 +118,18 @@ void Camera<T>::computeImageBounds()
             dist_coeffs_,
             cv::Mat(),
             intrinsic_matrix_);
-        //mat=mat.reshape(1);
     }
 
-    min_x_ =
-        std::min(undist_bounds_.at<T>(0,0), undist_bounds_.at<T>(2,0));
-    max_x_ =
-        std::max(undist_bounds_.at<T>(1,0), undist_bounds_.at<T>(3,0));
-    min_y_ =
-        std::min(undist_bounds_.at<T>(0,1), undist_bounds_.at<T>(1,1));
-    max_y_ =
-        std::max(undist_bounds_.at<T>(2,1), undist_bounds_.at<T>(3,1));
+    min_x_ = // clip at zero
+        std::max(std::min(undist_bounds_[0].x, undist_bounds_[2].x), (float)0);
+    max_x_ = // clip at width_
+        std::min(
+            std::max(undist_bounds_[1].x, undist_bounds_[3].x), (float)width_);
+    min_y_ = // clip at zero
+        std::max(std::min(undist_bounds_[0].y, undist_bounds_[1].y), (float)0);
+    max_y_ = // clip at height_
+        std::min(
+            std::max(undist_bounds_[2].y, undist_bounds_[3].y), (float)height_);
 
     undist_width_ = max_x_ - min_x_;
     undist_height_ = max_y_ - min_y_;
