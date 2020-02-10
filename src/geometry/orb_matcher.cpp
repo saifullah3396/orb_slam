@@ -191,7 +191,7 @@ void ORBMatcher::filterMatches(
             removed_duplicates.push_back(good_matches[i]);
         }
     }
-    removed_duplicates.swap(matches);
+    matches = removed_duplicates;
 }
 
 } // namespace geometry
