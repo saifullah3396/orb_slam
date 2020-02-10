@@ -18,7 +18,9 @@ namespace orb_slam
 Tracker::Tracker(const ros::NodeHandle& nh) : nh_(nh)
 {
     // initialize the camera
-    camera_ = geometry::CameraPtr<float>(new geometry::MonoCamera<float>(nh_));
+    camera_ = geometry::CameraPtr<float>(new geometry::MonoCamera<float>());
+    camera_->readParams(nh_);
+    camera_->setup();
     orb_extractor_ =
         geometry::ORBExtractorPtr(new geometry::ORBExtractor(nh_));
     orb_matcher_ =
