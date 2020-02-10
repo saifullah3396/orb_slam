@@ -1,0 +1,7 @@
+<launch>
+    <rosparam
+        command="load"
+        file="$(find orb_slam)/tests/geometry/cfg/camera.yaml" />
+    <test test-name="camera_tests" pkg="orb_slam" type="camera_tests" />
+    <!-- launch-prefix="xterm -e /usr/bin/gdb -args" -->
+</launch>
