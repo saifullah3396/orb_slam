@@ -139,7 +139,7 @@ template class Camera<float>;
 template class Camera<double>;
 
 template <typename T>
-MonoCamera<T>::MonoCamera() : Camera<T>()
+MonoCamera<T>::MonoCamera(const ros::NodeHandle& nh) : Camera<T>(nh)
 {
 }
 

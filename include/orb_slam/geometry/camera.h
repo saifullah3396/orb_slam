@@ -147,8 +147,9 @@ class MonoCamera : public Camera<T>
 public:
     /**
      * @brief Camera Constructor
+     * @param nh: ROS node handle
      */
-    MonoCamera();
+    MonoCamera(const ros::NodeHandle& nh);
 
     /**
      * @brief ~Camera Destructor

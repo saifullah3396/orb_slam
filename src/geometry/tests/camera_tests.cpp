@@ -11,8 +11,8 @@ using namespace orb_slam::geometry;
 TEST (MonoCameraTester, TestMonoCameraFloatReadParams) {
     ros::NodeHandle nh;
     auto camera =
-        CameraPtr<float>(new MonoCamera<float>());
-    camera->readParams(nh);
+        CameraPtr<float>(new MonoCamera<float>(nh));
+    camera->readParams();
     EXPECT_EQ(camera->type(), CameraType::MONO);
     EXPECT_EQ(camera->fps(), 30);
     EXPECT_EQ(camera->width(), 640);
@@ -35,8 +35,8 @@ TEST (MonoCameraTester, TestMonoCameraFloatReadParams) {
 TEST (MonoCameraTester, TestMonoCameraFloatSetup) {
     ros::NodeHandle nh;
     auto camera =
-        CameraPtr<float>(new MonoCamera<float>());
-    camera->readParams(nh);
+        CameraPtr<float>(new MonoCamera<float>(nh));
+    camera->readParams();
     camera->setup();
     auto mat = camera->intrinsicMatrix();
     EXPECT_EQ(mat(0, 0), camera->focalX());
@@ -62,8 +62,8 @@ TEST (MonoCameraTester, TestMonoCameraFloatSetup) {
 TEST (MonoCameraTester, TestMonoCameraDoubleReadParams) {
     ros::NodeHandle nh;
     auto camera =
-        CameraPtr<double>(new MonoCamera<double>());
-    camera->readParams(nh);
+        CameraPtr<double>(new MonoCamera<double>(nh));
+    camera->readParams();
         EXPECT_EQ(camera->type(), CameraType::MONO);
     EXPECT_EQ(camera->fps(), 30);
     EXPECT_EQ(camera->width(), 640);
@@ -86,8 +86,8 @@ TEST (MonoCameraTester, TestMonoCameraDoubleReadParams) {
 TEST (MonoCameraTester, TestMonoCameraDoubleSetup) {
     ros::NodeHandle nh;
     auto camera =
-        CameraPtr<double>(new MonoCamera<double>());
-    camera->readParams(nh);
+        CameraPtr<double>(new MonoCamera<double>(nh));
+    camera->readParams();
     camera->setup();
     auto mat = camera->intrinsicMatrix();
     EXPECT_EQ(mat(0, 0), camera->focalX());
