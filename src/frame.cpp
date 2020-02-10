@@ -38,8 +38,9 @@ void Frame::setupFirstFrame() {
 
 void Frame::setupGrid(const ros::NodeHandle& nh)
 {
-    nh.getParam("grid_rows", grid_rows_);
-    nh.getParam("grid_cols", grid_cols_);
+    std::string prefix = "/orb_slam/tracker/";
+    nh.getParam(prefix + "grid_rows", grid_rows_);
+    nh.getParam(prefix + "grid_cols", grid_cols_);
     grid_size_x_ = camera_->undistWidth() / grid_cols_;
     grid_size_y_ = camera_->undistHeight() / grid_rows_;
 }
