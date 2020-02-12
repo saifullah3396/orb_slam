@@ -157,7 +157,7 @@ void MonoCamera<T>::imageCb(
     const sensor_msgs::ImageConstPtr& image_msg,
     const sensor_msgs::CameraInfoConstPtr& camera_info_msg)
 {
-    cv_image_ = cv_bridge::toCvShare(image_msg);
+    cv_image_queue_.push(cv_bridge::toCvShare(image_msg));
     rgb_image_info_ = camera_info_msg;
 }
 #endif
@@ -174,9 +174,11 @@ void MonoCamera<T>::setupCameraStream()
     image_transport =
         std::shared_ptr<image_transport::ImageTransport>(
             new image_transport::ImageTransport(this->nh_));
+    // queue size less than 10 will mostly drop images, we do not want missing
+    // frames
     rgb_image_subscriber_ =
         image_transport->subscribeCamera(
-            rgb_topic, 1, &MonoCamera<T>::imageCb, this);
+            rgb_topic, 10, &MonoCamera<T>::imageCb, this);
     #endif
 }
 
