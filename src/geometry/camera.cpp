@@ -157,7 +157,6 @@ void MonoCamera<T>::imageCb(
     const sensor_msgs::ImageConstPtr& image_msg,
     const sensor_msgs::CameraInfoConstPtr& camera_info_msg)
 {
-    this-ast_timestamp_ = ros::Time::now();
     cv_image_ = cv_bridge::toCvShare(image_msg);
     rgb_image_info_ = camera_info_msg;
 }
