@@ -102,7 +102,7 @@ public:
     const T& centerX() const { return center_x_; }
     const T& centerY() const { return center_y_; }
     virtual const CameraType type() = 0;
-    virtual cv::Mat image() = 0;
+    virtual const cv_bridge::CvImageConstPtr& image() = 0;
     virtual const cv::Mat& imageL() = 0;
     virtual const cv::Mat& imageR() = 0;
     virtual const cv::Mat& imageDepth() = 0;
@@ -176,7 +176,7 @@ public:
     /**
      * Getters
      */
-    cv_bridge::CvImageConstPtr image() { return cv_image_; }
+    const cv_bridge::CvImageConstPtr& image() { return cv_image_; }
     const CameraType type() { return CameraType::MONO; }
     const cv::Mat& imageL() {
         throw std::runtime_error(
