@@ -23,7 +23,6 @@ Tracker::Tracker(const ros::NodeHandle& nh) : nh_(nh)
     camera_->readParams();
     camera_->setup();
     camera_->setupCameraStream();
-    camera_->setTracker(TrackerPtr(this));
 
     ROS_DEBUG("Initializing orb features extractor...");
     orb_extractor_ =
@@ -49,6 +48,15 @@ Tracker::~Tracker()
 
 void Tracker::update()
 {
+    auto image = camera_->image();
+    if (!image)
+        return;
+
+    if (last_image_ && last_image_->header.seq == image->header.seq) {
+        // no new images
+        return;
+    }
+
     ROS_DEBUG("Updating tracking...");
 
     // create a frame from the image
@@ -64,6 +72,8 @@ void Tracker::update()
     // track the frame
     trackFrame();
     camera_pose_history_.push_back(current_frame_->getWorldToCamT().clone());
+
+    last_image_ = image;
 }
 
 void Tracker::trackFrame()
@@ -117,6 +127,7 @@ void Tracker::monocularInitialization()
         }
 
         ROS_DEBUG("Matching first frame with the reference frame...");
+
         // find correspondences between current frame and first reference frame
         current_frame_->match(ref_frame_);
 
