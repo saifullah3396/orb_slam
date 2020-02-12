@@ -99,7 +99,6 @@ public:
     #ifdef ROS_CAMERA_STREAM
     virtual const bool subscribed() = 0;
     #endif
-    const ros::Time& last_timestamp() { return last_timestamp_; }
     const int& fps() { return fps_; }
     const int& width() { return width_; }
     const int& height() { return height_; }
@@ -117,11 +116,12 @@ public:
     const T& invFocalY() const { return focal_y_inv_; }
     const T& centerX() const { return center_x_; }
     const T& centerY() const { return center_y_; }
-    virtual const cv::Mat& image() = 0;
     virtual const CameraType type() = 0;
+    virtual cv::Mat image() = 0;
     virtual const cv::Mat& imageL() = 0;
     virtual const cv::Mat& imageR() = 0;
     virtual const cv::Mat& imageDepth() = 0;
+    const ros::Time& last_timestamp() = 0;
     const cv::Mat_<T>& distCoeffs() { return dist_coeffs_; }
     const cv::Mat_<T>& intrinsicMatrix() { return intrinsic_matrix_; }
 
@@ -161,7 +161,6 @@ protected:
 
     // ROS node handle for image streaming
     ros::NodeHandle nh_;
-    ros::Time last_timestamp_; // Latest image update timestamp
 
     TrackerPtr tracker_; // Pointer to the tracker class
 };
@@ -198,7 +197,7 @@ public:
     /**
      * Getters
      */
-    const cv::Mat& image() { return image_; }
+    cv_bridge::CvImageConstPtr image() { return cv_image_; }
     const CameraType type() { return CameraType::MONO; }
     const cv::Mat& imageL() {
         throw std::runtime_error(
@@ -212,6 +211,9 @@ public:
         throw std::runtime_error(
             "imageDepth() is undefined for monocular camera.");
     }
+    const ros::Time& last_timestamp() {
+        return cv_image_->header.stamp;
+    }
 
 private:
     #ifdef ROS_CAMERA_STREAM
@@ -222,11 +224,11 @@ private:
         const sensor_msgs::ImageConstPtr& image_msg,
         const sensor_msgs::CameraInfoConstPtr& camera_info_msg);
 
-    sensor_msgs::CameraInfo rgb_image_info_;
+    sensor_msgs::CameraInfoConstPtr rgb_image_info_;
+    cv_bridge::CvImageConstPtr cv_image_;
     image_transport::CameraSubscriber rgb_image_subscriber_;
     std::shared_ptr<image_transport::ImageTransport> image_transport;
     #endif
-    cv::Mat image_; //! Camera image
 };
 
 template <typename T = float>
