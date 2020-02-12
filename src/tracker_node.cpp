@@ -21,6 +21,11 @@ int main(int argc, char** argv)
 
     auto tracker =
         std::unique_ptr<Tracker>(new Tracker(nh));
-    ros::spin();
+    auto rate = ros::Rate(30);
+    while (true) {
+        tracker->update();
+        ros::spinOnce();
+        rate.sleep();
+    }
     return 0;
 }
