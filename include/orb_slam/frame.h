@@ -63,19 +63,26 @@ public:
     virtual void showImageWithFeatures(const std::string& name) {}
 
     /**
+     * Shows the matches between this frame and reference frame.
+     * @param name: Image output name while showing
+     */
+    virtual void showMatchesWithRef(const std::string& name) {}
+
+    /**
      * Getters
      */
     const cv::Mat& getWorldToCamT() const { return c_T_w_; }
-    const int nFeatures() const { return key_points.size(); }
+    const int nFeatures() const { return key_points_.size(); }
     const std::vector<cv::KeyPoint>& features() const
-        { return key_points; }
-    const int nFeaturesUndist() const { return undist_key_points.size(); }
+        { return key_points_; }
+    const int nFeaturesUndist() const { return undist_key_points_.size(); }
     const std::vector<cv::KeyPoint>& featuresUndist() const
-        { return undist_key_points; }
+        { return undist_key_points_; }
     const cv::Mat& descriptorsUndist() const { return undist_descriptors_; }
     const int nDescriptorsUnDist() const { return undist_descriptors_.rows; }
     const std::vector<cv::DMatch> matches() const { return matches_; }
     const int nMatches() const { return matches_.size(); }
+    const cv_bridge::CvImageConstPtr& image() = 0;
 
     /**
      * Setters
@@ -91,12 +98,12 @@ protected:
     /**
      * Extracts key points uniformly over the image in a grid
      *
-     * @param key_points: Input key points that are updated in place according
+     * @param key_points_: Input key points that are updated in place according
      *     to uniform extraction parameters
      * @param grid: Input grid to be updated
      */
     static void assignFeaturesToGrid(
-        std::vector<cv::KeyPoint>& key_points,
+        std::vector<cv::KeyPoint>& key_points_,
         Grid<std::vector<size_t>>& grid);
 
     /**
@@ -114,8 +121,8 @@ protected:
     int id_; // frame id
     ros::Time time_stamp_; // frame time stamp
     cv::Mat c_T_w_; // world to camera transformation matrix
-    std::vector<cv::KeyPoint> key_points;
-    std::vector<cv::KeyPoint> undist_key_points;
+    std::vector<cv::KeyPoint> key_points_;
+    std::vector<cv::KeyPoint> undist_key_points_;
     cv::Mat undist_descriptors_;
     cv::Mat undist_intrinsic_matrix;
 
@@ -157,6 +164,11 @@ public:
      */
     virtual void extractFeatures();
 
+    /**
+     * Getters
+     */
+    const cv_bridge::CvImageConstPtr& image() { return image; }
+
 private:
     /**
      * Returns the derived camera class
@@ -164,6 +176,7 @@ private:
     geometry::MonoCameraPtr<float> camera();
     void drawFeatures(cv::Mat& image);
     void showImageWithFeatures(const std::string& name);
+    void showMatchesWithRef(const std::string& name);
 
     cv_bridge::CvImageConstPtr image_; // Frame image
 };
