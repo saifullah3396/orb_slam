@@ -50,6 +50,9 @@ private:
     void trackFrame();
     void monocularInitialization();
 
+    // last image
+    cv_bridge::CvImageConstPtr last_image_;
+
     // latest frame
     FramePtr current_frame_;
     std::vector<cv::Mat> camera_pose_history_; // vector of poses
@@ -57,9 +60,6 @@ private:
     // monocular initialization
     FramePtr ref_frame_;
     FramePtr last_frame_;
-    std::vector<int> v_ini_last_matches_;
-    std::vector<int> v_ini_matches_;
-    std::vector<cv::Point2f> vb_prev_matched_;
     InitializerPtr initializer_;
 
     // ros node handle
