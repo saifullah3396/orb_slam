@@ -106,7 +106,6 @@ public:
     virtual const cv::Mat& imageL() = 0;
     virtual const cv::Mat& imageR() = 0;
     virtual const cv::Mat& imageDepth() = 0;
-    const ros::Time& last_timestamp() = 0;
     const cv::Mat_<T>& distCoeffs() { return dist_coeffs_; }
     const cv::Mat_<T>& intrinsicMatrix() { return intrinsic_matrix_; }
 
@@ -190,9 +189,6 @@ public:
     const cv::Mat& imageDepth() {
         throw std::runtime_error(
             "imageDepth() is undefined for monocular camera.");
-    }
-    const ros::Time& last_timestamp() {
-        return cv_image_->header.stamp;
     }
 
 private:
