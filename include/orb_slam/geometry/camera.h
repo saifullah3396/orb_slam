@@ -145,8 +145,6 @@ protected:
 
     // ROS node handle for image streaming
     ros::NodeHandle nh_;
-
-    TrackerPtr tracker_; // Pointer to the tracker class
 };
 
 /**
