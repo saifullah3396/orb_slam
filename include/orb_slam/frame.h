@@ -15,7 +15,7 @@ namespace orb_slam {
 template<class T>
 using Grid = std::vector<std::vector<T>>;
 
-class Frame {
+class Frame : public std::enable_shared_from_this<Frame> {
 public:
     /**
      * Constructor
@@ -82,7 +82,7 @@ public:
     const int nDescriptorsUnDist() const { return undist_descriptors_.rows; }
     const std::vector<cv::DMatch> matches() const { return matches_; }
     const int nMatches() const { return matches_.size(); }
-    const cv_bridge::CvImageConstPtr& image() = 0;
+    virtual const cv_bridge::CvImageConstPtr& image() = 0;
 
     /**
      * Setters
@@ -164,19 +164,20 @@ public:
      */
     virtual void extractFeatures();
 
+    void drawFeatures(cv::Mat& image);
+    void showImageWithFeatures(const std::string& name);
+    void showMatchesWithRef(const std::string& name);
+
     /**
      * Getters
      */
-    const cv_bridge::CvImageConstPtr& image() { return image; }
+    const cv_bridge::CvImageConstPtr& image() { return image_; }
 
 private:
     /**
      * Returns the derived camera class
      */
     geometry::MonoCameraPtr<float> camera();
-    void drawFeatures(cv::Mat& image);
-    void showImageWithFeatures(const std::string& name);
-    void showMatchesWithRef(const std::string& name);
 
     cv_bridge::CvImageConstPtr image_; // Frame image
 };
