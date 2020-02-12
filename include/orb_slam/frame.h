@@ -51,6 +51,18 @@ public:
     void match(const std::shared_ptr<Frame>& ref_frame);
 
     /**
+     * Draws the extracted features on the given image
+     * @param image: Drawing image
+     */
+    virtual void drawFeatures(cv::Mat& image) {}
+
+    /**
+     * Draws the extracted features on a copy image and shows it
+     * @param name: Image output name while showing
+     */
+    virtual void showImageWithFeatures(const std::string& name) {}
+
+    /**
      * Getters
      */
     const cv::Mat& getWorldToCamT() const { return c_T_w_; }
@@ -150,6 +162,10 @@ private:
      * Returns the derived camera class
      */
     geometry::MonoCameraPtr<float> camera();
+    void drawFeatures(cv::Mat& image);
+    void showImageWithFeatures(const std::string& name);
+
+    cv_bridge::CvImageConstPtr image_; // Frame image
 };
 
 //! pointer alias
