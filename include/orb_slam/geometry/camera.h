@@ -7,6 +7,7 @@
 #pragma once
 
 #include <iostream>
+#include <queue>
 #include <opencv2/core/core.hpp>
 #include <string>
 #include <ros/ros.h>
@@ -102,7 +103,7 @@ public:
     const T& centerX() const { return center_x_; }
     const T& centerY() const { return center_y_; }
     virtual const CameraType type() = 0;
-    virtual const cv_bridge::CvImageConstPtr& image() = 0;
+    virtual cv_bridge::CvImageConstPtr image() = 0;
     virtual const cv::Mat& imageL() = 0;
     virtual const cv::Mat& imageR() = 0;
     virtual const cv::Mat& imageDepth() = 0;
@@ -174,7 +175,14 @@ public:
     /**
      * Getters
      */
-    const cv_bridge::CvImageConstPtr& image() { return cv_image_; }
+    cv_bridge::CvImageConstPtr image() {
+        if (!cv_image_queue_.empty()) {
+            const auto& image = cv_image_queue_.front();
+            cv_image_queue_.pop();
+            return image;
+        }
+        return nullptr;
+    }
     const CameraType type() { return CameraType::MONO; }
     const cv::Mat& imageL() {
         throw std::runtime_error(
@@ -199,7 +207,7 @@ private:
         const sensor_msgs::CameraInfoConstPtr& camera_info_msg);
 
     sensor_msgs::CameraInfoConstPtr rgb_image_info_;
-    cv_bridge::CvImageConstPtr cv_image_;
+    std::queue<cv_bridge::CvImageConstPtr> cv_image_queue_;
     image_transport::CameraSubscriber rgb_image_subscriber_;
     std::shared_ptr<image_transport::ImageTransport> image_transport;
     #endif
