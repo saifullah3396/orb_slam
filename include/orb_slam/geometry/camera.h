@@ -18,9 +18,6 @@
 namespace orb_slam
 {
 
-class Tracker;
-using TrackerPtr = std::shared_ptr<Tracker>;
-
 namespace geometry
 {
 
@@ -66,11 +63,6 @@ public:
     virtual void setupCameraStream() {}
 
     /**
-     * Calls this function after image is received and allocated to camera
-     */
-    void onImageReceived() {}
-
-    /**
      * @brief undistortPoints Performs undistortion operation on array of key
      *     points
      * @param key_points: Input distorted key points
@@ -85,13 +77,6 @@ public:
      *     account the distortion in the image
      */
     void computeImageBounds();
-
-    /**
-     * Setters
-     */
-    void setTracker(const TrackerPtr& tracker) {
-        tracker_ = tracker;
-    }
 
     /**
      * Getters
@@ -183,11 +168,6 @@ public:
      * @brief ~Camera Destructor
      */
     ~MonoCamera();
-
-    /**
-     * Updates the image in the camera
-     */
-    void onImageReceived();
 
     /**
      * @brief setup Sets up the camera image streaming

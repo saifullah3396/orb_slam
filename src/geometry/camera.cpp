@@ -7,7 +7,6 @@
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include <orb_slam/geometry/camera.h>
-#include <orb_slam/tracker.h>
 
 namespace orb_slam
 {
@@ -158,9 +157,9 @@ void MonoCamera<T>::imageCb(
     const sensor_msgs::ImageConstPtr& image_msg,
     const sensor_msgs::CameraInfoConstPtr& camera_info_msg)
 {
+    this-ast_timestamp_ = ros::Time::now();
     cv_image_ = cv_bridge::toCvShare(image_msg);
     rgb_image_info_ = camera_info_msg;
-    onImageReceived();
 }
 #endif
 
@@ -179,17 +178,6 @@ void MonoCamera<T>::setupCameraStream()
     rgb_image_subscriber_ =
         image_transport->subscribeCamera(
             rgb_topic, 1, &MonoCamera<T>::imageCb, this);
-    #endif
-}
-
-template <typename T>
-void MonoCamera<T>::onImageReceived()
-{
-    #ifdef ROS_CAMERA_STREAM
-    // updates the tracker on every new image update
-    if (this->tracker_) {
-        this->tracker_->update();
-    }
     #endif
 }
 
