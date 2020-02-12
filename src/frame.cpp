@@ -2,9 +2,7 @@
  * Implements the Frame class.
  */
 
-#ifdef DEBUG
 #include <opencv2/highgui/highgui.hpp>
-#endif
 #include <orb_slam/frame.h>
 #include <thread>
 
@@ -49,20 +47,20 @@ void Frame::setupGrid(const ros::NodeHandle& nh)
 }
 
 void Frame::assignFeaturesToGrid(
-    std::vector<cv::KeyPoint>& key_points,
+    std::vector<cv::KeyPoint>& key_points_,
     Grid<std::vector<size_t>>& grid)
 {
     // Create an empty grid
-    int n_reserve = 0.5f * key_points.size() / (grid_cols_ * grid_rows_);
+    int n_reserve = 0.5f * key_points_.size() / (grid_cols_ * grid_rows_);
     for(unsigned int i = 0; i < grid_cols_; i++)
         for (unsigned int j = 0; j < grid_rows_; j++)
             grid[i][j].reserve(n_reserve);
 
     // Insert keypoints to grid. If not full, insert this cv::KeyPoint to result
-    std::vector<cv::KeyPoint> filt_key_points;
+    std::vector<cv::KeyPoint> filt_key_points_;
     int count = 0;
-    for (int i = 0; i < key_points.size(); ++i) {
-        const auto& key_point = key_points[i];
+    for (int i = 0; i < key_points_.size(); ++i) {
+        const auto& key_point = key_points_[i];
         int row, col;
         if (pointInGrid(key_point, row, col)) {
             filt_key_points.push_back(key_point);
@@ -72,7 +70,7 @@ void Frame::assignFeaturesToGrid(
     }
 
     // removes the key points that are not in grid
-    key_points = filt_key_points;
+    key_points_ = filt_key_points_;
 }
 
 bool Frame::pointInGrid(
@@ -94,7 +92,7 @@ bool Frame::pointInGrid(
 void Frame::match(const std::shared_ptr<Frame>& ref_frame)
 {
     ref_frame_ = ref_frame;
-    orb_matcher_->match(FramePtr(this), ref_frame_, matches_);
+    orb_matcher_->match(shared_from_this(), ref_frame_, matches_);
 }
 
 MonoFrame::MonoFrame(const ros::Time& time_stamp) : Frame(time_stamp)
@@ -102,59 +100,79 @@ MonoFrame::MonoFrame(const ros::Time& time_stamp) : Frame(time_stamp)
     grid_.resize(grid_cols_);
     for(unsigned int i = 0; i < grid_cols_; i++)
         grid_[i].resize(grid_rows_);
+    image_ = camera_->image();
 }
 
 MonoFrame::~MonoFrame()
 {
 }
 
-void MonoFrame::extractFeatures() {
-    // find orb features in the image
-    orb_extractor_->detect(camera_->image(), key_points);
-    #ifdef HARD_DEBUG
-    ROS_DEBUG_STREAM("Number of features extracted: " << key_points.size());
-    cv::Mat draw_image = camera_->image().clone();
+void MonoFrame::drawFeatures(cv::Mat& image)
+{
+    ROS_DEBUG_STREAM("Number of features extracted: " << key_points_.size());
     cv::drawKeypoints(
-        camera_->image(),
-        key_points,
-        draw_image,
+        image,
+        key_points_,
+        image,
         cv::Scalar(255, 0, 0),
         cv::DrawMatchesFlags::DEFAULT);
-    cv::imshow("key_points", draw_image);
-    cv::waitKey(0);
+}
+
+void MonoFrame::showImageWithFeatures(
+    const std::string& name)
+{
+    cv::Mat draw_image = image_->image.clone();
+    drawFeatures(draw_image);
+    cv::imshow(name, draw_image);
+}
+
+void MonoFrame::showMatchesWithRef(const std::string& name)
+{
+    if (!ref_frame_ || matches_.empty()) {
+        return;
+    }
+    cv::Mat image_match;
+    drawMatches(
+        image_->image,
+        undist_key_points_,
+        ref_frame_->image()->image,
+        ref_frame_->featuresUndist(),
+        matches_,
+        image_match);
+    cv::imshow(name, image_match);
+}
+
+void MonoFrame::extractFeatures()
+{
+    // find orb features in the image
+    orb_extractor_->detect(image_->image, key_points_);
+    #ifdef HARD_DEBUG
+    ROS_DEBUG_STREAM("Number of features extracted: " << key_points_.size());
+    showImageWithFeatures("key_points_");
     #endif
 
-    if (key_points.empty())
+    if (key_points_.empty())
         return;
 
     // undistort key points so they are the in the correct positions
     camera_->undistortPoints(
-        key_points, undist_key_points);
+        key_points_, undist_key_points_);
 
     #ifdef HARD_DEBUG
     ROS_DEBUG_STREAM(
-        "Number of undistorted features: " << undist_key_points.size());
-    ROS_DEBUG_STREAM(
-        "undist_intrinsic_matrix:\n" << undist_intrinsic_matrix);
-    cv::drawKeypoints(
-        draw_image,
-        undist_key_points,
-        draw_image,
-        cv::Scalar(0, 0, 255),
-        cv::DrawMatchesFlags::DEFAULT);
-    cv::imshow("undist_key_points", draw_image);
-    cv::waitKey(0);
+        "Number of undistorted features: " << undist_key_points_.size());
+    showImageWithFeatures("undist_key_points_");
     #endif
 
     // update the key points so that they are uniformly accumulated over
     // the image. Note that the points are undistorted and the grid is also
     // within non-black region of the undisorted image.
-    assignFeaturesToGrid(undist_key_points, grid_);
+    assignFeaturesToGrid(undist_key_points_, grid_);
 
     ROS_DEBUG_STREAM("Finding orb features...");
     // find the orb descriptors for undistorted points
     orb_extractor_->compute(
-        camera_->image(), undist_key_points, undist_descriptors_);
+        image_->image, undist_key_points_, undist_descriptors_);
 }
 
 geometry::MonoCameraPtr<float> MonoFrame::camera()
