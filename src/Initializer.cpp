@@ -102,13 +102,13 @@ void Initializer::tryToInitialize(
     // on the ratio (0.40-0.45)
     if(r_score > 0.40) {
         ROS_DEBUG_STREAM("Finding R-t with Homography matrix.");
-    std::vector<cv::Point2f> inlier_points, inlier_ref_points;
-    for (int i = 0; i < n; ++i) {
-        if (!inliers_h_[i])
-            continue;
-        inlier_points.push_back(points[i]);
-        inlier_ref_points.push_back(ref_points[i]);
-    }
+        std::vector<cv::Point2f> inlier_points, inlier_ref_points;
+        for (int i = 0; i < n; ++i) {
+            if (!inliers_h_[i])
+                continue;
+            inlier_points.push_back(points[i]);
+            inlier_ref_points.push_back(ref_points[i]);
+        }
 
         ROS_DEBUG_STREAM("Number of inlier points: " << inlier_points.size());
 
@@ -116,12 +116,12 @@ void Initializer::tryToInitialize(
         std::vector<cv::Mat> rot_mats, trans_mats, normals;
         cv::Mat i_mat = camera_->intrinsicMatrix();
         try {
-        decomposeHomographyMat(
-            homography_mat_,
-            i_mat,
-            rot_mats,
-            trans_mats,
-            normals);
+            decomposeHomographyMat(
+                homography_mat_,
+                i_mat,
+                rot_mats,
+                trans_mats,
+                normals);
         } catch (cv::Exception& e) {
             ROS_WARN_STREAM(
                 "Decomposition of homography matrix failed with following \
@@ -133,12 +133,12 @@ void Initializer::tryToInitialize(
         std::vector<cv::Mat> res_Rs, res_ts, res_normals;
         cv::Mat sols;
         try {
-        filterHomographyDecompByVisibleRefpoints(
-            rot_mats,
-            normals,
-            inlier_points,
-            inlier_ref_points,
-            sols);
+            filterHomographyDecompByVisibleRefpoints(
+                rot_mats,
+                normals,
+                inlier_points,
+                inlier_ref_points,
+                sols);
         } catch (cv::Exception& e) {
             ROS_WARN_STREAM(
                 "Filteratoin of R-t with homography failed with following \
@@ -170,16 +170,16 @@ void Initializer::tryToInitialize(
 
         cv::Mat_<double> essential_mat = K.t() * fundamental_mat_ * K;
         try {
-        // Recover R,t from essential matrix
+            // Recover R,t from essential matrix
             // This only works with double!
-        recoverPose(
-            essential_mat,
+            recoverPose(
+                essential_mat,
                 inlier_ref_points,
-            inlier_points,
-            best_rot_mat,
-            best_trans_mat,
-            focal_length,
-            principal_point);
+                inlier_points,
+                best_rot_mat,
+                best_trans_mat,
+                focal_length,
+                principal_point);
         } catch (cv::Exception& e) {
             ROS_WARN_STREAM(
                 "Pose recovery from fundamental matrix failed with following \
@@ -351,7 +351,7 @@ void Initializer::findHomographyMat(
         cv::Mat h_normalized;
         geometry::computeHomographyMat(
             h_normalized, iter_points, iter_ref_points);
-            
+
         // unnormalize the homography matrix
         h_mat = T_inv * h_normalized * ref_T;
         cv::Mat h_mat_inv = h_mat.inv();
