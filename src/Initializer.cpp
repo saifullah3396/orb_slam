@@ -104,9 +104,9 @@ bool Initializer::tryToInitialize(
 
     // try to reconstruct from homography or fundamental depending
     // on the ratio (0.40-0.45)
+    std::vector<cv::Point2d> inlier_points, inlier_ref_points;
     if(r_score > 0.40) {
         ROS_DEBUG_STREAM("Finding R-t with Homography matrix.");
-        std::vector<cv::Point2f> inlier_points, inlier_ref_points;
         for (int i = 0; i < n; ++i) {
             if (!inliers_h_[i])
                 continue;
@@ -158,7 +158,6 @@ bool Initializer::tryToInitialize(
         }
     } else { //if(pF_HF>0.6)
         ROS_DEBUG_STREAM("Finding R-t with fundamental matrix...");
-        std::vector<cv::Point2d> inlier_points, inlier_ref_points;
         for (int i = 0; i < n; ++i) {
             if (!inliers_f_[i])
                 continue;
