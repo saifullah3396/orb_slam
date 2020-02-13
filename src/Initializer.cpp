@@ -409,7 +409,7 @@ double Initializer::checkHomographyScore(
 
         const float chiSquare2 = squareDist2*invSigmaSquare;
 
-        if(chiSquare2>th) {
+        if(chiSquare2 > th) {
             good_point = false;
         } else {
             score += th - chiSquare2;
