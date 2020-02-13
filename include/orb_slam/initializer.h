@@ -40,8 +40,9 @@ public:
      *     reference frame
      * @param best_trans_mat: The best translation matrix from this frame to
      *     reference frame
+     * @returns True if initialized successfully, false otherwise
      */
-    void tryToInitialize(
+    bool tryToInitialize(
         const FramePtr& frame, cv::Mat& best_rot_mat, cv::Mat& best_trans_mat);
 
 private:

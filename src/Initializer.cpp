@@ -26,7 +26,7 @@ Initializer::~Initializer() {
 
 }
 
-void Initializer::tryToInitialize(
+bool Initializer::tryToInitialize(
     const FramePtr& frame, cv::Mat& best_rot_mat, cv::Mat& best_trans_mat)
 {
     frame_ = frame;
@@ -126,6 +126,7 @@ void Initializer::tryToInitialize(
             ROS_WARN_STREAM(
                 "Decomposition of homography matrix failed with following \
                 error" << e.what());
+            return false;
         }
 
         // Remove wrong rotations and translations
@@ -143,6 +144,7 @@ void Initializer::tryToInitialize(
             ROS_WARN_STREAM(
                 "Filteratoin of R-t with homography failed with following \
                 error" << e.what());
+            return false;
         }
 
         if (!sols.empty()) {
@@ -151,6 +153,7 @@ void Initializer::tryToInitialize(
             best_trans_mat = trans_mats[idx];
         }
     } else { //if(pF_HF>0.6)
+        ROS_DEBUG_STREAM("Finding R-t with fundamental matrix...");
         std::vector<cv::Point2d> inlier_points, inlier_ref_points;
         for (int i = 0; i < n; ++i) {
             if (!inliers_f_[i])
@@ -184,8 +187,10 @@ void Initializer::tryToInitialize(
             ROS_WARN_STREAM(
                 "Pose recovery from fundamental matrix failed with following \
                 error" << e.what());
+            return false;
         }
     }
+    return true;
 }
 
 void Initializer::findFundamentalMat(
