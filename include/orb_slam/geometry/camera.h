@@ -177,7 +177,7 @@ public:
      */
     cv_bridge::CvImageConstPtr image() {
         if (!cv_image_queue_.empty()) {
-            const auto& image = cv_image_queue_.front();
+            auto image = cv_image_queue_.front();
             cv_image_queue_.pop();
             return image;
         }
