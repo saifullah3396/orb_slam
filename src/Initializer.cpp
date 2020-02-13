@@ -161,7 +161,7 @@ void Initializer::findFundamentalMat(
     const cv::Mat& ref_T)
 {
     const auto n = points.size();
-    cv::Mat ref_T_t = ref_T.t();
+    cv::Mat T_t = T.t();
 
     // best results variables
     f_score_ = 0.0;
