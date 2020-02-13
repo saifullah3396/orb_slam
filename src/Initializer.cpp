@@ -92,7 +92,7 @@ void Initializer::tryToInitialize(
 
     // wait for both threads to finish...
     computeF.join();
-    //computeH.join();
+    computeH.join();
 
     ROS_DEBUG("Getting inlier points...");
     std::vector<cv::Point2f> inlier_points, inlier_ref_points;
