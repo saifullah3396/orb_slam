@@ -157,6 +157,8 @@ void Initializer::tryToInitialize(
 void Initializer::findFundamentalMat(
     const std::vector<cv::Point2f>& points,
     const std::vector<cv::Point2f>& ref_points,
+    const std::vector<cv::Point2f>& points_norm,
+    const std::vector<cv::Point2f>& ref_points_norm,
     const cv::Mat& T,
     const cv::Mat& ref_T)
 {
@@ -178,8 +180,8 @@ void Initializer::findFundamentalMat(
     for(int it = 0; it < iterations_; it++) {
         for(int j = 0; j < 8; j++) {
             const int idx = ransac_sets_[it][j];
-            iter_points[j] = points[idx];
-            iter_ref_points[j] = ref_points[idx];
+            iter_points[j] = points_norm[idx];
+            iter_ref_points[j] = ref_points_norm[idx];
         }
 
         cv::Mat f_normalized;
@@ -285,6 +287,8 @@ double Initializer::checkFundamentalScore(
 void Initializer::findHomographyMat(
     const std::vector<cv::Point2f>& points,
     const std::vector<cv::Point2f>& ref_points,
+    const std::vector<cv::Point2f>& points_norm,
+    const std::vector<cv::Point2f>& ref_points_norm,
     const cv::Mat& T,
     const cv::Mat& ref_T)
 {
@@ -306,8 +310,8 @@ void Initializer::findHomographyMat(
     for(int it = 0; it < iterations_; it++) {
         for(int j = 0; j < 8; j++) {
             const int idx = ransac_sets_[it][j];
-            iter_points[j] = points[idx];
-            iter_ref_points[j] = ref_points[idx];
+            iter_points[j] = points_norm[idx];
+            iter_ref_points[j] = ref_points_norm[idx];
         }
 
         cv::Mat h_normalized;
