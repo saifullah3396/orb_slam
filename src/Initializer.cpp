@@ -156,16 +156,21 @@ void Initializer::tryToInitialize(
         double focal_length =
             (camera_->focalX() + camera_->focalY()) / 2.0;
 
-        cv::Mat essential_mat = K.t() * fundamental_mat_ * K;
+        cv::Mat_<double> essential_mat = K.t() * fundamental_mat_ * K;
+        try {
         // Recover R,t from essential matrix
+            // This only works with double!
         recoverPose(
             essential_mat,
+                inlier_ref_points,
             inlier_points,
-            inlier_ref_points,
             best_rot_mat,
             best_trans_mat,
             focal_length,
             principal_point);
+        } catch (std::exception& e) {
+            ROS_DEBUG_STREAM(e.what());
+        }
     }
 }
 
