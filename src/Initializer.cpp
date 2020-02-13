@@ -169,7 +169,9 @@ void Initializer::tryToInitialize(
             focal_length,
             principal_point);
         } catch (std::exception& e) {
-            ROS_DEBUG_STREAM(e.what());
+            ROS_WARN_STREAM(
+                "Pose recovery from fundamental matrix failed with following \
+                error" << e.what());
         }
     }
 }
