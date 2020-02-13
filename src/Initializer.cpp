@@ -81,12 +81,14 @@ void Initializer::tryToInitialize(
     // find fundamental matrix using RANSAC
     std::thread computeF(
         [&] {
-            findFundamentalMat(points_norm, ref_points_norm, T, ref_T); });
+            findFundamentalMat(
+                points, ref_points, points_norm, ref_points_norm, T, ref_T); });
 
     // find homography matrix
-    //std::thread computeH(
-    //    [&] {
-    //        findHomographyMat(points_norm, ref_points_norm, T, ref_T); });
+    std::thread computeH(
+        [&] {
+            findHomographyMat(
+                points, ref_points, points_norm, ref_points_norm, T, ref_T); });
 
     // wait for both threads to finish...
     computeF.join();
