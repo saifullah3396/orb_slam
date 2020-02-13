@@ -50,12 +50,16 @@ private:
      *
      * @param points: Input points in the first frame
      * @param ref_points: Input points in reference frame
+     * @param points_norm: Normalized points in the first frame
+     * @param ref_points_norm: Normalized points in reference frame
      * @param T: The normalization matrix for the frame
      * @param ref_T: The normalization matrix for the reference frame
      */
     void findFundamentalMat(
         const std::vector<cv::Point2f>& points,
         const std::vector<cv::Point2f>& ref_points,
+        const std::vector<cv::Point2f>& points_norm,
+        const std::vector<cv::Point2f>& ref_points_norm,
         const cv::Mat& T,
         const cv::Mat& ref_T);
 
@@ -79,12 +83,16 @@ private:
      *
      * @param points: Input points in the first frame
      * @param ref_points: Input points in reference frame
+     * @param points_norm: Normalized points in the first frame
+     * @param ref_points_norm: Normalized points in reference frame
      * @param T: The normalization matrix for the frame
      * @param ref_T: The normalization matrix for the reference frame
      */
     void findHomographyMat(
         const std::vector<cv::Point2f>& points,
         const std::vector<cv::Point2f>& ref_points,
+        const std::vector<cv::Point2f>& points_norm,
+        const std::vector<cv::Point2f>& ref_points_norm,
         const cv::Mat& T,
         const cv::Mat& ref_T);
 
