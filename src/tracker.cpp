@@ -152,6 +152,10 @@ void Tracker::monocularInitialization()
         ROS_DEBUG("Trying to initialize between first and reference frame...");
         initializer_->tryToInitialize(
             current_frame_, best_rot_mat, best_trans_mat);
+        ROS_DEBUG_STREAM("R from current to reference:\n" << best_rot_mat);
+        ROS_DEBUG_STREAM("t from current to reference:\n" << best_trans_mat);
+        current_frame_->showMatchesWithRef("current_frame");
+        cv::waitKey(0);
     }
 }
 
