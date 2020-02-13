@@ -173,7 +173,8 @@ public:
     virtual void setupCameraStream();
 
     /**
-     * Getters
+     * @brief Pops the front element of the queue and returns it. Returns null if queue
+     * is empty
      */
     cv_bridge::CvImageConstPtr image() {
         if (!cv_image_queue_.empty()) {
