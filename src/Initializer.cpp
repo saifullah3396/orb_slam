@@ -132,12 +132,18 @@ void Initializer::tryToInitialize(
         // R, t is wrong if a point ends up behind the camera
         std::vector<cv::Mat> res_Rs, res_ts, res_normals;
         cv::Mat sols;
+        try {
         filterHomographyDecompByVisibleRefpoints(
             rot_mats,
             normals,
             inlier_points,
             inlier_ref_points,
             sols);
+        } catch (cv::Exception& e) {
+            ROS_WARN_STREAM(
+                "Filteratoin of R-t with homography failed with following \
+                error" << e.what());
+        }
 
         if (!sols.empty()) {
             int idx = sols.at<int>(0, 0);
