@@ -326,8 +326,8 @@ void Initializer::findHomographyMat(
             checkHomographyScore(
                 points, ref_points, h_mat, h_mat_inv, current_inliers);
 
-        if(current_score > f_score_) {
-            // set best f_mat to fundamental_mat
+        if(current_score > h_score_) {
+            // set best h_mat to homograhy mat
             homography_mat_ = h_mat.clone();
             inliers_h_ = current_inliers;
             h_score_ = current_score;
