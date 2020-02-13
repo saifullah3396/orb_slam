@@ -228,7 +228,7 @@ double Initializer::checkFundamentalScore(
     const double th = 3.841;
     const double th_score = 5.991;
 
-    const double inv_sigma_square = 1.0 / sigma_squared_;
+    double inv_sigma_square = 1.0 / sigma_squared_;
 
     inliers.resize(n);
     for (int i = 0; i < n; i++)
