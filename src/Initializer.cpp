@@ -317,6 +317,11 @@ void Initializer::findHomographyMat(
         // unnormalize the homography matrix
         h_mat = T_inv * h_normalized * ref_T;
         cv::Mat h_mat_inv = h_mat.inv();
+
+        // set h_mat(2, 2) to 1
+        if(fabs(h_mat.at<float>(2, 2)) > 1e-8)
+            h_mat *= 1.0 / h_mat.at<float>(2, 2);
+
         current_score =
             checkHomographyScore(
                 points, ref_points, h_mat, h_mat_inv, current_inliers);
