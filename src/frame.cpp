@@ -95,7 +95,11 @@ void Frame::match(const std::shared_ptr<Frame>& ref_frame)
     orb_matcher_->match(shared_from_this(), ref_frame_, matches_);
 }
 
-MonoFrame::MonoFrame(const ros::Time& time_stamp) : Frame(time_stamp)
+MonoFrame::MonoFrame(
+    const cv_bridge::CvImageConstPtr& image,
+    const ros::Time& time_stamp) :
+    Frame(time_stamp),
+    image_(image)
 {
     grid_.resize(grid_cols_);
     for(unsigned int i = 0; i < grid_cols_; i++)
