@@ -213,15 +213,15 @@ double Initializer::checkFundamentalScore(
 {
     const auto n = points.size();
 
-    const double f11 = f_mat.at<double>(0, 0);
-    const double f12 = f_mat.at<double>(0, 1);
-    const double f13 = f_mat.at<double>(0, 2);
-    const double f21 = f_mat.at<double>(1, 0);
-    const double f22 = f_mat.at<double>(1, 1);
-    const double f23 = f_mat.at<double>(1, 2);
-    const double f31 = f_mat.at<double>(2, 0);
-    const double f32 = f_mat.at<double>(2, 1);
-    const double f33 = f_mat.at<double>(2, 2);
+    double f11 = f_mat.at<float>(0, 0);
+    double f12 = f_mat.at<float>(0, 1);
+    double f13 = f_mat.at<float>(0, 2);
+    double f21 = f_mat.at<float>(1, 0);
+    double f22 = f_mat.at<float>(1, 1);
+    double f23 = f_mat.at<float>(1, 2);
+    double f31 = f_mat.at<float>(2, 0);
+    double f32 = f_mat.at<float>(2, 1);
+    double f33 = f_mat.at<float>(2, 2);
 
     double score = 0;
 
