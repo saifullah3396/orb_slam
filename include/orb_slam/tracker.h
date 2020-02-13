@@ -62,6 +62,8 @@ private:
     FramePtr ref_frame_;
     FramePtr last_frame_;
     InitializerPtr initializer_;
+    double initializer_sigma_;
+    int initializer_iterations_;
 
     // ros node handle
     ros::NodeHandle nh_;

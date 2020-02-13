@@ -18,6 +18,10 @@ namespace orb_slam
 
 Tracker::Tracker(const ros::NodeHandle& nh) : nh_(nh)
 {
+    // get parameters
+    nh_.getParam("initializer_sigma", initializer_sigma_);
+    nh_.getParam("initializer_iterations", initializer_iterations_);
+
     // initialize the camera
     ROS_DEBUG("Initializing camera...");
     camera_ = geometry::CameraPtr<float>(new geometry::MonoCamera<float>(nh_));
@@ -111,7 +115,11 @@ void Tracker::monocularInitialization()
             // reset the initializer with current frame
             initializer_ =
                 InitializerPtr(
-                    new Initializer(current_frame_, camera_, 1.0, 200));
+                    new Initializer(
+                        current_frame_,
+                        camera_,
+                        initializer_sigma_,
+                        initializer_iterations_));
             return;
         } else {
             ROS_WARN("Not enough features to initialize. Resetting...");
