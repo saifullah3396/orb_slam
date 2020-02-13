@@ -115,7 +115,8 @@ void Tracker::monocularInitialization()
         } else {
             ROS_WARN("Not enough features to initialize. Resetting...");
         }
-    } else { // now we have the reference frame so try to initialize the map
+    } else {
+        // now we have the reference frame so try to initialize the map
         // try to initialize with the current frame, here we will already have
         // a reference frame assigned.
         if(current_frame_->nFeatures() <= MIN_REQ_MATCHES) {// not enough key points?
