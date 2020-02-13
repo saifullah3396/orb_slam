@@ -289,7 +289,7 @@ void Initializer::findHomographyMat(
     const cv::Mat& ref_T)
 {
     const auto n = points.size();
-    cv::Mat ref_T_inv = ref_T.inv();
+    cv::Mat T_inv = T.inv();
 
     // best results variables
     h_score_ = 0.0;
