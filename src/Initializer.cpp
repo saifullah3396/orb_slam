@@ -235,8 +235,8 @@ double Initializer::checkFundamentalScore(
     {
         bool good_point = true;
 
-        const auto& p1 = points[i];
-        const auto& p2 = ref_points[i];
+        const auto& p1 = ref_points[i];
+        const auto& p2 = points[i];
 
         const auto& u1 = p1.x;
         const auto& v1 = p1.y;
