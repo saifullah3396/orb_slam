@@ -188,6 +188,11 @@ void Initializer::findFundamentalMat(
 
         // unnormalize the fundamental matrix
         f_mat = T_t * f_normalized * ref_T;
+
+        // set f_mat(2, 2) to 1
+        if(fabs(f_mat.at<float>(2, 2)) > 1e-8)
+            f_mat *= 1.0 / f_mat.at<float>(2, 2);
+
         current_score =
             checkFundamentalScore(f_mat, points, ref_points, current_inliers);
 
