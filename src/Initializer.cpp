@@ -185,8 +185,9 @@ void Initializer::findFundamentalMat(
         cv::Mat f_normalized;
         geometry::computeFundamentalMat(
             f_normalized, iter_points, iter_ref_points);
+
         // unnormalize the fundamental matrix
-        f_mat = ref_T_t * f_normalized * T;
+        f_mat = T_t * f_normalized * ref_T;
         current_score =
             checkFundamentalScore(f_mat, points, ref_points, current_inliers);
 
