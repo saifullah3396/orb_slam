@@ -147,12 +147,11 @@ void computeHomographyMat(
         A.at<float>(2*i+1,8) = -u2;
 
     }
-
     // perform SVD
     cv::Mat u, w, vt;
     cv::SVDecomp(A,w,u,vt,cv::SVD::MODIFY_A | cv::SVD::FULL_UV);
 
-    // entries of F are elements of column v for least singular values
+    // entries of H are elements of column v for least singular values
     h_mat = vt.row(8).reshape(0, 3);
 }
 
