@@ -2,3 +2,5 @@ orb_slam:
   tracker:
     grid_rows: 64
     grid_cols: 64
+    initializer_sigma: 1
+    initializer_iterations: 200
