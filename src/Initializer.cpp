@@ -56,18 +56,15 @@ void Initializer::tryToInitialize(
     }
 
     ROS_DEBUG("Generating 8-point sets for RANSAC iterations...");
-    ransac_sets_ =
-        std::vector<std::vector<size_t>>(
-            iterations_, std::vector<size_t>(8, 0));
+    ransac_sets_ = std::vector<std::vector<size_t>>(iterations_);
 
     for (int it = 0; it < iterations_; it++) {
         std::shuffle(
             all_indices.begin(),
             all_indices.end(),
             std::mt19937{std::random_device{}()});
-        ransac_sets_.push_back(
-            std::vector<size_t>(
-                all_indices.begin(), all_indices.begin() + 8));
+        ransac_sets_[it] =
+            std::vector<size_t>(all_indices.begin(), all_indices.begin() + 8);
     }
 
     // see http://www.cs.cmu.edu/~16385/s17/Slides/12.4_8Point_Algorithm.pdf
