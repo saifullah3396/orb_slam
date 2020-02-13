@@ -72,10 +72,10 @@ void computeFundamentalMat(
     // create an n x 9 matrix filled with the points
     // step 1: Construct A
     for(int i = 0; i< n; i++) {
-        const auto& u1 = points[i].x;
-        const auto& v1 = points[i].y;
-        const auto& u2 = ref_points[i].x;
-        const auto& v2 = ref_points[i].y;
+        const auto& u1 = ref_points[i].x;
+        const auto& v1 = ref_points[i].y;
+        const auto& u2 = points[i].x;
+        const auto& v2 = points[i].y;
 
         A.at<float>(i,0) = u2*u1;
         A.at<float>(i,1) = u2*v1;
