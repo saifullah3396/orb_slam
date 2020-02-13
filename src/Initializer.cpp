@@ -115,12 +115,18 @@ void Initializer::tryToInitialize(
         // find R-t from homography matrix
         std::vector<cv::Mat> rot_mats, trans_mats, normals;
         cv::Mat i_mat = camera_->intrinsicMatrix();
+        try {
         decomposeHomographyMat(
             homography_mat_,
             i_mat,
             rot_mats,
             trans_mats,
             normals);
+        } catch (cv::Exception& e) {
+            ROS_WARN_STREAM(
+                "Decomposition of homography matrix failed with following \
+                error" << e.what());
+        }
 
         // Remove wrong rotations and translations
         // R, t is wrong if a point ends up behind the camera
