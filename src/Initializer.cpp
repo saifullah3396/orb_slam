@@ -254,13 +254,11 @@ double Initializer::checkFundamentalScore(
         const double square_dist_1 = num2 * num2 / (a2 * a2 + b2 * b2);
 
         const double chi_square_1 = square_dist_1 * inv_sigma_square;
-        if (chi_square_1 > th)
-        {
-            score += 0;
+        if (chi_square_1 > th) {
             good_point = false;
-        }
-        else
+        } else {
             score += th_score - chi_square_1;
+        }
 
         // Reprojection error in second image
         // l1 =x2tF21=(a1,b1,c1)
