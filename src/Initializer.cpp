@@ -50,7 +50,7 @@ void Initializer::tryToInitialize(
     // used for computing both matrices. As in paper, this is done to ensure
     // the procedure is homogenous.
     std::vector<size_t> all_indices;
-    all_indices.reserve(n);
+    all_indices.resize(n);
     for (int i = 0; i < n; ++i) {
         all_indices[i] = i;
     }
