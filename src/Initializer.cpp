@@ -148,10 +148,13 @@ void Initializer::tryToInitialize(
             inlier_points.push_back(cv::Point2d(p.x, p.y));
             inlier_ref_points.push_back(cv::Point2d(rp.x, rp.y));
         }
+        ROS_DEBUG_STREAM("Number of inlier points: " << inlier_points.size());
+
+        const cv::Mat& K = camera_->intrinsicMatrix();
         auto principal_point =
             cv::Point2f(camera_->centerX(), camera_->centerY());
         double focal_length =
-            (camera_->focalX() + camera_->focalY()) / 2;
+            (camera_->focalX() + camera_->focalY()) / 2.0;
 
         cv::Mat essential_mat = K.t() * fundamental_mat_ * K;
         // Recover R,t from essential matrix
