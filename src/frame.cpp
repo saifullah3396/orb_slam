@@ -104,7 +104,6 @@ MonoFrame::MonoFrame(
     grid_.resize(grid_cols_);
     for(unsigned int i = 0; i < grid_cols_; i++)
         grid_[i].resize(grid_rows_);
-    image_ = camera_->image();
 }
 
 MonoFrame::~MonoFrame()
