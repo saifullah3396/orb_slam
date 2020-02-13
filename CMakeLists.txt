@@ -200,20 +200,20 @@ target_link_libraries(tracker_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 ## Testing ##
 #############
 
-#if(CATKIN_ENABLE_TESTING)
+if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
-  set(TESTS camera_tests orb_extractor_tests orb_matcher_tests)
+  set(TESTS camera_tests orb_extractor_tests orb_matcher_tests utils_tests)
   foreach(test ${TESTS})
     add_rostest_gtest(${test}
         tests/geometry/${test}.test
-        src/geometry/tests/${test}.cpp)
+        src/tests/geometry/${test}.cpp)
     target_link_libraries(${test}
         ${catkin_LIBRARIES}
         ${OpenCV_LIBRARIES}
         ${GTEST_LIBRARIES}
         ${PROJECT_NAME})
   endforeach()
-#endif()
+endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
