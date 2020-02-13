@@ -168,7 +168,7 @@ void Initializer::tryToInitialize(
             best_trans_mat,
             focal_length,
             principal_point);
-        } catch (std::exception& e) {
+        } catch (cv::Exception& e) {
             ROS_WARN_STREAM(
                 "Pose recovery from fundamental matrix failed with following \
                 error" << e.what());
