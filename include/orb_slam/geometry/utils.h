@@ -26,36 +26,31 @@ void normalizePoints(
     normalized.resize(n);
     auto sum =
         std::accumulate(points.begin(), points.end(), cv::Point2f(0.f, 0.f));
-    auto mean_x = sum.x / n;
-    auto mean_y = sum.y / n;
+    auto n_inv = 1.0 / n;
+    auto mean_x = sum.x * n_inv;
+    auto mean_y = sum.y * n_inv;
 
-    // use same normalization done in orb-slam repository
-    // this looks similar to hartley's normalization but is a bit different
+    // use same normalization done in original paper
     // in place of 's' parameter, there are 'sx', and 'sy' parameters.
     // see https://cs.adelaide.edu.au/~wojtek/papers/pami-nals2.pdf
-    float mean_dev_x = 0;
-    float mean_dev_y = 0;
-    for (int i = 0; i < n; i++) {
+    double scale = 0.0;
+    for (int i = 0; i < n; ++i) {
         const auto& p = points[i];
-        normalized[i].x = p.x - mean_x;
-        normalized[i].y = p.y - mean_y;
-        mean_dev_x += fabs(normalized[i].x);
-        mean_dev_y += fabs(normalized[i].y);
+        normalized[i] = cv::Point2f(p.x - mean_x, p.y - mean_y);
+        scale += cv::norm(normalized[i]);
     }
-    mean_dev_x = mean_dev_x / n;
-    mean_dev_y = mean_dev_y / n;
-    float s_x = 1.0 / mean_dev_x;
-    float s_y = 1.0 / mean_dev_y;
-    for (int i = 0; i < n; i++) {
-        auto& n = normalized[i];
-        n.x *= s_x;
-        n.y *= s_y;
+    scale *= n_inv;
+    scale = std::sqrt(2.0) / scale;
+
+    for (int i = 0; i < n; ++i) {
+        normalized[i] *= scale;
     }
+
     T = cv::Mat::eye(3, 3, CV_32F);
-    T.at<float>(0,0) = s_x;
-    T.at<float>(1,1) = s_y;
-    T.at<float>(0,2) = -mean_x * s_x;
-    T.at<float>(1,2) = -mean_y * s_y;
+    T.at<float>(0,0) = scale;
+    T.at<float>(1,1) = scale;
+    T.at<float>(0,2) = -mean_x * scale;
+    T.at<float>(1,2) = -mean_y * scale;
 }
 
 /**
