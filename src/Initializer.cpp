@@ -110,19 +110,14 @@ void Initializer::tryToInitialize(
         inlier_ref_points.push_back(ref_points[i]);
     }
 
-    // compute ratio of scores
-    float r_score = h_score_/(h_score_ + f_score_);
+        ROS_DEBUG_STREAM("Number of inlier points: " << inlier_points.size());
 
-    // try to reconstruct from homography or fundamental depending
-    // on the ratio (0.40-0.45)
-    if(r_score > 0.40) {
         // find R-t from homography matrix
-        std::vector<cv::Mat> rot_mats;
-        std::vector<cv::Mat> trans_mats;
-        std::vector<cv::Mat> normals;
+        std::vector<cv::Mat> rot_mats, trans_mats, normals;
+        cv::Mat i_mat = camera_->intrinsicMatrix();
         decomposeHomographyMat(
             homography_mat_,
-            camera_->intrinsicMatrix(),
+            i_mat,
             rot_mats,
             trans_mats,
             normals);
