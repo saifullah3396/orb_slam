@@ -40,10 +40,16 @@ public:
      *     reference frame
      * @param best_trans_mat: The best translation matrix from this frame to
      *     reference frame
+     * @param inlier_points_3d: Points found after triangulation with R-t found
+     * @param inliers_mask: A bool mask for inlier points from input points
      * @returns True if initialized successfully, false otherwise
      */
     bool tryToInitialize(
-        const FramePtr& frame, cv::Mat& best_rot_mat, cv::Mat& best_trans_mat);
+        const FramePtr& frame,
+        cv::Mat& best_rot_mat,
+        cv::Mat& best_trans_mat,
+        std::vector<cv::Point3f> inlier_points_3d, // 3-dimensional
+        std::vector<bool>& inliers_mask);
 
 private:
     /**
