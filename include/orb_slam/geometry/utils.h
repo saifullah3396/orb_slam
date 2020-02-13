@@ -121,10 +121,10 @@ void computeHomographyMat(
     // construct A matrix
     cv::Mat A(2 * n, 9, CV_32F);
     for(int i = 0; i < n; i++) {
-        const float u1 = points[i].x;
-        const float v1 = points[i].y;
-        const float u2 = ref_points[i].x;
-        const float v2 = ref_points[i].y;
+        const float u1 = ref_points[i].x;
+        const float v1 = ref_points[i].y;
+        const float u2 = points[i].x;
+        const float v2 = points[i].y;
 
         A.at<float>(2*i,0) = 0.0;
         A.at<float>(2*i,1) = 0.0;
