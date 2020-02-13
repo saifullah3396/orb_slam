@@ -128,6 +128,10 @@ void Tracker::monocularInitialization()
         }
 
         ROS_DEBUG("Matching first frame with the reference frame...");
+        //ref_frame_->showImageWithFeatures("ref_frame");
+        //cv::waitKey(0);
+        //current_frame_->showImageWithFeatures("current_frame");
+        //cv::waitKey(0);
 
         // find correspondences between current frame and first reference frame
         current_frame_->match(ref_frame_);
