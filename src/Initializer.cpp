@@ -139,7 +139,15 @@ void Initializer::tryToInitialize(
             best_trans_mat = trans_mats[idx];
         }
     } else { //if(pF_HF>0.6)
-        const auto& K = camera_->intrinsicMatrix();
+        std::vector<cv::Point2d> inlier_points, inlier_ref_points;
+        for (int i = 0; i < n; ++i) {
+            if (!inliers_f_[i])
+                continue;
+            const auto& p = points[i];
+            const auto& rp = ref_points[i];
+            inlier_points.push_back(cv::Point2d(p.x, p.y));
+            inlier_ref_points.push_back(cv::Point2d(rp.x, rp.y));
+        }
         auto principal_point =
             cv::Point2f(camera_->centerX(), camera_->centerY());
         double focal_length =
