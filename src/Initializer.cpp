@@ -313,8 +313,9 @@ void Initializer::findHomographyMat(
         cv::Mat h_normalized;
         geometry::computeHomographyMat(
             h_normalized, iter_points, iter_ref_points);
-        // unnormalize the fundamental matrix
-        h_mat = ref_T_inv * h_normalized * T;
+            
+        // unnormalize the homography matrix
+        h_mat = T_inv * h_normalized * ref_T;
         cv::Mat h_mat_inv = h_mat.inv();
         current_score =
             checkHomographyScore(
