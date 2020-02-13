@@ -109,7 +109,8 @@ void Tracker::monocularInitialization()
 
             // reset the initializer with current frame
             initializer_ =
-                InitializerPtr(new Initializer(current_frame_, 1.0, 200));
+                InitializerPtr(
+                    new Initializer(current_frame_, camera_, 1.0, 200));
             return;
         } else {
             ROS_WARN("Not enough features to initialize. Resetting...");
