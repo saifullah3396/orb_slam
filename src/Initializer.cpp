@@ -27,7 +27,11 @@ Initializer::~Initializer() {
 }
 
 bool Initializer::tryToInitialize(
-    const FramePtr& frame, cv::Mat& best_rot_mat, cv::Mat& best_trans_mat)
+    const FramePtr& frame,
+    cv::Mat& best_rot_mat,
+    cv::Mat& best_trans_mat,
+    std::vector<cv::Point3f> inlier_points_3d, // 3-dimensional
+    std::vector<bool>& inliers_mask)
 {
     frame_ = frame;
     if (!ref_frame_) {
