@@ -9,14 +9,15 @@
 
 namespace orb_slam {
 
-// static variable definitions
-geometry::CameraPtr<float> Initializer::camera_;
-
 Initializer::Initializer(
     const FramePtr& ref_frame,
+    const geometry::CameraPtr<float>& camera,
     double sigma,
     int iterations) :
-    ref_frame_(ref_frame), sigma_(sigma), iterations_(iterations)
+    ref_frame_(ref_frame),
+    camera_(camera),
+    sigma_(sigma),
+    iterations_(iterations)
 {
     sigma_squared_ = sigma * sigma;
 }
