@@ -5,6 +5,7 @@
 #include <ros/ros.h>
 #include <vector>
 #include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include "orb_slam/frame.h"
 #include "orb_slam/tracker.h"
 #include "orb_slam/initializer.h"
