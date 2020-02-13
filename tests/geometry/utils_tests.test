@@ -1,0 +1,7 @@
+<launch>
+    <test
+        test-name="utils_tests"
+        pkg="orb_slam"
+        type="utils_tests" />
+    <!-- launch-prefix="xterm -e /usr/bin/gdb -args" -->
+</launch>
