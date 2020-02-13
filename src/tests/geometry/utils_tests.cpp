@@ -97,6 +97,29 @@ TEST (UtilitiesTest, TestFundamentalMatrix) {
     EXPECT_NEAR(cv::norm(f_mat - cv_f_mat), 0.0, 1e-3);
 }
 
+TEST (UtilitiesTest, TestHomographyMatrix) {
+    auto pkg_path = ros::package::getPath("orb_slam");
+    cv::Mat h_mat;
+    cv::Mat cv_h_mat;
+    cv_h_mat =
+        (
+            cv::Mat_<float>(3, 3) << // computed by opencv
+                0.9671625266205051, -0.1317623229618765, 28.05865021389668,
+                0.03869274681909932, 1.005845772688223, 3.014059003382929,
+                -4.044027122083386e-05, 0.0001381719338975627, 1
+        );
+
+    std::vector<cv::Point2f> points_norm, ref_points_norm;
+    cv::Mat T, ref_T, h_norm;
+    normalizePoints(points, points_norm, T);
+    normalizePoints(ref_points, ref_points_norm, ref_T);
+    computeHomographyMat(h_norm, points_norm, ref_points_norm);
+    h_mat = T.inv() * h_norm * ref_T;
+    if(fabs(h_mat.at<float>(2, 2)) > 1e-8)
+        h_mat *= 1./h_mat.at<float>(2, 2);
+    EXPECT_NEAR(cv::norm(h_mat - cv_h_mat), 0.0, 1.0);
+}
+
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     ros::init(argc, argv, "utils_tests");
