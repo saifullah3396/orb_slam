@@ -26,6 +26,7 @@ class Initializer
 public:
     Initializer(
         const FramePtr& ref_frame,
+        const geometry::CameraPtr<float>& camera,
         double sigma = 1.0,
         int iterations = 200);
     ~Initializer();
@@ -42,12 +43,6 @@ public:
      */
     void tryToInitialize(
         const FramePtr& frame, cv::Mat& best_rot_mat, cv::Mat& best_trans_mat);
-
-    /**
-     * setters
-     */
-    static void setCamera(const geometry::CameraPtr<float>& camera)
-        { camera_ = camera; }
 
 private:
     /**
@@ -129,7 +124,7 @@ private:
     std::vector<bool> inliers_h_; // inliers found by RANSAC while finding hmat.
     double h_score_; // homography matrix score as in orb-slam paper
 
-    static geometry::CameraPtr<float> camera_;
+    geometry::CameraPtr<float> camera_;
 };
 
 class Initializer;
