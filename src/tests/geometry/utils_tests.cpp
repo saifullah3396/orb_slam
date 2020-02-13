@@ -67,6 +67,36 @@ std::vector<cv::Point2f> points =
         {150.49364, 243.65637}, {347.56863, 336.81909}, {272.32181, 250.82272},
         {186.32545, 290.23773}, {333.2359, 240.07318}
 };
+
+TEST (UtilitiesTest, TestFundamentalMatrix) {
+    auto pkg_path = ros::package::getPath("orb_slam");
+    cv::Mat f_mat;
+    cv::Mat cv_f_mat;
+    cv_f_mat =
+        (
+            cv::Mat_<float>(3, 3) << // computed by opencv 8-point algorithm
+                4.844484382466111e-06,
+                0.0001222601840188731,
+                -0.01786737827487386,
+                -0.0001174326832719333,
+                2.122888800459598e-05,
+                -0.01775877156212593,
+                0.01799658210895528,
+                0.008143605989020664,
+                1
+        );
+
+    std::vector<cv::Point2f> points_norm, ref_points_norm;
+    cv::Mat T, ref_T, f_norm;
+    normalizePoints(points, points_norm, T);
+    normalizePoints(ref_points, ref_points_norm, ref_T);
+    computeFundamentalMat(f_norm, points_norm, ref_points_norm);
+    f_mat = T.t() * f_norm * ref_T;
+    if(fabs(f_mat.at<float>(2, 2)) > 1e-8)
+        f_mat *= 1./f_mat.at<float>(2, 2);
+    EXPECT_NEAR(cv::norm(f_mat - cv_f_mat), 0.0, 1e-3);
+}
+
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     ros::init(argc, argv, "utils_tests");
