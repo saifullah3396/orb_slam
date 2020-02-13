@@ -150,9 +150,11 @@ public:
     /**
      * Constructor
      *
+     * @param image: Image assigned to this frame
      * @param time_stamp: Frame time stamp on creation
      */
-    MonoFrame(const ros::Time& time_stamp);
+    MonoFrame(
+        const cv_bridge::CvImageConstPtr& image, const ros::Time& time_stamp);
 
     /**
      * Destructor
