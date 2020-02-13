@@ -62,7 +62,7 @@ void Tracker::update()
     // create a frame from the image
     ROS_DEBUG("Creating frame...");
     current_frame_ =
-        FramePtr(new MonoFrame(ros::Time::now()));
+        FramePtr(new MonoFrame(image, ros::Time::now()));
 
     ROS_DEBUG("Extracting features from frame...");
     // extract features from the frame
