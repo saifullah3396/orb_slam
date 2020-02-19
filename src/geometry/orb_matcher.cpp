@@ -132,20 +132,20 @@ void ORBMatcher::match(
     bool filter_matches) const
 {
     if (matcher_1 != nullptr) {
-    match(
-        frame->featuresUndist(),
-        ref_frame->featuresUndist(),
-        frame->descriptorsUndist(),
-        ref_frame->descriptorsUndist(),
-        matches,
-        filter_matches);
+        match(
+            frame->featuresUndist(),
+            ref_frame->featuresUndist(),
+            frame->descriptorsUndist(),
+            ref_frame->descriptorsUndist(),
+            matches,
+            filter_matches);
     } else if (matcher_2 != nullptr) {
         match(
             frame->descriptorsUndist(),
             ref_frame->descriptorsUndist(),
             matches,
             filter_matches);
-}
+    }
 }
 
 void ORBMatcher::match(
