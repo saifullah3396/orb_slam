@@ -80,8 +80,6 @@ CVORBMatcher::CVORBMatcher(const ros::NodeHandle& nh) {
 }
 
 void CVORBMatcher::match(
-    const std::vector<cv::KeyPoint>& key_points,
-    const std::vector<cv::KeyPoint>& ref_key_points,
     const cv::Mat& descriptors,
     const cv::Mat& ref_descriptors,
     std::vector<cv::DMatch>& matches)
