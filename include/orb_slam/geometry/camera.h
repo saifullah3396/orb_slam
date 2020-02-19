@@ -215,6 +215,91 @@ private:
     #endif
 };
 
+/**
+ * @struct RGBDCamera
+ * @brief Holds information about a single rgbd camera
+ */
+template <typename T = float>
+class RGBDCamera : public Camera<T>
+{
+public:
+    /**
+     * @brief Camera Constructor
+     * @param nh: ROS node handle
+     */
+    RGBDCamera(const ros::NodeHandle& nh);
+
+    /**
+     * @brief ~Camera Destructor
+     */
+    ~RGBDCamera();
+
+    /**
+     * @brief setup Sets up the camera image streaming
+     */
+    virtual void setupCameraStream();
+
+    /**
+     * @brief Pops the front element of the queue and returns it. Returns null if queue
+     * is empty
+     */
+    cv_bridge::CvImageConstPtr image() {
+        if (!cv_image_queue_.empty()) {
+            auto image = cv_image_queue_.front();
+            cv_image_queue_.pop();
+            return image;
+        }
+        return nullptr;
+    }
+    const CameraType type() { return CameraType::RGBD; }
+    const cv::Mat& imageL() {
+        throw std::runtime_error(
+            "imageL() is undefined for monocular camera.");
+    }
+    const cv::Mat& imageR() {
+        throw std::runtime_error(
+            "imageR() is undefined for monocular camera.");
+    }
+    cv_bridge::CvImageConstPtr imageDepth() {
+        if (!depth_image_queue_.empty()) {
+            auto image = depth_image_queue_.front();
+            depth_image_queue_.pop();
+            return image;
+        }
+        return nullptr;
+    }
+
+private:
+    #ifdef ROS_CAMERA_STREAM
+    virtual const bool subscribed() {
+        return subscribed_;
+    }
+    void imageCb(
+        const sensor_msgs::ImageConstPtr& image_msg,
+        const sensor_msgs::CameraInfoConstPtr& image_info_msg,
+        const sensor_msgs::ImageConstPtr& depth_msg,
+        const sensor_msgs::CameraInfoConstPtr& depth_info_msg);
+
+    sensor_msgs::CameraInfoConstPtr rgb_image_info_;
+    sensor_msgs::CameraInfoConstPtr depth_image_info_;
+    std::queue<cv_bridge::CvImageConstPtr> cv_image_queue_;
+    std::queue<cv_bridge::CvImageConstPtr> depth_image_queue_;
+
+    std::shared_ptr<message_filters::Subscriber<Image>> rgb_image_subscriber_;
+    std::shared_ptr<message_filters::Subscriber<Image>> depth_image_subscriber_;
+    std::shared_ptr<message_filters::Subscriber<CameraInfo>> rgb_info_subscriber_;
+    std::shared_ptr<message_filters::Subscriber<CameraInfo>> depth_info_subscriber_;
+
+    // camera stream synchronizer
+    typedef message_filters::sync_policies::ApproximateTime<
+        sensor_msgs::Image, sensor_msgs::CameraInfo,
+        sensor_msgs::Image, sensor_msgs::CameraInfo> SyncPolicy;
+    std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> synchronizer_;
+    #endif
+
+    bool subscribed_ = {false};
+    float depth_scale_ = {1.f}; // sometimes datasets have scaled depths
+};
 template <typename T = float>
 using CameraPtr = std::shared_ptr<Camera<T>>;
 template <typename T = float>
