@@ -40,4 +40,8 @@ void KeyFrame::addMapPoint(const MapPointPtr& mp, const size_t& idx)
     frame_->obs_map_points_[idx] = mp;
 }
 
+void KeyFrame::removeMapPointAt(const unsigned long& idx) {
+    std::unique_lock<std::mutex> lock(mutex_map_points_);
+    frame_->obs_map_points_[idx].reset();
+}
 } // namespace orb_slam

@@ -59,6 +59,11 @@ public:
      */
     void addMapPoint(const MapPointPtr& mp, const size_t& idx);
 
+    /**
+     * Removes a map point at the given index
+     * @param idx: The map point index
+     */
+    void removeMapPointAt(const unsigned long& idx);
 private:
     FramePtr frame_; // Associated frame
     cv::Mat world_pos_; // World position of camera for this frame
