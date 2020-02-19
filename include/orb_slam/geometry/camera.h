@@ -194,7 +194,7 @@ public:
         throw std::runtime_error(
             "imageR() is undefined for monocular camera.");
     }
-    const cv::Mat& imageDepth() {
+    cv_bridge::CvImageConstPtr imageDepth() {
         throw std::runtime_error(
             "imageDepth() is undefined for monocular camera.");
     }
