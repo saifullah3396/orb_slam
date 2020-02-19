@@ -89,11 +89,11 @@ public:
     /**
      * Setters
      */
-    static void setCamera(const geometry::CameraPtr<float>& camera)
+    static void setCamera(const geometry::CameraConstPtr<float>& camera)
         { camera_ = camera; }
-    static void setORBExtractor(const geometry::ORBExtractorPtr& orb_extractor)
+    static void setORBExtractor(const geometry::ORBExtractorConstPtr& orb_extractor)
         { orb_extractor_ = orb_extractor; }
-    static void setORBMatcher(const geometry::ORBMatcherPtr& orb_matcher)
+    static void setORBMatcher(const geometry::ORBMatcherConstPtr& orb_matcher)
         { orb_matcher_ = orb_matcher; }
 
 protected:
@@ -133,9 +133,9 @@ protected:
     std::vector<cv::DMatch> matches_;
 
     // static class pointers
-    static geometry::CameraPtr<float> camera_; // camera info
-    static geometry::ORBExtractorPtr orb_extractor_; // orb features extractor
-    static geometry::ORBMatcherPtr orb_matcher_; // orb features extractor
+    static geometry::CameraConstPtr<float> camera_; // camera info
+    static geometry::ORBExtractorConstPtr orb_extractor_; // orb features extractor
+    static geometry::ORBMatcherConstPtr orb_matcher_; // orb features extractor
 
     // uniform points extraction parameters
     Grid<std::vector<size_t>> grid_;
