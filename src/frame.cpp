@@ -217,8 +217,40 @@ RGBDFrame::~RGBDFrame()
 {
 }
 
+void RGBDFrame::drawFeatures(cv::Mat& image)
 {
-    return std::static_pointer_cast<geometry::MonoCamera<float>>(camera_);
+    ROS_DEBUG_STREAM("Number of features extracted: " << key_points_.size());
+    cv::drawKeypoints(
+        image,
+        key_points_,
+        image,
+        cv::Scalar(255, 0, 0),
+        cv::DrawMatchesFlags::DEFAULT);
+}
+
+void RGBDFrame::showImageWithFeatures(
+    const std::string& name)
+{
+    cv::Mat draw_image = image_->image.clone();
+    drawFeatures(draw_image);
+    cv::imshow(name, draw_image);
+}
+
+void RGBDFrame::showMatchesWithRef(const std::string& name)
+{
+    if (!ref_frame_ || matches_.empty()) {
+        return;
+    }
+    cv::Mat image_match;
+    drawMatches(
+        image_->image,
+        undist_key_points_,
+        ref_frame_->image()->image,
+        ref_frame_->featuresUndist(),
+        matches_,
+        image_match);
+    cv::imshow(name, image_match);
+}
 }
 
 } // namespace orb_slam
