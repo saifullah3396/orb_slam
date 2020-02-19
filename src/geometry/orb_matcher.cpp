@@ -129,8 +129,9 @@ void ORBMatcher::match(
     const FramePtr& frame,
     const FramePtr& ref_frame,
     std::vector<cv::DMatch>& matches,
-    bool filter_matches)
+    bool filter_matches) const
 {
+    if (matcher_1 != nullptr) {
     match(
         frame->featuresUndist(),
         ref_frame->featuresUndist(),
@@ -138,6 +139,13 @@ void ORBMatcher::match(
         ref_frame->descriptorsUndist(),
         matches,
         filter_matches);
+    } else if (matcher_2 != nullptr) {
+        match(
+            frame->descriptorsUndist(),
+            ref_frame->descriptorsUndist(),
+            matches,
+            filter_matches);
+}
 }
 
 void ORBMatcher::match(
