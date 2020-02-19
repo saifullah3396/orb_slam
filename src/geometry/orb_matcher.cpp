@@ -93,20 +93,18 @@ ORBMatcher::ORBMatcher(const ros::NodeHandle& nh): nh_(nh) {
     if (method_ == "cv_orb_matcher") {
         using namespace std::placeholders;
         matcher_ = std::shared_ptr<MatcherBase>(new CVORBMatcher(nh_));
-        match_ =
+        matcher_2 =
             std::bind(
                 &CVORBMatcher::match,
                 std::static_pointer_cast<CVORBMatcher>(matcher_),
                 std::placeholders::_1,
                 std::placeholders::_2,
-                std::placeholders::_3,
-                std::placeholders::_4,
-                std::placeholders::_5);
+                std::placeholders::_3);
     } else if (method_ == "brute_force_with_radius") {
         using namespace std::placeholders;
         matcher_ =
             std::shared_ptr<MatcherBase>(new BruteForceWithRadiusMatcher(nh_));
-        match_ =
+        matcher_1 =
             std::bind(
                 &BruteForceWithRadiusMatcher::match,
                 std::static_pointer_cast<BruteForceWithRadiusMatcher>(matcher_),
@@ -117,7 +115,7 @@ ORBMatcher::ORBMatcher(const ros::NodeHandle& nh): nh_(nh) {
                 std::placeholders::_5);
     }
 
-    if (match_ == nullptr) {
+    if (matcher_1 == nullptr && matcher_2 == nullptr) {
         throw std::runtime_error(
             "Please set an orb matcher in cfg/orb_matcher.yaml.");
     }
