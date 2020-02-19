@@ -185,6 +185,13 @@ void MonoCamera<T>::setupCameraStream()
 template class MonoCamera<float>;
 template class MonoCamera<double>;
 
+template <typename T>
+RGBDCamera<T>::RGBDCamera(const ros::NodeHandle& nh) : Camera<T>(nh)
+{
+    this->nh_.getParam(
+        "/orb_slam/depth_camera/depth_scale",
+        depth_scale_);
+}
 } // namespace geometry
 
 } // namespace orb_slam
