@@ -36,6 +36,11 @@ public:
     static void setupGrid(const ros::NodeHandle& nh);
 
     /**
+     * Computes the bag of words from orb vocabulary and frame features
+     */
+    void computeBow();
+
+    /**
      * Extracts orb features from the frame image
      */
     virtual void extractFeatures() = 0;

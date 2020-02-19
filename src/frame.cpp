@@ -47,6 +47,22 @@ void Frame::setupGrid(const ros::NodeHandle& nh)
     grid_size_y_ = camera_->undistHeight() / grid_rows_;
 }
 
+/**
+ * Computes the bag of words from orb vocabulary and frame features
+ */
+void Frame::computeBow() {
+    if(bow_vec_.empty() || feature_vec_.empty()) {
+        std::vector<cv::Mat> vec_descriptors;
+        utils::matToVectorMat(undist_descriptors_, vec_descriptors);
+        // Same as in orb_slam original repository
+        // Feature vector associate features with nodes in the 4th level
+        // (from leaves up). We assume the vocabulary tree has 6 levels,
+        // change the 4 otherwise
+        orb_vocabulary_->transform(
+            vec_descriptors, bow_vec_, feature_vec_, 4);
+    }
+}
+
 void Frame::assignFeaturesToGrid(
     std::vector<cv::KeyPoint>& key_points_,
     Grid<std::vector<size_t>>& grid)
