@@ -222,6 +222,57 @@ void RGBDCamera<T>::imageCb(
     subscribed_ = true;
 }
 #endif
+
+template <typename T>
+void RGBDCamera<T>::setupCameraStream()
+{
+    #ifdef ROS_CAMERA_STREAM
+    std::string prefix = "/orb_slam/depth_camera/", rgb_topic, rgb_info_topic;
+    std::string depth_topic, depth_info_topic;
+
+    // read all the camera parameters
+    this->nh_.getParam(
+        prefix + "rgb_topic", rgb_topic);
+    this->nh_.getParam(
+        prefix + "rgb_info_topic", rgb_info_topic);
+    this->nh_.getParam(
+        prefix + "depth_topic", depth_topic);
+    this->nh_.getParam(
+        prefix + "depth_info_topic", depth_info_topic);
+
+    // queue size less than 10 will mostly drop images, we do not want missing
+    // frames
+    using namespace sensor_msgs;
+    rgb_image_subscriber_ =
+        std::shared_ptr<message_filters::Subscriber<Image>>(
+            new message_filters::Subscriber<Image>(
+                this->nh_, rgb_topic, 5));
+    rgb_info_subscriber_ =
+        std::shared_ptr<message_filters::Subscriber<CameraInfo>>(
+            new message_filters::Subscriber<CameraInfo>(
+                this->nh_, rgb_info_topic, 5));
+    depth_image_subscriber_ =
+        std::shared_ptr<message_filters::Subscriber<Image>>(
+            new message_filters::Subscriber<Image>(
+                this->nh_, depth_topic, 5));
+    depth_info_subscriber_ =
+        std::shared_ptr<message_filters::Subscriber<CameraInfo>>(
+            new message_filters::Subscriber<CameraInfo>(
+                this->nh_, depth_info_topic, 5));
+
+    synchronizer_ =
+        std::shared_ptr<message_filters::Synchronizer<SyncPolicy>>(
+            new message_filters::Synchronizer<SyncPolicy>(
+                SyncPolicy(10),
+                *rgb_image_subscriber_,
+                *rgb_info_subscriber_,
+                *depth_image_subscriber_,
+                *depth_info_subscriber_));
+    synchronizer_->registerCallback(
+        boost::bind(
+            &RGBDCamera<T>::imageCb, this, _1, _2, _3, _4));
+    #endif
+}
 } // namespace geometry
 
 } // namespace orb_slam
