@@ -72,7 +72,7 @@ public:
      */
     void undistortPoints(
         std::vector<cv::KeyPoint>& key_points,
-        std::vector<cv::KeyPoint>& undist_key_points);
+        std::vector<cv::KeyPoint>& undist_key_points) const;
 
     /**
      * @brief computeImageBounds Computes the image bounds while taking into
