@@ -197,6 +197,31 @@ template <typename T>
 RGBDCamera<T>::~RGBDCamera()
 {
 }
+
+#ifdef ROS_CAMERA_STREAM
+template <typename T>
+void RGBDCamera<T>::imageCb(
+    const sensor_msgs::ImageConstPtr& image_msg,
+    const sensor_msgs::CameraInfoConstPtr& image_info_msg,
+    const sensor_msgs::ImageConstPtr& depth_msg,
+    const sensor_msgs::CameraInfoConstPtr& depth_info_msg)
+{
+    // set info
+    rgb_image_info_ = image_info_msg;
+    depth_image_info_ = depth_info_msg;
+
+    // set images
+    cv_image_queue_.push(cv_bridge::toCvShare(image_msg));
+    cv_bridge::CvImageConstPtr depth_image =
+        cv_bridge::toCvShare(depth_msg, image_encodings::TYPE_32FC1);
+    if ((fabs(depth_scale_ - 1.f) > 1e-5)) {
+        depth_image->image.convertTo(
+            depth_image->image, CV_32F, depth_scale_);
+    }
+    depth_image_queue_.push(depth_image);
+    subscribed_ = true;
+}
+#endif
 } // namespace geometry
 
 } // namespace orb_slam
