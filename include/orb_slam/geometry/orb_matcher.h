@@ -72,15 +72,11 @@ struct CVORBMatcher : public MatcherBase {
     /**
      * @brief Matches the descriptors of two images using desired opencv-based
      *     matcher.
-     * @param key_points: Input key points to match
-     * @param ref_key_points: Reference key points to match with
      * @param descriptors: Input key points descriptors
      * @param ref_descriptors: Reference key points descriptors
      * @param matches: Output features that are matched
      */
     void match(
-        const std::vector<cv::KeyPoint>& key_points,
-        const std::vector<cv::KeyPoint>& ref_key_points,
         const cv::Mat& descriptors,
         const cv::Mat& ref_descriptors,
         std::vector<cv::DMatch>& matches);
