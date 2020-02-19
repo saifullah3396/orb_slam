@@ -22,6 +22,19 @@ public:
     Map() {}
     ~Map() {}
 
+
+    /**
+     * Adds a new key frame to map
+     * @param key_frame: Key frame to be added
+     */
+    void addKeyFrame(const KeyFramePtr& key_frame);
+
+    /**
+     * Removes the given key frame from the map
+     * @param key_frame: Key frame to be removed
+     */
+    void removeKeyFrame(const KeyFramePtr& kf);
+
 private:
     // map data
     long unsigned int max_key_frame_id_;
