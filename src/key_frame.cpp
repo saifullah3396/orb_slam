@@ -27,4 +27,17 @@ KeyFrame::KeyFrame(
 KeyFrame::~KeyFrame() {
 }
 
+
+void KeyFrame::resizeMap(const size_t& n)
+{
+    std::unique_lock<std::mutex> lock(mutex_map_points_);
+    frame_->obs_map_points_.resize(n);
+}
+
+void KeyFrame::addMapPoint(const MapPointPtr& mp, const size_t& idx)
+{
+    std::unique_lock<std::mutex> lock(mutex_map_points_);
+    frame_->obs_map_points_[idx] = mp;
+}
+
 } // namespace orb_slam
