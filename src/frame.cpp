@@ -199,6 +199,24 @@ geometry::MonoCameraConstPtr<float> MonoFrame::camera()
 {
     return std::static_pointer_cast<const geometry::MonoCamera<float>>(camera_);
 }
+
+RGBDFrame::RGBDFrame(
+    const cv_bridge::CvImageConstPtr& image,
+    const cv_bridge::CvImageConstPtr& depth,
+    const ros::Time& time_stamp) :
+    Frame(time_stamp),
+    image_(image),
+    depth_(depth)
+{
+    grid_.resize(grid_cols_);
+    for(unsigned int i = 0; i < grid_cols_; i++)
+        grid_[i].resize(grid_rows_);
+}
+
+RGBDFrame::~RGBDFrame()
+{
+}
+
 {
     return std::static_pointer_cast<geometry::MonoCamera<float>>(camera_);
 }
