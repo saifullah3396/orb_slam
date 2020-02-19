@@ -26,7 +26,8 @@ namespace geometry
  * Camera type
  */
 enum class CameraType {
-    MONO
+    MONO,
+    RGBD
 };
 
 /**
