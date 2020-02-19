@@ -79,9 +79,9 @@ void Frame::assignFeaturesToGrid(
     for (int i = 0; i < key_points_.size(); ++i) {
         const auto& key_point = key_points_[i];
         int row, col;
-        if (pointInGrid(key_point, row, col)) {
-            filt_key_points.push_back(key_point);
-            // stores indices to filt_key_points
+        if (pointInGrid(key_point, col, row)) {
+            filt_key_points_.push_back(key_point);
+            // stores indices to filt_key_points_
             grid[row][col].push_back(count++);
         }
     }
