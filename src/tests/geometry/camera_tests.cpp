@@ -2,8 +2,10 @@
  * Defines tests for Camera class.
  */
 
+#include <opencv2/highgui/highgui.hpp>
 #include <gtest/gtest.h>
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <orb_slam/geometry/camera.h>
 
 using namespace orb_slam::geometry;
@@ -119,6 +121,35 @@ TEST (MonoCameraTester, TestMonoCameraSubscription) {
     camera->setupCameraStream();
     ros::spinOnce();
     ros::Rate(1).sleep();
+    EXPECT_TRUE(camera->subscribed());
+}
+
+TEST (DepthCameraTester, TestDepthCameraSubscription) {
+    ros::NodeHandle nh;
+    auto camera =
+        CameraPtr<double>(new RGBDCamera<double>(nh));
+    camera->readParams();
+    camera->setup();
+    camera->setupCameraStream();
+    int count = 0;
+    auto pkg_path = ros::package::getPath("orb_slam");
+    while (true) {
+        if (camera->subscribed()) {
+            auto image = camera->image();
+            auto depth = camera->imageDepth();
+            if (image && depth) {
+                cv::Mat depth_norm;
+                cv::normalize(depth->image, depth_norm, 0, 255, cv::NORM_MINMAX);
+                cv::imwrite(pkg_path + "/tests/test_images/image_" + std::to_string(count) + ".jpg", image->image);
+                cv::imwrite(pkg_path + "/tests/test_images/depth_" + std::to_string(count) + ".pgm", depth_norm);
+                if (count++ > 10) {
+                    break;
+                }
+            }
+        }
+        ros::spinOnce();
+        ros::Rate(1000).sleep();
+    }
     EXPECT_TRUE(camera->subscribed());
 }
 
