@@ -29,6 +29,24 @@ Tracker::Tracker(const ros::NodeHandle& nh) : nh_(nh)
     camera_->setup();
     camera_->setupCameraStream();
 
+    ROS_DEBUG("Initializing orb features vocabulary...");
+    auto pkg_path = ros::package::getPath("orb_slam");
+    orb_vocabulary_ = ORBVocabularyPtr(new ORBVocabulary());
+    std::string vocabulary_path;
+    ROS_DEBUG_STREAM("pkg_path:" << pkg_path);
+    nh_.getParam("/orb_slam/tracker/vocabulary_path", vocabulary_path);
+    try {
+        orb_vocabulary_->loadFromTextFile(
+            "/home/sai/visual_slam/orb_slam_ws/src/orb_slam/vocabulary/orb_vocabulary.txt");
+    } catch (std::exception& e) {
+        ROS_FATAL_STREAM(e.what());
+        ROS_FATAL_STREAM(
+            "Failed to load ORB vocabulary from path:" <<
+                pkg_path + "/" + vocabulary_path);
+        exit(-1);
+    }
+    ROS_DEBUG("ORB vocabulary successfully loaded...");
+
     ROS_DEBUG("Initializing orb features extractor...");
     orb_extractor_ =
         geometry::ORBExtractorPtr(new geometry::ORBExtractor(nh_));

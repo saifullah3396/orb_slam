@@ -2,9 +2,12 @@
  * Declares the Tracker class.
  */
 
+#pragma once
+
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/core/core.hpp>
 #include <memory.h>
+#include <orb_slam/orb_vocabulary.h>
 
 namespace orb_slam
 {
@@ -70,8 +73,7 @@ private:
 
     // pointer to camera
     geometry::CameraPtr<float> camera_;
-    geometry::ORBExtractorPtr orb_extractor_;
-    geometry::ORBMatcherPtr orb_matcher_;
+    ORBVocabularyPtr orb_vocabulary_;
 
     // Tracking states same as in original orb slam package
     enum TrackingState {
