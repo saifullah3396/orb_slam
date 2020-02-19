@@ -35,7 +35,7 @@ Frame::~Frame()
 void Frame::setupFirstFrame() {
     // since this is the first frame it acts as reference for others
     // there we set it as identity matrix
-    c_T_w_ = cv::Mat::eye(4, 4, CV_64F);
+    c_T_w_ = cv::Mat::eye(4, 4, CV_32F);
 }
 
 void Frame::setupGrid(const ros::NodeHandle& nh)
