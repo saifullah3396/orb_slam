@@ -164,7 +164,7 @@ void ORBMatcher::match(
 
 void ORBMatcher::filterMatches(
     const cv::Mat& descriptors,
-    std::vector<cv::DMatch>& matches)
+    std::vector<cv::DMatch>& matches) const
 {
     // filter out based on distance
     auto min_max =
