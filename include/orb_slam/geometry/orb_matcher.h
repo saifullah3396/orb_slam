@@ -146,7 +146,11 @@ private:
         const std::vector<cv::KeyPoint>&,
         const cv::Mat&,
         const cv::Mat&,
-        std::vector<cv::DMatch>&)> match_;
+        std::vector<cv::DMatch>&)> matcher_1;
+    std::function<void(
+        const cv::Mat&,
+        const cv::Mat&,
+        std::vector<cv::DMatch>&)> matcher_2;
 
 
     //! opencv orb extractors
