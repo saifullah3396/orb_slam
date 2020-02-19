@@ -37,6 +37,20 @@ public:
      * Getters
      */
     const size_t nObservations();
+    /**
+     * Adds an observation for this point.
+     * @param key_frame: The key frame in which the point is observed
+     * @param idx: The id of the feature point in frame associated with this
+     *     map point.
+     */
+    void addObservation(const KeyFramePtr& key_frame, const size_t idx);
+
+    /**
+     * Removes a given key frame observation for this point.
+     * @param key_frame: The key frame in which the point is observed
+     */
+    void removeObservation(const KeyFramePtr& key_frame);
+
 private:
     // Map point details
     cv::Mat world_pos_; // Point position in world coordinates
