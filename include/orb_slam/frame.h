@@ -9,6 +9,7 @@
 #include <orb_slam/geometry/camera.h>
 #include <orb_slam/geometry/orb_extractor.h>
 #include <orb_slam/geometry/orb_matcher.h>
+#include <orb_slam/geometry/utils.h>
 #include <orb_slam/orb_vocabulary.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
