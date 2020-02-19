@@ -19,3 +19,25 @@ orb_slam:
       0.0026,
       1.1633
     ]
+
+  depth_camera:
+    rgb_topic: "/camera/rgb/image_color"
+    rgb_info_topic: "/camera/rgb/camera_info"
+    depth_topic: "/camera/depth/image"
+    depth_info_topic: "/camera/depth/camera_info"
+    fps: 30
+    width: 640
+    height: 480
+    fov_x: 518 # example
+    fov_y: 519 # example
+    focal_x: 517.3
+    focal_y: 516.5
+    center_x: 318.6
+    center_y: 255.3
+    dist_coeffs: [
+      0.2624,
+      -0.9531,
+      -0.0054,
+      0.0026,
+      1.1633
+    ]
