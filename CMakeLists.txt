@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 find_package(OpenCV 3.4.9 REQUIRED
     COMPONENTS core calib3d features2d imgproc highgui)
+find_package(DBoW2)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -122,6 +123,7 @@ include_directories(
 include
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
+  ${DBoW2_INCLUDE_DIRS}
 )
 
 FILE(GLOB SRC
@@ -152,8 +154,8 @@ add_executable(tracker_node ${SRC})
 ## add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-target_link_libraries(tracker_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${DBoW2_LIBRARIES})
+target_link_libraries(tracker_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${DBoW2_LIBRARIES})
 
 #############
 ## Install ##
