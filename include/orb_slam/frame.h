@@ -269,5 +269,6 @@ private:
 
 //! pointer alias
 using FramePtr = std::shared_ptr<Frame>;
+using FrameConstPtr = std::shared_ptr<const Frame>;
 
 } // namespace orb_slam
