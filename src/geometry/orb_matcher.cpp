@@ -156,7 +156,23 @@ void ORBMatcher::match(
     std::vector<cv::DMatch>& matches,
     bool filter_matches) const
 {
-    match_(key_points, ref_key_points, descriptors, ref_descriptors, matches);
+    if (matcher_1 != nullptr) {
+        matcher_1(key_points, ref_key_points, descriptors, ref_descriptors, matches);
+    }
+    if (filter_matches) {
+        filterMatches(descriptors, matches);
+    }
+}
+
+void ORBMatcher::match(
+    const cv::Mat& descriptors,
+    const cv::Mat& ref_descriptors,
+    std::vector<cv::DMatch>& matches,
+    bool filter_matches) const
+{
+    if (matcher_2 != nullptr) {
+        matcher_2(descriptors, ref_descriptors, matches);
+    }
     if (filter_matches) {
         filterMatches(descriptors, matches);
     }
