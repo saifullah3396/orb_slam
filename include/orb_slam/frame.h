@@ -97,6 +97,9 @@ public:
     /**
      * Setters
      */
+    void setPose(const cv::Mat& c_T_w) {
+        c_T_w_ = c_T_w.clone();
+    }
     static void setCamera(const geometry::CameraConstPtr<float>& camera)
         { camera_ = camera; }
     static void setORBExtractor(const geometry::ORBExtractorConstPtr& orb_extractor)
