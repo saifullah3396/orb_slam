@@ -2,6 +2,8 @@
  * Defines the Frame class.
  */
 
+#pragma once
+
 #include <array>
 #include <memory>
 #include <orb_slam/geometry/camera.h>
