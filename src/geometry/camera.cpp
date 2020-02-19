@@ -77,7 +77,7 @@ void Camera<T>::updateIntrinsicMatrix() {
 template <typename T>
 void Camera<T>::undistortPoints(
     std::vector<cv::KeyPoint>& key_points,
-    std::vector<cv::KeyPoint>& undist_key_points)
+    std::vector<cv::KeyPoint>& undist_key_points) const
 {
     std::vector<cv::Point2f> points;
     for(auto it = key_points.begin(); it != key_points.end(); it++) {
