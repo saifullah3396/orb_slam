@@ -11,6 +11,7 @@
 #include <orb_slam/geometry/orb_matcher.h>
 #include <orb_slam/geometry/utils.h>
 #include <orb_slam/orb_vocabulary.h>
+#include <orb_slam/map_point.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 
@@ -18,6 +19,9 @@ namespace orb_slam {
 
 template<class T>
 using Grid = std::vector<std::vector<T>>;
+
+class MapPoint;
+using MapPointPtr = std::shared_ptr<MapPoint>;
 
 class Frame : public std::enable_shared_from_this<Frame> {
 public:
@@ -93,6 +97,7 @@ public:
     const int nMatches() const { return matches_.size(); }
     const DBoW2::BowVector& bow() const { return bow_vec_; }
     const DBoW2::FeatureVector& bowFeatures() const { return feature_vec_; }
+    const std::vector<MapPointPtr>& obsMapPoints() { return obs_map_points_; }
     virtual const cv_bridge::CvImageConstPtr& image() = 0;
 
     /**
@@ -150,6 +155,9 @@ protected:
     // frame matching info
     std::shared_ptr<Frame> ref_frame_;
     std::vector<cv::DMatch> matches_;
+
+    // map points associated with frame
+    std::vector<MapPointPtr> obs_map_points_;
 
     // static class pointers
     static geometry::CameraConstPtr<float> camera_; // camera info
