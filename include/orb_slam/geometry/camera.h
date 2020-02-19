@@ -86,11 +86,11 @@ public:
     #ifdef ROS_CAMERA_STREAM
     virtual const bool subscribed() = 0;
     #endif
-    const int& fps() { return fps_; }
-    const int& width() { return width_; }
-    const int& height() { return height_; }
-    const int& undistWidth() { return undist_width_; }
-    const int& undistHeight() { return undist_height_; }
+    const int& fps() const { return fps_; }
+    const int& width() const { return width_; }
+    const int& height() const { return height_; }
+    const int& undistWidth() const { return undist_width_; }
+    const int& undistHeight() const { return undist_height_; }
     const T& minX() const { return min_x_; }
     const T& minY() const { return min_y_; }
     const T& maxX() const { return max_x_; }
