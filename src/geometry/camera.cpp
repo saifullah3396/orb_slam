@@ -192,6 +192,11 @@ RGBDCamera<T>::RGBDCamera(const ros::NodeHandle& nh) : Camera<T>(nh)
         "/orb_slam/depth_camera/depth_scale",
         depth_scale_);
 }
+
+template <typename T>
+RGBDCamera<T>::~RGBDCamera()
+{
+}
 } // namespace geometry
 
 } // namespace orb_slam
