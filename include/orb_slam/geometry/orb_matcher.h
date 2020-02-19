@@ -127,6 +127,20 @@ public:
         bool filter_matches = true) const;
 
     /**
+     * Matches the input key points
+     *
+     * @param descriptors: Input key points descriptors
+     * @param ref_descriptors: Reference key points descriptors
+     * @param matches: Output features that are matched
+     * @param filter_matches: Matches are filtered if true
+     */
+    void match(
+        const cv::Mat& descriptors,
+        const cv::Mat& ref_descriptors,
+        std::vector<cv::DMatch>& matches,
+        bool filter_matches = true) const;
+
+    /**
      * Filters out the matched points based on min/max distance threshold
      * @param descriptors: Input descriptors
      * @param matches: Found matches
