@@ -251,6 +251,61 @@ void RGBDFrame::showMatchesWithRef(const std::string& name)
         image_match);
     cv::imshow(name, image_match);
 }
+
+void RGBDFrame::extractFeatures()
+{
+    // convert image to gray
+    if (image_->image.channels() == 3) {
+        if(rgb_) // rgb or bgr
+            cv::cvtColor(image_->image, gray_image_, CV_RGB2GRAY);
+        else
+            cv::cvtColor(image_->image, gray_image_, CV_BGR2GRAY);
+    } else {
+        gray_image_ = image_->image;
+    }
+
+    // find orb features in the image
+    orb_extractor_->detect(gray_image_, key_points_);
+    #ifdef HARD_DEBUG
+    ROS_DEBUG_STREAM("Number of features extracted: " << key_points_.size());
+    showImageWithFeatures("key_points_");
+    #endif
+
+    if (key_points_.empty())
+        return;
+
+    // undistort key points so they are the in the correct positions
+    camera_->undistortPoints(
+        key_points_, undist_key_points_);
+
+    #ifdef HARD_DEBUG
+    ROS_DEBUG_STREAM(
+        "Number of undistorted features: " << undist_key_points_.size());
+    showImageWithFeatures("undist_key_points_");
+    #endif
+
+    // update the key points so that they are uniformly accumulated over
+    // the image. Note that the points are undistorted and the grid is also
+    // within non-black region of the undisorted image.
+    assignFeaturesToGrid(undist_key_points_, grid_);
+
+    // assign depth for each key point
+    const auto n = undist_key_points_.size();
+    undist_key_point_depths_ = std::vector<float>(n, -1);
+    for (int i = 0; i < n; ++i) {
+        const auto& kp = undist_key_points_[i];
+        const auto depth = depth_->image.at<float>(kp.pt.y, kp.pt.x);
+        if (depth > 0) {
+            undist_key_point_depths_[i] = depth;
+        }
+    }
+
+    ROS_DEBUG_STREAM("Finding orb features...");
+    // find the orb descriptors for undistorted points
+    orb_extractor_->compute(
+        gray_image_, undist_key_points_, undist_descriptors_);
+}
+
 }
 
 } // namespace orb_slam
