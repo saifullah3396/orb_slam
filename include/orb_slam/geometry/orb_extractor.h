@@ -36,6 +36,14 @@ public:
         nh_.param<int>(prefix + "patch_size", patch_size_, 31);
         nh_.param<int>(prefix + "score_threshold", score_threshold_, 20);
 
+        scale_factors_.resize(level_pyramid_);
+        inv_scale_factors_.resize(level_pyramid_);
+        scale_factors_[0]=1.0f;
+        for (int i = 1; i< level_pyramid_; ++i) {
+            scale_factors_[i] = scale_factors_[i-1] * scale_factor_;
+            inv_scale_factors_[i] = 1.0f / scale_factors_[i];
+        }
+
         // initialize the detector
         cv_orb_detector_ =
             cv::ORB::create(
@@ -106,6 +114,9 @@ private:
     int score_type_ = {cv::ORB::HARRIS_SCORE}; // score type
     int patch_size_ = {31}; // patch size
     int score_threshold_; // score threshold
+
+    std::vector<float> scale_factors_;
+    std::vector<float> inv_scale_factors_;
 
     //! opencv orb extractors
     cv::Ptr<cv::ORB> cv_orb_detector_;
