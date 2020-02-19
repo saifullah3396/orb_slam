@@ -106,7 +106,7 @@ public:
         const FramePtr& frame,
         const FramePtr& ref_frame,
         std::vector<cv::DMatch>& matches,
-        bool filter_matches = true);
+        bool filter_matches = true) const;
 
     /**
      * Matches the input key points
@@ -124,7 +124,7 @@ public:
         const cv::Mat& descriptors,
         const cv::Mat& ref_descriptors,
         std::vector<cv::DMatch>& matches,
-        bool filter_matches = true);
+        bool filter_matches = true) const;
 
     /**
      * Filters out the matched points based on min/max distance threshold
@@ -133,7 +133,7 @@ public:
      */
     void filterMatches(
         const cv::Mat& descriptors,
-        std::vector<cv::DMatch>& matches);
+        std::vector<cv::DMatch>& matches) const;
 
 private:
     //! ros node handle for reading parameters
@@ -156,6 +156,7 @@ private:
 };
 
 using ORBMatcherPtr = std::shared_ptr<ORBMatcher>;
+using ORBMatcherConstPtr = std::shared_ptr<const ORBMatcher>;
 
 } // namespace geometry
 
