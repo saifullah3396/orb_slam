@@ -16,6 +16,10 @@ namespace orb_slam
 class Map;
 using MapConstPtr = std::shared_ptr<const Map>;
 
+class MapPoint;
+using MapPointPtr = std::shared_ptr<MapPoint>;
+using MapPointConstPtr = std::shared_ptr<const MapPoint>;
+
 class Frame;
 using FramePtr = std::shared_ptr<Frame>;
 
