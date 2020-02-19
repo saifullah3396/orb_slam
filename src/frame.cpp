@@ -13,6 +13,7 @@ int Frame::id_global_ = 0;
 geometry::CameraConstPtr<float> Frame::camera_;
 geometry::ORBExtractorConstPtr Frame::orb_extractor_;
 geometry::ORBMatcherConstPtr Frame::orb_matcher_;
+ORBVocabularyConstPtr Frame::orb_vocabulary_;
 
 // grid
 int Frame::grid_rows_;

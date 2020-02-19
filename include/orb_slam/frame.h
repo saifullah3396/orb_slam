@@ -95,6 +95,9 @@ public:
         { orb_extractor_ = orb_extractor; }
     static void setORBMatcher(const geometry::ORBMatcherConstPtr& orb_matcher)
         { orb_matcher_ = orb_matcher; }
+    static void setORBVocabulary(
+        const ORBVocabularyConstPtr& orb_vocabulary)
+        { orb_vocabulary_ = orb_vocabulary; }
 
 protected:
     /**
@@ -136,6 +139,7 @@ protected:
     static geometry::CameraConstPtr<float> camera_; // camera info
     static geometry::ORBExtractorConstPtr orb_extractor_; // orb features extractor
     static geometry::ORBMatcherConstPtr orb_matcher_; // orb features extractor
+    static ORBVocabularyConstPtr orb_vocabulary_; // orb vocabulary
 
     // uniform points extraction parameters
     Grid<std::vector<size_t>> grid_;
