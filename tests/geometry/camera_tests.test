@@ -6,8 +6,7 @@
         pkg="rosbag"
         type="play"
         name="player"
-        output="screen"
-        args="--clock $(arg video_bag_file)" />
+        args="$(arg video_bag_file)" />
     <rosparam
         command="load"
         file="$(find orb_slam)/tests/geometry/cfg/camera.yaml" />
