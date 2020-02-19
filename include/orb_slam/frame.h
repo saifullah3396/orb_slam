@@ -84,6 +84,8 @@ public:
     const int nDescriptorsUnDist() const { return undist_descriptors_.rows; }
     const std::vector<cv::DMatch> matches() const { return matches_; }
     const int nMatches() const { return matches_.size(); }
+    const DBoW2::BowVector& bow() const { return bow_vec_; }
+    const DBoW2::FeatureVector& bowFeatures() const { return feature_vec_; }
     virtual const cv_bridge::CvImageConstPtr& image() = 0;
 
     /**
@@ -130,6 +132,10 @@ protected:
     std::vector<cv::KeyPoint> undist_key_points_;
     cv::Mat undist_descriptors_;
     cv::Mat undist_intrinsic_matrix;
+
+    // Bag of words vectors
+    DBoW2::BowVector bow_vec_;
+    DBoW2::FeatureVector feature_vec_;
 
     // frame matching info
     std::shared_ptr<Frame> ref_frame_;
