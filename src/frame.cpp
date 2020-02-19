@@ -306,6 +306,9 @@ void RGBDFrame::extractFeatures()
         gray_image_, undist_key_points_, undist_descriptors_);
 }
 
+geometry::RGBDCameraConstPtr<float> RGBDFrame::camera()
+{
+    return std::static_pointer_cast<const geometry::RGBDCamera<float>>(camera_);
 }
 
 } // namespace orb_slam
