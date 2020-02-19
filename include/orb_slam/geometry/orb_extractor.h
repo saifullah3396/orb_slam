@@ -72,6 +72,12 @@ public:
     }
 
     /**
+     * Getters
+     */
+    const std::vector<float>& scaleFactors() const { return scale_factors_; }
+    const int& levels() const { return level_pyramid_; }
+
+    /**
      * Extracts orb features from the input image
      *
      * @param image: Input image
