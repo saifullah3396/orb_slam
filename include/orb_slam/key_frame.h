@@ -46,6 +46,19 @@ public:
     const FramePtr& frame() { return frame_; }
     const cv::Mat& getWorldPos() const { return world_pos_; }
 
+    /**
+     * Resizes the map to given size
+     * @param n: Map size
+     */
+    void resizeMap(const size_t& n);
+
+    /**
+     * Adds a map point to the list of points associated with the frame.
+     * @param mp: The map point to be pushed
+     * @param idx: Index where the point is to be added
+     */
+    void addMapPoint(const MapPointPtr& mp, const size_t& idx);
+
 private:
     FramePtr frame_; // Associated frame
     cv::Mat world_pos_; // World position of camera for this frame
