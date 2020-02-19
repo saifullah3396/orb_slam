@@ -273,6 +273,9 @@ void RGBDCamera<T>::setupCameraStream()
             &RGBDCamera<T>::imageCb, this, _1, _2, _3, _4));
     #endif
 }
+
+template class RGBDCamera<float>;
+template class RGBDCamera<double>;
 } // namespace geometry
 
 } // namespace orb_slam
