@@ -195,7 +195,10 @@ void MonoFrame::extractFeatures()
         image_->image, undist_key_points_, undist_descriptors_);
 }
 
-geometry::MonoCameraPtr<float> MonoFrame::camera()
+geometry::MonoCameraConstPtr<float> MonoFrame::camera()
+{
+    return std::static_pointer_cast<const geometry::MonoCamera<float>>(camera_);
+}
 {
     return std::static_pointer_cast<geometry::MonoCamera<float>>(camera_);
 }

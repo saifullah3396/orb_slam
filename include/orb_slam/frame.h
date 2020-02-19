@@ -200,7 +200,7 @@ private:
     /**
      * Returns the derived camera class
      */
-    geometry::MonoCameraPtr<float> camera();
+    geometry::MonoCameraConstPtr<float> camera();
 
     cv_bridge::CvImageConstPtr image_; // Frame image
 };
