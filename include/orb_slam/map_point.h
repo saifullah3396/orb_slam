@@ -33,12 +33,19 @@ public:
 
     std::map<KeyFramePtr, size_t> observations();
 
+    /**
+     * Getters
+     */
+    const size_t nObservations();
 private:
     // Map point details
     cv::Mat world_pos_; // Point position in world coordinates
 
     long unsigned int id_; // Point id
     static std::atomic_uint64_t global_id_; // Thread safe points id accumulator
+
+    // Key frames observing the point and associated index in keyframe
+    std::map<KeyFramePtr, size_t> observations_;
 
     // Reference key frame
     KeyFramePtr ref_key_frame_;
