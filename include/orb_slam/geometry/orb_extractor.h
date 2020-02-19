@@ -83,7 +83,9 @@ public:
      * @param image: Input image
      * @param key_points: Output feature points
      */
-    void detect(const cv::Mat& image, std::vector<cv::KeyPoint>& key_points) {
+    void detect(
+        const cv::Mat& image, std::vector<cv::KeyPoint>& key_points) const
+    {
         cv_orb_detector_->detect(image, key_points);
     }
 
@@ -97,7 +99,7 @@ public:
     void compute(
         const cv::Mat& image,
         std::vector<cv::KeyPoint>& key_points,
-        cv::Mat& descriptors)
+        cv::Mat& descriptors) const
     {
         cv_orb_descriptor_->compute(image, key_points, descriptors);
     }
@@ -130,6 +132,7 @@ private:
 };
 
 using ORBExtractorPtr = std::shared_ptr<ORBExtractor>;
+using ORBExtractorConstPtr = std::shared_ptr<const ORBExtractor>;
 
 } // namespace geometry
 
