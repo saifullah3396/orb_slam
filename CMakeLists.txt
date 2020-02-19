@@ -213,6 +213,10 @@ if(CATKIN_ENABLE_TESTING)
     target_link_libraries(${test}
         ${catkin_LIBRARIES}
         ${OpenCV_LIBRARIES}
+        ${DBoW2_LIBRARIES}
+        ${GTEST_LIBRARIES}
+        ${PROJECT_NAME})
+  endforeach()
         ${GTEST_LIBRARIES}
         ${PROJECT_NAME})
   endforeach()
