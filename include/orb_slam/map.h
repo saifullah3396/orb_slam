@@ -35,6 +35,18 @@ public:
      */
     void removeKeyFrame(const KeyFramePtr& kf);
 
+    /**
+     * Adds a new map point to map
+     * @param mp: Map point to be added
+     */
+    void addMapPoint(const MapPointPtr& mp);
+
+    /**
+     * Removes the given map point from the map
+     * @param mp: Map point to be removed
+     */
+    void removeMapPoint(const MapPointPtr& mp);
+
 private:
     // map data
     long unsigned int max_key_frame_id_;
