@@ -300,10 +300,21 @@ private:
     bool subscribed_ = {false};
     float depth_scale_ = {1.f}; // sometimes datasets have scaled depths
 };
+
 template <typename T = float>
 using CameraPtr = std::shared_ptr<Camera<T>>;
 template <typename T = float>
+using CameraConstPtr = std::shared_ptr<const Camera<T>>;
+
+template <typename T = float>
 using MonoCameraPtr = std::shared_ptr<MonoCamera<T>>;
+template <typename T = float>
+using MonoCameraConstPtr = std::shared_ptr<const MonoCamera<T>>;
+
+template <typename T = float>
+using RGBDCameraPtr = std::shared_ptr<RGBDCamera<T>>;
+template <typename T = float>
+using RGBDCameraConstPtr = std::shared_ptr<const RGBDCamera<T>>;
 
 } // namespace geometry
 
