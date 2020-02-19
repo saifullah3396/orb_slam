@@ -154,7 +154,7 @@ void ORBMatcher::match(
     const cv::Mat& descriptors,
     const cv::Mat& ref_descriptors,
     std::vector<cv::DMatch>& matches,
-    bool filter_matches)
+    bool filter_matches) const
 {
     match_(key_points, ref_key_points, descriptors, ref_descriptors, matches);
     if (filter_matches) {
