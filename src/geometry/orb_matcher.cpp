@@ -212,6 +212,125 @@ void BruteForceWithProjectionMatcher::match(
                     i, matched[i], static_cast<float>(feature_dists[i])));
     }
 }
+
+void BowOrbMatcher::match(
+    const FramePtr& frame,
+    const FramePtr& ref_frame,
+    std::vector<cv::DMatch>& matches)
+{
+    std::vector<int> rot_hist[hist_length_];
+    for (size_t i = 0; i < hist_length_; i++)
+        rot_hist[i].reserve(500);
+    const auto factor = 1.0f / hist_length_;
+
+    const auto& ref_key_points = ref_frame->featuresUndist();
+    const auto& key_points = frame->featuresUndist();
+    std::vector<int> matched(key_points.size(), -1);
+    std::vector<int> feature_dists(key_points.size(), -1);
+
+    const auto& ref_descs = ref_frame->descriptorsUndist();
+    const auto& descs = frame->descriptorsUndist();
+    const auto& ref_features = ref_frame->bowFeatures();
+    const auto& features = frame->bowFeatures();
+
+    auto ref_f = ref_features.begin();
+    auto f = features.begin();
+    while (ref_f != ref_features.end() && f != features.end()) {
+        // if both features are in the same node level, meaning if they
+        // are in the same histogram bin of bag of words
+        if (ref_f->first == f->first) {
+            // get all the features from both frames and match
+            const auto& idxs = f->second;
+            const auto& ref_idxs = ref_f->second;
+            for (const auto& ref_idx: ref_idxs) {
+                // if the feature at this index is bad for any reason
+                //if (ref_frame->isBadFeature(ref_idx)) continue;
+                const auto& ref_desc = ref_descs.row(ref_idx);
+
+                // finds closest of all the features in ref_frame that lies within
+                // pixel radius of feature i
+                int min_feature_dist = 256;
+                int min_feature_dist_2 = 256; // second minimum
+                int matched_id = -1;
+                for (const auto& idx: idxs) {
+                    if (matched[idx] > 0) // match already assigned
+                        continue;
+                    // find distance between descriptors of this point and all the
+                    // close points
+                    const auto& desc = descs.row(idx);
+                    const auto dist =
+                        geometry::descriptorDistance(ref_desc, desc);
+                    if (dist <= min_feature_dist) {
+                        min_feature_dist = dist;
+                        matched_id = idx;
+                    } else if (dist < min_feature_dist_2) {
+                        min_feature_dist_2 = dist;
+                    }
+                }
+
+                if (min_feature_dist <= low_threshold_ &&
+                    // not sure what nn ratio is
+                    static_cast<float>(min_feature_dist) <
+                    nn_ratio_ * static_cast<float>(min_feature_dist_2))
+                {
+                    matched[matched_id] = ref_idx;
+                    feature_dists[matched_id] = min_feature_dist;
+                    if(check_orientation_) {
+                        float rot_diff =
+                            ref_key_points[ref_idx].angle -
+                            key_points[matched_id].angle;
+                        if (rot_diff < 0.0)
+                            rot_diff += 360.0f;
+                        // add rot_diff to bin
+                        int bin = round(rot_diff * factor);
+                        if (bin == hist_length_)
+                            bin = 0;
+                        assert(bin >= 0 && bin < hist_length_);
+                        // add rotation difference to histogram
+                        rot_hist[bin].push_back(matched_id);
+                    }
+                }
+            }
+
+            f++; // move forward
+            ref_f++; // move forward
+        } else if(ref_f->first < f->first) { // not sure whats happening here
+            ref_f = ref_features.lower_bound(f->first);
+        } else {
+            f = features.lower_bound(ref_f->first);
+        }
+    }
+
+    // apply rotation consistency
+    if(check_orientation_)
+    {
+        int ind1 = -1;
+        int ind2 = -1;
+        int ind3 = -1;
+
+        // take the 3 top most histograms
+        geometry::computeThreeMaxima(rot_hist, hist_length_, ind1, ind2, ind3);
+
+        // remove all the points that have rotation difference other than the
+        // top 3 histogram bins.
+        for (int i = 0; i < hist_length_; i++) {
+            if (i != ind1 && i != ind2 && i != ind3) {
+                for (size_t j = 0, jend = rot_hist[i].size(); j < jend; j++) {
+                    matched[rot_hist[i][j]] = false;
+                }
+            }
+        }
+    }
+
+    // create matches
+    for (size_t i = 0; i < matched.size(); ++i) {
+        if (matched[i]) // matches from frame to reference frame
+            matches.push_back(
+                cv::DMatch(
+                    i, matched[i], static_cast<float>(feature_dists[i])));
+    }
+}
+
 CVORBMatcher::CVORBMatcher(const ros::NodeHandle& nh) {
     std::string prefix = "orb_slam/cv_orb_matcher/";
     std::string matcher_type;
