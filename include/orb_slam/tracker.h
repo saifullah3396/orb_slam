@@ -77,6 +77,9 @@ protected:
 
     // pointer to camera
     geometry::CameraPtr<float> camera_;
+
+    geometry::ORBExtractorPtr orb_extractor_; // orb features extractor
+    geometry::ORBMatcherPtr orb_matcher_; // orb features matcher
     ORBVocabularyPtr orb_vocabulary_;
 
     // Tracking states same as in original orb slam package
