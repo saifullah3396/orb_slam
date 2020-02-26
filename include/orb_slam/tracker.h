@@ -38,6 +38,7 @@ using PoseOptimizerPtr = std::shared_ptr<PoseOptimizer>;
 
 #define MIN_REQ_MATCHES_INIT 100
 #define MIN_REQ_MATCHES 15
+#define MIN_REQ_KEY_FRAMES_RELOC 5
 
 class Tracker {
 public:
@@ -62,7 +63,16 @@ public:
      * Updates the visual odometry tracking
      */
     virtual void update() = 0;
+
+    /**
+     * Initializes the tracking with first good frame
+     */
     virtual void initializeTracking() = 0;
+
+    /**
+     * Resets the tracker completely.
+     */
+    virtual void reset();
 
 protected:
     virtual void trackFrame();
