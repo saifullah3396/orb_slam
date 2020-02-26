@@ -183,10 +183,7 @@ void MonoTracker::createInitialMonocularMap(
     map_->addKeyFrame(ref_key_frame);
     map_->addKeyFrame(key_frame);
 
-    ROS_DEBUG_STREAM("Resizing map...");
     const auto n = inlier_points.size();
-    ref_key_frame->resizeMap(n);
-    key_frame->resizeMap(n);
 
     // create MapPoints and assign associated key frames
     ROS_DEBUG_STREAM("Creating map points and assigning to frames...");
