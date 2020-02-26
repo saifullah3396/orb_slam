@@ -33,7 +33,7 @@ Frame::~Frame()
 {
 }
 
-std::vector<MapPointPtr> Frame::obsMapPoints() {
+std::vector<MapPointPtr> Frame::obsMapPoints() const {
     std::unique_lock<std::mutex> (mutex_map_points_);
     return obs_map_points_;
 }
@@ -352,9 +352,13 @@ void MonoFrame::extractFeatures()
     assignFeaturesToGrid(undist_key_points_, grid_);
 
     ROS_DEBUG_STREAM("Finding orb features...");
+
     // find the orb descriptors for undistorted points
     orb_extractor_->compute(
         image_->image, undist_key_points_, undist_descriptors_);
+
+    // resize the map equal to the feature points
+    resizeMap(undist_key_points_.size());
 }
 
 geometry::MonoCameraConstPtr<float> MonoFrame::camera()
