@@ -30,7 +30,9 @@ using InitializerPtr = std::unique_ptr<Initializer>;
 class Frame;
 using FramePtr = std::shared_ptr<Frame>;
 
-#define MIN_REQ_MATCHES 100
+class Map;
+using MapPtr = std::shared_ptr<Map>;
+
 
 class Tracker {
 public:
@@ -81,6 +83,8 @@ protected:
     geometry::ORBExtractorPtr orb_extractor_; // orb features extractor
     geometry::ORBMatcherPtr orb_matcher_; // orb features matcher
     ORBVocabularyPtr orb_vocabulary_;
+    MapPtr map_;
+
 
     // Tracking states same as in original orb slam package
     enum TrackingState {
