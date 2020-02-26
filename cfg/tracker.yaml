@@ -1,6 +1,8 @@
 orb_slam:
   tracker:
+    vocabulary_path: "vocabulary/orb_vocabulary.txt"
     grid_rows: 64
     grid_cols: 64
     initializer_sigma: 1
-    initializer_iterations: 200
+    initializer_iterations: 500
+    camera_type: 1
