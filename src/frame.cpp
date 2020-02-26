@@ -106,10 +106,12 @@ bool Frame::pointInGrid(
     return true;
 }
 
-void Frame::match(const std::shared_ptr<Frame>& ref_frame)
+void Frame::match(
+    const std::shared_ptr<Frame>& ref_frame,
+    const geometry::OrbMatcherTypes type)
 {
     ref_frame_ = ref_frame;
-    orb_matcher_->match(shared_from_this(), ref_frame_, matches_);
+    orb_matcher_->match(shared_from_this(), ref_frame_, matches_, type);
 }
 
 MonoFrame::MonoFrame(
