@@ -6,7 +6,7 @@
         pkg="rosbag"
         type="play"
         name="player"
-        args="--clock $(arg video_bag_file)" />
+        args="-r 1 $(arg video_bag_file)" />
 
     <!-- load camera paramters -->
     <rosparam
