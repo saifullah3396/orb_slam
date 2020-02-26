@@ -34,6 +34,9 @@ class Map;
 using MapPtr = std::shared_ptr<Map>;
 
 
+#define MIN_REQ_MATCHES_INIT 100
+#define MIN_REQ_MATCHES 15
+
 class Tracker {
 public:
     /**
