@@ -1,0 +1,147 @@
+/**
+ * Defines tests for Initializer class.
+ */
+
+#include <gtest/gtest.h>
+#include <ros/ros.h>
+#include <ros/package.h>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <orb_slam/frame.h>
+#include <orb_slam/initializer.h>
+#include <orb_slam/geometry/camera.h>
+#include <orb_slam/geometry/utils.h>
+
+using namespace orb_slam;
+using namespace orb_slam::geometry;
+using namespace cv;
+
+std::vector<cv::Point2f> ref_points =
+    {
+        { 318, 92}, {245, 211}, {81, 312}, {207, 288}, {76, 290}, {420, 169},
+        {46, 270}, {49, 267}, {540, 244}, {557, 249}, {295, 225}, {143, 175},
+        {373, 217}, {527, 241}, {295.20001, 225.60001}, {428.40002, 169.20001},
+        {420.00003, 168}, {76.800003, 292.80002}, {244.8, 210.00002},
+        {63.600002, 276}, {558, 249.60001}, {331.20001, 94.800003},
+        {318, 93.600006}, {530.40002, 241.20001}, {372, 217.20001},
+        {206.40001, 288}, {526.80005, 241.20001}, {244.8, 208.8},
+        {371.52002, 216.00002}, {511.20001, 262.08002}, {427.68002, 168.48001},
+        {420.48001, 168.48001}, {529.92004, 247.68001}, {295.20001, 224.64001},
+        {205.92001, 288}, {544.32007, 248.83203}, {371.52005, 216.00002},
+        {245.37602, 210.81602}, {530.49603, 248.83203}, {316.22403, 88.128006},
+        {426.81604, 169.34401}, {419.90405, 167.61601}, {319.68002, 93.312012},
+        {222.91202, 260.92804}, {67.392006, 274.75201}, {532.22406, 241.92003},
+        {58.752007, 278.20804}, {205.63202, 286.84802}, {157.24802, 231.55202},
+        {147.22562, 234.31683}, {425.08807, 167.96162}, {371.17444, 215.65443},
+        {331.77606, 93.312012}, {246.75844, 209.43362}, {207.36003, 286.15683},
+        {157.59363, 230.16963}, {161.74083, 236.39043}, {146.81091, 233.90213},
+        {246.34373, 209.01894}, {370.75977, 213.99557}, {154.27588, 228.92549},
+        {296.11014, 223.94885}, {206.53061, 286.15686}, {391.164, 358.31818},
+        {382.20605, 352.34619}, {370.26212, 214.99091}, {247.83673, 209.01894},
+        {223.94885, 185.13106}, {298.59848, 226.93484}, {397.73318, 354.73502},
+        {386.98364, 354.73502}, {247.23955, 207.82455}, {369.06772, 211.40773},
+        {297.40408, 225.74046}, {161.24318, 236.49001}, {383.40045, 326.06955},
+        {290.23773, 240.07318}, {207.82455, 286.65454}, {351.15182, 229.32364}
+    };
+
+std::vector<cv::Point2f> points =
+    {
+        {323, 109}, {231, 219}, {65, 308}, {185, 292}, {61, 287}, {414, 188},
+        {35, 267}, {37, 264}, {510, 266}, {528, 272}, {279, 236}, {135, 182},
+        {350, 232}, {500, 263}, {278.40002, 236.40001}, {422, 188}, {414, 188},
+        {62.400002, 289.20001}, {231.60001, 219.60001}, {50.400002, 273.60001},
+        {528, 272.40002}, {337.20001, 114.00001}, {324, 111.60001},
+        {502.80002, 262.80002}, {350.40002, 231.60001}, {185, 292},
+        {499.20001, 262.80002}, {231.55202, 219.45602}, {349.92001, 230.40001},
+        {478.08002, 282.24002}, {420.48001, 187.20001}, {413.28003, 187.20001},
+        {501.12003, 267.84}, {277.92001, 236.16}, {184.32001, 290.88},
+        {514.94403, 271.29602}, {349.05603, 229.82402}, {231.55202, 219.45602},
+        {501.12006, 269.56802}, {321.40802, 105.40801}, {419.90405, 188.35202},
+        {413.28003, 187.20001}, {324.86404, 110.59201}, {205.63202, 267.84003},
+        {55.296005, 273.02402}, {502.84805, 262.65604}, {46.080002, 273.60001},
+        {184.32001, 290.88}, {148.32001, 236.16}, {136.85762, 236.39043},
+        {418.86725, 186.62402}, {350.43845, 230.16963}, {337.99686, 111.97442},
+        {232.24323, 217.72803}, {184.89601, 290.30402}, {147.22562, 234.31683},
+        {151.37282, 240.53763}, {136.85764, 236.39046}, {232.24323, 217.72803},
+        {350.43845, 230.16963}, {144.3226, 233.90213}, {281.18024, 236.39046},
+        {186.62402, 290.30405}, {349.36023, 367.27612}, {343.38824, 364.29016},
+        {346.37424, 226.93484}, {232.90681, 217.9769}, {217.9769, 194.08902},
+        {280.68256, 235.89279}, {354.73502, 365.48456}, {343.38824, 364.29016},
+        {232.90681, 214.99091}, {347.56863, 225.74046}, {283.07138, 236.49001},
+        {150.49364, 243.65637}, {347.56863, 336.81909}, {272.32181, 250.82272},
+        {186.32545, 290.23773}, {333.2359, 240.07318}
+};
+
+TEST (InitializerTest, TestFundamentalAndHomography) {
+    ros::NodeHandle nh;
+    // initialize the camera
+    auto camera =
+        CameraPtr<float>(new MonoCamera<float>(nh));
+    camera->readParams();
+    camera->setup();
+    //camera->setupCameraStream();
+
+    auto orb_extractor =
+        geometry::ORBExtractorPtr(new geometry::ORBExtractor(nh));
+    auto orb_matcher =
+        geometry::ORBMatcherPtr(new geometry::ORBMatcher(nh));
+    Frame::setCamera(camera);
+    Frame::setORBExtractor(orb_extractor);
+    Frame::setORBMatcher(orb_matcher);
+    Frame::setupGrid(nh);
+
+    auto pkg_path = ros::package::getPath("orb_slam");
+    auto image_1 =
+        cv::imread(pkg_path + "/tests/test_images/1.png", CV_LOAD_IMAGE_COLOR);
+    auto image_2 =
+        cv::imread(pkg_path + "/tests/test_images/2.png", CV_LOAD_IMAGE_COLOR);
+    cv_bridge::CvImage i1, i2;
+    i1.image = image_1;
+    i2.image = image_2;
+
+    cv_bridge::CvImageConstPtr image_1_cv, image_2_cv;
+    image_1_cv = cv_bridge::CvImageConstPtr(new cv_bridge::CvImage(i1));
+    image_2_cv = cv_bridge::CvImageConstPtr(new cv_bridge::CvImage(i2));
+    auto ref_frame = FramePtr(new MonoFrame(image_1_cv, ros::Time::now()));
+    auto current_frame =
+        FramePtr(new MonoFrame(image_2_cv, ros::Time::now()));
+    ref_frame->extractFeatures();
+    current_frame->extractFeatures();
+    current_frame->match(ref_frame);
+
+    double initializer_sigma_;
+    int initializer_iterations_;
+    // get parameters
+    nh.getParam("/orb_slam/tracker/initializer_sigma", initializer_sigma_);
+    nh.getParam(
+        "/orb_slam/tracker/initializer_iterations", initializer_iterations_);
+    auto initializer_ =
+        InitializerPtr(
+            new Initializer(
+                ref_frame,
+                camera,
+                initializer_sigma_,
+                initializer_iterations_));
+    /*cv::Mat R, t;
+    std::vector<cv::Point3d> inliers_3d;
+    std::vector<bool> inliers_mask;
+    initializer_->tryToInitialize(current_frame, R, t, inliers_3d, inliers_mask);
+    cv::Mat f_mat = initializer_->getFundamentalMat();
+    cv::Mat h_mat = initializer_->getHomographyMat();
+    std::vector<cv::Vec3f> ref_lines, lines;
+    cv::computeCorrespondEpilines(ref_points, 1, f_mat, lines);
+    cv::computeCorrespondEpilines(points, 2, f_mat, ref_lines);
+    ROS_INFO_STREAM("fundamental_mat:\n" << f_mat);
+    ROS_INFO_STREAM("homograpgy_mat:\n" << h_mat);*/
+    //current_frame->showMatchesWithRef("current_frame");
+    //drawEpilines(lines, f_mat, image_1, ref_points, inliers_mask);
+    //drawEpilines(ref_lines, f_mat, image_2, points, inliers_mask);
+    //cv::waitKey(0);
+}
+
+int main(int argc, char** argv) {
+    testing::InitGoogleTest(&argc, argv);
+    ros::init(argc, argv, "utils_tests");
+    ros::NodeHandle nh;
+    return RUN_ALL_TESTS();
+}
