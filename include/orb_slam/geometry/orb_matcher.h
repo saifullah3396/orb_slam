@@ -170,12 +170,14 @@ public:
      * @param frame: Input frame to match
      * @param ref_frame: Reference frame to match with
      * @param matches: Output features that are matched
+     * @param type: Type of orb matcher to use
      * @param filter_matches: Matches are filtered if true
      */
     void match(
         const FramePtr& frame,
         const FramePtr& ref_frame,
         std::vector<cv::DMatch>& matches,
+        const OrbMatcherTypes type,
         bool filter_matches = true) const;
 
     /**
@@ -211,6 +213,44 @@ public:
         bool filter_matches = true) const;
 
     /**
+     * Matches the input key points with output points using bow features
+     *
+     * @param frame: Input frame to match
+     * @param ref_frame: Reference frame to match with
+     * @param matches: Output features that are matched
+     * @param check_orientation: Also checks orb feature orientations while
+     *   matching if true
+     * @param nn_ratio: Best to second best match ratio threshold. Best match
+     *   distance should be at least smaller than nn_ratio * second best match.
+     * @param filter_matches: Matches are filtered if true
+     */
+    void matchByBowFeatures(
+        const FramePtr& frame,
+        const FramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches,
+        const bool check_orientation = true,
+        const float nn_ratio = 0.6,
+        const bool filter_matches = false);
+
+    /**
+     * Matches the input key points with output points using 3d to 2d
+     * projection from reference frame over frame
+     *
+     * @param frame: Input frame to match
+     * @param ref_frame: Reference frame to match with
+     * @param matches: Output features that are matched
+     * @param check_orientation: Also checks orb feature orientations while
+     *   matching if true
+     * @param filter_matches: Matches are filtered if true
+     */
+    void matchByProjection(
+        const FramePtr& frame,
+        const FramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches,
+        const bool check_orientation = true,
+        const bool filter_matches = false);
+
+    /**
      * Filters out the matched points based on min/max distance threshold
      * @param descriptors: Input descriptors
      * @param matches: Found matches
@@ -225,22 +265,9 @@ private:
 
     //! orb matcher parameters
     std::string method_;
-    std::function<void(
-        const std::vector<cv::KeyPoint>&,
-        const std::vector<cv::KeyPoint>&,
-        const cv::Mat&,
-        const cv::Mat&,
-        std::vector<cv::DMatch>&)> matcher_1;
-    std::function<void(
-        const cv::Mat&,
-        const cv::Mat&,
-        std::vector<cv::DMatch>&)> matcher_2;
-
 
     //! opencv orb extractors
-    cv::Ptr<cv::ORB> cv_orb_detector_;
-    cv::Ptr<cv::ORB> cv_orb_descriptor_;
-    std::shared_ptr<MatcherBase> matcher_;
+    std::vector<std::shared_ptr<MatcherBase> > matcher_;
 };
 
 using ORBMatcherPtr = std::shared_ptr<ORBMatcher>;

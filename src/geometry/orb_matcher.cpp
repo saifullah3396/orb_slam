@@ -350,35 +350,15 @@ void CVORBMatcher::match(
 ORBMatcher::ORBMatcher(const ros::NodeHandle& nh): nh_(nh) {
     std::string prefix = "orb_slam/orb_matcher/";
     nh_.getParam(prefix + "method", method_);
-    if (method_ == "cv_orb_matcher") {
-        using namespace std::placeholders;
-        matcher_ = std::shared_ptr<MatcherBase>(new CVORBMatcher(nh_));
-        matcher_2 =
-            std::bind(
-                &CVORBMatcher::match,
-                std::static_pointer_cast<CVORBMatcher>(matcher_),
-                std::placeholders::_1,
-                std::placeholders::_2,
-                std::placeholders::_3);
-    } else if (method_ == "brute_force_with_radius") {
-        using namespace std::placeholders;
-        matcher_ =
-            std::shared_ptr<MatcherBase>(new BruteForceWithRadiusMatcher(nh_));
-        matcher_1 =
-            std::bind(
-                &BruteForceWithRadiusMatcher::match,
-                std::static_pointer_cast<BruteForceWithRadiusMatcher>(matcher_),
-                std::placeholders::_1,
-                std::placeholders::_2,
-                std::placeholders::_3,
-                std::placeholders::_4,
-                std::placeholders::_5);
-    }
-
-    if (matcher_1 == nullptr && matcher_2 == nullptr) {
-        throw std::runtime_error(
-            "Please set an orb matcher in cfg/orb_matcher.yaml.");
-    }
+    matcher_.resize(MATCHER_TYPES);
+    matcher_[BF_WITH_RADIUS] =
+        std::shared_ptr<MatcherBase>(new BruteForceWithRadiusMatcher(nh_));
+    matcher_[BF_WITH_PROJ] =
+        std::shared_ptr<MatcherBase>(new BruteForceWithProjectionMatcher(nh_));
+    matcher_[BOW_ORB] =
+        std::shared_ptr<MatcherBase>(new BowOrbMatcher(nh_));
+    matcher_[CV_ORB] =
+        std::shared_ptr<MatcherBase>(new CVORBMatcher(nh_));
 }
 
 ORBMatcher::~ORBMatcher() {
@@ -389,23 +369,32 @@ void ORBMatcher::match(
     const FramePtr& frame,
     const FramePtr& ref_frame,
     std::vector<cv::DMatch>& matches,
-    bool filter_matches) const
+    const OrbMatcherTypes type,
+    const bool filter_matches) const
 {
-    if (matcher_1 != nullptr) {
-        match(
-            frame->featuresUndist(),
-            ref_frame->featuresUndist(),
-            frame->descriptorsUndist(),
-            ref_frame->descriptorsUndist(),
-            matches,
-            filter_matches);
-    } else if (matcher_2 != nullptr) {
-        match(
-            frame->descriptorsUndist(),
-            ref_frame->descriptorsUndist(),
-            matches,
-            filter_matches);
+    if (type == BF_WITH_RADIUS) {
+        static_pointer_cast<BruteForceWithRadiusMatcher>(matcher_[type])->
+            match(
+                frame->featuresUndist(),
+                ref_frame->featuresUndist(),
+                frame->descriptorsUndist(),
+                ref_frame->descriptorsUndist(),
+                matches);
+    } else if (type == BF_WITH_PROJ) {
+        static_pointer_cast<BruteForceWithProjectionMatcher>(matcher_[type])->
+            match(frame, ref_frame, matches);
+    } else if (type == BOW_ORB) {
+        static_pointer_cast<BowOrbMatcher>(matcher_[type])->
+            match(frame, ref_frame, matches);
+    } else if (type == CV_ORB) {
+        static_pointer_cast<CVORBMatcher>(matcher_[type])->
+            match(
+                frame->descriptorsUndist(),
+                ref_frame->descriptorsUndist(),
+                matches);
     }
+    if (filter_matches)
+        filterMatches(frame->descriptorsUndist(), matches);
 }
 
 void ORBMatcher::match(
@@ -416,9 +405,13 @@ void ORBMatcher::match(
     std::vector<cv::DMatch>& matches,
     bool filter_matches) const
 {
-    if (matcher_1 != nullptr) {
-        matcher_1(key_points, ref_key_points, descriptors, ref_descriptors, matches);
-    }
+    static_pointer_cast<BruteForceWithRadiusMatcher>(matcher_[BF_WITH_RADIUS])->
+        match(
+            key_points,
+            ref_key_points,
+            descriptors,
+            ref_descriptors,
+            matches);
     if (filter_matches) {
         filterMatches(descriptors, matches);
     }
@@ -430,12 +423,46 @@ void ORBMatcher::match(
     std::vector<cv::DMatch>& matches,
     bool filter_matches) const
 {
-    if (matcher_2 != nullptr) {
-        matcher_2(descriptors, ref_descriptors, matches);
-    }
+    static_pointer_cast<CVORBMatcher>(matcher_[CV_ORB])->
+        match(
+            descriptors,
+            ref_descriptors,
+            matches);
     if (filter_matches) {
         filterMatches(descriptors, matches);
     }
+}
+
+void ORBMatcher::matchByBowFeatures(
+    const FramePtr& frame,
+    const FramePtr& ref_frame,
+    std::vector<cv::DMatch>& matches,
+    const bool check_orientation,
+    const float nn_ratio,
+    const bool filter_matches)
+{
+    const auto& matcher = static_pointer_cast<BowOrbMatcher>(matcher_[BOW_ORB]);
+    matcher->check_orientation_ = check_orientation;
+    matcher->nn_ratio_ = nn_ratio;
+    matcher->match(frame, ref_frame, matches);
+    if (filter_matches)
+        filterMatches(frame->descriptorsUndist(), matches);
+}
+
+void ORBMatcher::matchByProjection(
+    const FramePtr& frame,
+    const FramePtr& ref_frame,
+    std::vector<cv::DMatch>& matches,
+    const bool check_orientation,
+    const bool filter_matches)
+{
+    const auto& matcher =
+        static_pointer_cast<BruteForceWithProjectionMatcher>(
+            matcher_[BF_WITH_PROJ]);
+    matcher->check_orientation_ = check_orientation;
+    matcher->match(frame, ref_frame, matches);
+    if (filter_matches)
+        filterMatches(frame->descriptorsUndist(), matches);
 }
 
 void ORBMatcher::filterMatches(
