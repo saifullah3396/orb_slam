@@ -19,8 +19,9 @@ int main(int argc, char** argv)
         ros::console::notifyLoggerLevelsChanged();
     }
 
-    auto tracker =
-        std::unique_ptr<Tracker>(new Tracker(nh));
+    int camera_type;
+    nh.getParam("/orb_slam/tracker/camera_type", camera_type);
+    auto tracker = Tracker::createTracker(nh, camera_type);
     auto rate = ros::Rate(1000);
     while (ros::ok()) {
         tracker->update();
