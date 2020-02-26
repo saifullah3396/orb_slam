@@ -74,6 +74,18 @@ public:
      */
     void removeMapPoint(const MapPointPtr& mp);
 
+    /**
+     * Adds a new map point to reference map
+     * @param mp: Map point to be added
+     */
+    void addRefMapPoint(const MapPointPtr& mp);
+
+    /**
+     * Removes the given map point from the reference map
+     * @param mp: Map point to be removed
+     */
+    void removeRefMapPoint(const MapPointPtr& mp);
+
 private:
     // map data
     long unsigned int max_key_frame_id_;
@@ -81,6 +93,9 @@ private:
     // A set of all the key frames generated from camera observations
     std::set<KeyFramePtr> key_frames_;
 
+    // Map points of reference key frame
+    std::vector<MapPointPtr> ref_map_points_;
+    std::vector<KeyFramePtr> ref_key_frames_;
 
     // mutexes
     std::mutex map_mutex_;
