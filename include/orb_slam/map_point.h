@@ -37,6 +37,15 @@ public:
      * Getters
      */
     const size_t nObservations();
+
+    /**
+     * Setters
+     */
+    static void setORBMatcher(const geometry::ORBMatcherConstPtr& orb_matcher)
+        { orb_matcher_ = orb_matcher; }
+    static void setORBExtractor(const geometry::ORBExtractorConstPtr& orb_extractor)
+        { orb_extractor_ = orb_extractor; }
+
     /**
      * Adds an observation for this point.
      * @param key_frame: The key frame in which the point is observed
