@@ -82,7 +82,7 @@ void Frame::assignFeaturesToGrid(
         if (pointInGrid(key_point, col, row)) {
             filt_key_points_.push_back(key_point);
             // stores indices to filt_key_points_
-            grid[row][col].push_back(count++);
+            grid[col][row].push_back(count++);
         }
     }
 
