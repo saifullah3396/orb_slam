@@ -2,6 +2,7 @@
 # freiburg #1
 orb_slam:
   camera:
+    preprocess: False
     rgb_topic: "/camera/rgb/image_color"
     fps: 30
     width: 640
@@ -40,4 +41,18 @@ orb_slam:
       -0.0054,
       0.0026,
       1.1633
+    ]
+    fps_depth: 30
+    width_depth: 640
+    height_depth: 480
+    focal_x_depth: 591.1
+    focal_y_depth: 590.1
+    center_x_depth: 331.0
+    center_y_depth: 234.0
+    dist_coeffs_depth: [
+      -0.0410,
+      0.3286,
+      0.0087,
+      0.0051,
+      -0.5643
     ]
