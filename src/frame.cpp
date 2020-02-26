@@ -54,6 +54,11 @@ void Frame::removeMapPointAt(const unsigned long& idx) {
     obs_map_points_[idx].reset();
 }
 
+bool Frame::pointWithinBounds(const cv::Point2f& p)
+{
+    return camera_->pointWithinBounds(p);
+}
+
 void Frame::setupFirstFrame() {
     // since this is the first frame it acts as reference for others
     // there we set it as identity matrix
