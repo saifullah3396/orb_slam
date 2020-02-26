@@ -37,6 +37,10 @@ public:
      * Getters
      */
     const size_t nObservations();
+    const bool& isBad() { return bad_point_; }
+    const cv::Mat& worldPos() const { return world_pos_; }
+    const cv::Mat& viewVector() const { return view_vector_; }
+    const cv::Mat& bestDescriptor() const { return best_descriptor_; }
 
     /**
      * Setters
@@ -83,9 +87,18 @@ public:
 private:
     // Map point details
     cv::Mat world_pos_; // Point position in world coordinates
+    cv::Mat view_vector_; // Mean viewing direction
+    // Best descriptor from all the key frames that matches closest to the rest
+    cv::Mat best_descriptor_;
+
+    // Scale invariance distances
+    float min_scale_distance_;
+    float max_scale_distance_;
 
     long unsigned int id_; // Point id
     static std::atomic_uint64_t global_id_; // Thread safe points id accumulator
+    // If true, the point is bad and should be removed from the map
+    bool bad_point_ = {false};
 
     // Key frames observing the point and associated index in keyframe
     std::map<KeyFramePtr, size_t> observations_;
@@ -99,6 +112,10 @@ private:
     // Mutexes
     std::mutex pos_mutex_;
     std::mutex observations_mutex_;
+
+    // Orb matcher for descriptor distances
+    static geometry::ORBMatcherConstPtr orb_matcher_;
+    static geometry::ORBExtractorConstPtr orb_extractor_;
 };
 
 } // namespace orb_slam
