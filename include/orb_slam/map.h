@@ -7,6 +7,7 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include <vector>
 
 namespace orb_slam
 {
@@ -27,17 +28,32 @@ public:
     /**
      * Getters
      */
-    const size_t nMapPoints() {
+    const size_t nMapPoints() const {
         LOCK_MAP;
         return map_points_.size();
     }
 
-    const std::vector<MapPointPtr> refMapPoints() {
+    const size_t nKeyFrames() const {
+        LOCK_MAP;
+        return key_frames_.size();
+    }
+
+    const std::set<MapPointPtr> mapPoints() const {
+        LOCK_MAP;
+        return map_points_;
+    }
+
+    const std::set<KeyFramePtr> keyFrames() const {
+        LOCK_MAP;
+        return key_frames_;
+    }
+
+    const std::vector<MapPointPtr> refMapPoints() const {
         LOCK_MAP;
         return ref_map_points_;
     }
 
-    const std::vector<KeyFramePtr> refKeyFrames() {
+    const std::vector<KeyFramePtr> refKeyFrames() const {
         LOCK_MAP;
         return ref_key_frames_;
     }
@@ -97,11 +113,14 @@ private:
     std::vector<MapPointPtr> ref_map_points_;
     std::vector<KeyFramePtr> ref_key_frames_;
 
-    // mutexes
-    std::mutex map_mutex_; // for updating map
+    // mutexes. mutable for use in const functions
+    mutable std::mutex map_mutex_; // for updating map
 
     // for freezing map state between different threads
     std::mutex map_update_mutex_;
 };
+
+using MapPtr = std::shared_ptr<Map>;
+using MapConstPtr = std::shared_ptr<const Map>;
 
 } // namespace orb_slam
