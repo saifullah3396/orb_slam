@@ -51,6 +51,12 @@ public:
     void addKeyFrame(const KeyFramePtr& key_frame);
 
     /**
+     * Adds a new key frame to map that acts as global reference
+     * @param key_frame: Key frame to be added
+     */
+    void addRefKeyFrame(const KeyFramePtr& ref_key_frame);
+
+    /**
      * Removes the given key frame from the map
      * @param key_frame: Key frame to be removed
      */
