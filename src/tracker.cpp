@@ -130,74 +130,50 @@ void Tracker::trackFrame()
     }
 }
 
-void Tracker::monocularInitialization()
+bool Tracker::trackReferenceFrame()
 {
-    if(!initializer_) { // if no initializer, set the frame as reference
-        ROS_DEBUG("Initializing the SLAM system with monocular camera...");
-        // if enough features are available
-        if(current_frame_->nFeatures() > MIN_REQ_MATCHES)
-        {
-            // set is reference frame
-            current_frame_->setupFirstFrame();
-            // assign first and last frame as current frame for initialization
-            ref_frame_ = last_frame_ = current_frame_;
-            const auto& key_points = current_frame_->featuresUndist();
+    // compute bag of words vector for current frame
+    current_frame_->computeBow();
 
-            // reset the initializer with current frame
-            initializer_ =
-                InitializerPtr(
-                    new Initializer(
-                        current_frame_,
-                        camera_,
-                        initializer_sigma_,
-                        initializer_iterations_));
-            return;
-        } else {
-            ROS_WARN("Not enough features to initialize. Resetting...");
-        }
-    } else {
-        // now we have the reference frame so try to initialize the map
-        // try to initialize with the current frame, here we will already have
-        // a reference frame assigned.
-        if(current_frame_->nFeatures() <= MIN_REQ_MATCHES) {// not enough key points?
-            ROS_WARN(
-                "Not enough features between in first frame \
-                    after initialization");
-            // discard the initializer so that we can retry
-            initializer_.reset();
-            return;
-        }
+    // find matches between current and reference frame. If enough matches are
+    // found we setup a PnP solver
+    std::vector<cv::DMatch> matches;
+    orb_matcher_->matchByBowFeatures( // 0.7 taken from original orb slam code
+        current_frame_, ref_frame_, matches, true, 0.7);
 
-        ROS_DEBUG("Matching first frame with the reference frame...");
-        //ref_frame_->showImageWithFeatures("ref_frame");
-        //cv::waitKey(0);
-        //current_frame_->showImageWithFeatures("current_frame");
-        //cv::waitKey(0);
+    if (matches.size() < MIN_REQ_MATCHES)
+        return false;
 
-        // find correspondences between current frame and first reference frame
-        current_frame_->match(ref_frame_);
-
-        // check if there are enough matches
-        if(current_frame_->nMatches() < MIN_REQ_MATCHES)
-        {
-            ROS_DEBUG("Not enough matches between first and reference frame");
-
-            // not enough matches, retry
-            initializer_.reset();
-            return;
-        }
-
-        // try to initialize the monocular slam with current frame and already
-        // assigned reference frame
-        cv::Mat best_rot_mat, best_trans_mat;
-        ROS_DEBUG("Trying to initialize between first and reference frame...");
-        initializer_->tryToInitialize(
-            current_frame_, best_rot_mat, best_trans_mat);
-        ROS_DEBUG_STREAM("R from current to reference:\n" << best_rot_mat);
-        ROS_DEBUG_STREAM("t from current to reference:\n" << best_trans_mat);
-        current_frame_->showMatchesWithRef("current_frame");
-        cv::waitKey(0);
+    const auto ref_map_points = ref_frame_->obsMapPoints();
+    for (int i = 0; i < matches.size(); ++i) {
+        // add matched map points from reference to current frame
+        current_frame_->addMapPoint(
+            ref_map_points[matches[i].trainIdx], matches[i].queryIdx);
     }
+
+    // set initial pose of this frame to last frame. This acts as starting point
+    // for pose optimization using graph
+    current_frame_->setPose(last_frame_->getCamInWorldT());
+    pose_optimizer_->solve(current_frame_);
+
+    // Discard outliers
+    int map_matches = 0;
+    const auto& map_points = current_frame_->obsMapPoints();
+    const auto& outliers = current_frame_->outliers();
+    for (int i = 0; i < current_frame_->nFeaturesUndist(); i++) {
+        const auto& mp = map_points[i];
+        if(!mp) continue;
+        if(outliers[i]) {
+            current_frame_->removeMapPointAt(i);
+            current_frame_->setOutlier(i, false);
+            //mp->setTrackInView(false);
+            //mp->setLastSeenFrame(current_frame_->id());
+        } else if (mp->nObservations() > 0) {
+            map_matches++;
+        }
+    }
+
+    return map_matches >= 10;
 }
 
 } // namespace orb_slam

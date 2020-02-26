@@ -78,6 +78,9 @@ protected:
 
     // after triangulation
     cv::Mat best_rot_mat, best_trans_mat;
+    std::vector<cv::Point3d> inlier_points_3d;
+    std::vector<size_t> inliers_idxs;
+    std::vector<cv::Point2d> inlier_points, inlier_ref_points;
 
     // ros node handle
     ros::NodeHandle nh_;
