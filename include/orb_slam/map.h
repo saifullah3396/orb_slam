@@ -16,6 +16,8 @@ using KeyFramePtr = std::shared_ptr<KeyFrame>;
 class MapPoint;
 using MapPointPtr = std::shared_ptr<MapPoint>;
 
+#define LOCK_MAP std::unique_lock<std::mutex> lock(map_mutex_)
+
 class Map
 {
 public:
