@@ -115,6 +115,10 @@ public:
     const cv::Mat_<T>& distCoeffs() const { return dist_coeffs_; }
     const cv::Mat_<T>& intrinsicMatrix() const { return intrinsic_matrix_; }
 
+    /**
+     * Setters
+     */
+    void setPreprocess(const bool& preprocess) { preprocess_ = preprocess; }
 
 protected:
     /**
@@ -149,6 +153,9 @@ protected:
     //! [0 fy cy]
     //! [0  0  1]
     cv::Mat_<T> intrinsic_matrix_ = {cv::Mat_<T>(3, 3)};
+
+    // Preprocessing toggle
+    bool preprocess_ = {true};
 
     // ROS node handle for image streaming
     ros::NodeHandle nh_;
