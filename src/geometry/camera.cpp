@@ -261,13 +261,32 @@ void RGBDCamera<T>::imageCb(
 
     // set images
     cv_image_queue_.push(cv_bridge::toCvShare(image_msg));
+    cv_bridge::CvImageConstPtr depth_image;
+    if (this->preprocess_) {
+        auto depth_image_temp =
+            cv_bridge::toCvCopy(depth_msg, image_encodings::TYPE_32FC1);
+        if ((fabs(depth_scale_ - 1.f) > 1e-5)) {
+            depth_image_temp->image.convertTo(
+                depth_image_temp->image, CV_16UC1, depth_scale_);
+        }
+        cv::Mat undist;
+        cv::undistort(
+            depth_image_temp->image,
+            undist,
+            intrinsic_matrix_depth_,
+            dist_coeffs_depth_,
+            intrinsic_matrix_depth_);
+        //cv::Mat registered;
+        //registerDepth(depth_image_temp->image, registered);
+        //depth_image_temp->image = registered;
+        depth_image_queue_.push(
+            boost::const_pointer_cast<const cv_bridge::CvImage>(
+                depth_image_temp));
+    } else {
     cv_bridge::CvImageConstPtr depth_image =
         cv_bridge::toCvShare(depth_msg, image_encodings::TYPE_32FC1);
-    if ((fabs(depth_scale_ - 1.f) > 1e-5)) {
-        depth_image->image.convertTo(
-            depth_image->image, CV_32F, depth_scale_);
+        depth_image_queue_.push(depth_image);
     }
-    depth_image_queue_.push(depth_image);
     subscribed_ = true;
 }
 #endif
