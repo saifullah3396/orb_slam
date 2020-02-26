@@ -289,6 +289,12 @@ public:
     const cv::Mat_<T>& intrinsicMatrixDepth() const { return intrinsic_matrix_depth_; }
 
 private:
+    /**
+     * @brief updateIntrinsicMatrix Updates the intrinsic matrix of the camera
+     *     from current known parameters
+     */
+    void updateIntrinsicMatrix();
+
     #ifdef ROS_CAMERA_STREAM
     virtual const bool subscribed() {
         return subscribed_;
