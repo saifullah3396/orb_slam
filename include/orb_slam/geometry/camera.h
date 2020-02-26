@@ -112,8 +112,9 @@ public:
     virtual const cv::Mat& imageL() = 0;
     virtual const cv::Mat& imageR() = 0;
     virtual cv_bridge::CvImageConstPtr imageDepth() = 0;
-    const cv::Mat_<T>& distCoeffs() { return dist_coeffs_; }
-    const cv::Mat_<T>& intrinsicMatrix() { return intrinsic_matrix_; }
+    const cv::Mat_<T>& distCoeffs() const { return dist_coeffs_; }
+    const cv::Mat_<T>& intrinsicMatrix() const { return intrinsic_matrix_; }
+
 
 protected:
     /**
