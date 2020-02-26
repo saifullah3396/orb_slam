@@ -22,6 +22,15 @@ using FramePtr = std::shared_ptr<Frame>;
 namespace geometry
 {
 
+//! Types of matchers
+enum OrbMatcherTypes {
+    BF_WITH_RADIUS,
+    BF_WITH_PROJ,
+    BOW_ORB,
+    CV_ORB,
+    MATCHER_TYPES
+};
+
 /**
  * Base class for all matcher types
  */
