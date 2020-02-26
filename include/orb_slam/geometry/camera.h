@@ -85,6 +85,13 @@ public:
     void computeImageBounds();
 
     /**
+     * @brief Checks whether a given point is within the image bounds
+     * @param p: Point to check
+     * @returns true if it is
+     */
+    bool pointWithinBounds(const cv::Point2f& p) const;
+
+    /**
      * Getters
      */
     #ifdef ROS_CAMERA_STREAM

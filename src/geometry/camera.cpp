@@ -145,6 +145,16 @@ void Camera<T>::computeImageBounds()
     undist_height_ = max_y_ - min_y_;
 }
 
+template <typename T>
+bool Camera<T>::pointWithinBounds(const cv::Point2f& p) const
+{
+    return
+        p.x > min_x_ &&
+        p.x < max_x_ &&
+        p.y > min_y_ &&
+        p.y < max_y_;
+}
+
 template class Camera<float>;
 template class Camera<double>;
 
