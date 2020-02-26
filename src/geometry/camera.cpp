@@ -80,6 +80,7 @@ void Camera<T>::undistortPoints(
     std::vector<cv::KeyPoint>& key_points,
     std::vector<cv::KeyPoint>& undist_key_points) const
 {
+    if (dist_coeffs_(0, 0) != 0.0) {
     std::vector<cv::Point2f> points;
     for(auto it = key_points.begin(); it != key_points.end(); it++) {
         points.push_back(it->pt);
@@ -101,6 +102,9 @@ void Camera<T>::undistortPoints(
         kp.pt = points[i];
         undist_key_points[i] = kp;
     }
+    } else {
+        undist_key_points = key_points;
+}
 }
 
 template <typename T>
