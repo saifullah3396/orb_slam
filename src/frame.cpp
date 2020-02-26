@@ -59,6 +59,37 @@ bool Frame::pointWithinBounds(const cv::Point2f& p)
     return camera_->pointWithinBounds(p);
 }
 
+bool Frame::getBoxAroundPoint(
+    const cv::Point2f& p,
+    const float& box_radius,
+    int& left,
+    int& right,
+    int& up,
+    int& down)
+{
+    left =
+        std::max( //
+            0, (int)(p.x - camera_->minX() - box_radius) / grid_size_x_);
+    if (left >= grid_cols_) return false;
+
+    right =
+        std::max(
+            (int)(p.x - camera_->minX() + box_radius) / grid_size_x_,
+            grid_cols_ - 1);
+    if (right < 0) return false;
+
+    up =
+        std::max( //
+            0, (int)(p.y - camera_->minY() - box_radius) / grid_size_y_);
+    if (up >= grid_rows_) return false;
+
+    down =
+        std::max(
+            (int)(p.y - camera_->minY() + box_radius) / grid_size_y_,
+            grid_rows_ - 1);
+    if (down < 0) return false;
+}
+
 void Frame::setupFirstFrame() {
     // since this is the first frame it acts as reference for others
     // there we set it as identity matrix
