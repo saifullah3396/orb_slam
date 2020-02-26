@@ -32,6 +32,28 @@ Frame::~Frame()
 {
 }
 
+std::vector<MapPointPtr> Frame::obsMapPoints() {
+    std::unique_lock<std::mutex> (mutex_map_points_);
+    return obs_map_points_;
+}
+
+void Frame::resizeMap(const size_t& n)
+{
+    std::unique_lock<std::mutex> lock(mutex_map_points_);
+    obs_map_points_.resize(n);
+}
+
+void Frame::addMapPoint(const MapPointPtr& mp, const size_t& idx)
+{
+    std::unique_lock<std::mutex> lock(mutex_map_points_);
+    obs_map_points_[idx] = mp;
+}
+
+void Frame::removeMapPointAt(const unsigned long& idx) {
+    std::unique_lock<std::mutex> lock(mutex_map_points_);
+    obs_map_points_[idx].reset();
+}
+
 void Frame::setupFirstFrame() {
     // since this is the first frame it acts as reference for others
     // there we set it as identity matrix
