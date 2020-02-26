@@ -145,4 +145,56 @@ void MapPoint::computeBestDescriptor()
     }
 }
 
+void MapPoint::updateNormalAndScale()
+{
+    std::map<KeyFramePtr, size_t> observations;
+    KeyFramePtr ref_key_frame;
+    cv::Mat pos;
+    { // shared
+        std::unique_lock<std::mutex> observations_lock(observations_mutex_);
+        std::unique_lock<std::mutex> pos_lock(pos_mutex_);
+        if(bad_point_)
+            return;
+
+        if(observations_.empty())
+            return;
+
+        // get point state
+        observations = observations_;
+        ref_key_frame = ref_key_frame_;
+        pos = world_pos_.clone();
+    }
+
+    cv::Mat normal = cv::Mat::zeros(3, 1, CV_32F);
+    int n = 0;
+    for (auto it = observations.begin(); it != observations.end(); it++) {
+        const auto& key_frame = it->first;
+        const auto& frame_pos = key_frame->getWorldPos();
+        cv::Mat diff = world_pos_ - frame_pos;
+        normal = normal + diff / cv::norm(diff);
+        ++n;
+    }
+
+    cv::Mat p = world_pos_ - ref_key_frame_->getWorldPos();
+    const float dist = cv::norm(p);
+    const auto& undist_key_points = ref_key_frame_->frame()->featuresUndist();
+    const int level = undist_key_points[observations[ref_key_frame_]].octave;
+    const float scale_factor = orb_extractor_->scaleFactors()[level];
+    const int n_levels = orb_extractor_->levels();
+
+    { // shared
+        std::unique_lock<std::mutex> pos_lock(pos_mutex_);
+        // the maximum distance from which this point can be found again. The
+        // scale_factor is from the pyramid level this point is found in the
+        // image. scale_factor increases with levels [1, 1.2, 1.44, 1.728, ...]
+        // Greater the pyramid level, farther the max scale distance.
+        max_scale_distance_ = dist * scale_factor;
+
+        // the minimum distance from which this point can be found again.
+        min_scale_distance_ =
+            max_scale_distance_ / orb_extractor_->scaleFactors()[n_levels - 1];
+        view_vector_ = normal / n;
+    }
+}
+
 } // namespace orb_slam
