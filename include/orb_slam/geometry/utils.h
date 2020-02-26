@@ -59,6 +59,9 @@ void drawEpilines(
 
 int descriptorDistance(const cv::Mat &a, const cv::Mat &b);
 
+void computeThreeMaxima(
+    std::vector<int>* histo, const int L, int &ind1, int &ind2, int &ind3);
+
 } // namespace geometry
 
 namespace utils {

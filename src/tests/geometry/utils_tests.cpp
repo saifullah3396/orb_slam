@@ -120,6 +120,32 @@ TEST (UtilitiesTest, TestHomographyMatrix) {
     EXPECT_NEAR(cv::norm(h_mat - cv_h_mat), 0.0, 1.0);
 }
 
+TEST (UtilitiesTest, TestComputeThreeMaxima) {
+    int hist_l = 30;
+	std::vector<int> hist[hist_l];
+	for (int i = 0; i < 10; ++i)
+		hist[0].push_back(1);
+	for (int i = 0; i < 1; ++i)
+		hist[1].push_back(1);
+	for (int i = 0; i < 20; ++i)
+		hist[2].push_back(1);
+	for (int i = 0; i < 15; ++i)
+		hist[3].push_back(1);
+	for (int i = 0; i < 9; ++i)
+		hist[4].push_back(1);
+	for (int i = 0; i < 8; ++i)
+		hist[5].push_back(1);
+	for (int i = 0; i < 7; ++i)
+		hist[6].push_back(1);
+	for (int i = 0; i < 5; ++i)
+		hist[7].push_back(1);
+	int m1, m2, m3;
+	computeThreeMaxima(hist, hist_l, m1, m2, m3);
+    EXPECT_TRUE(m1 == 2);
+    EXPECT_TRUE(m2 == 3);
+    EXPECT_TRUE(m3 == 0);
+}
+
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     ros::init(argc, argv, "utils_tests");
