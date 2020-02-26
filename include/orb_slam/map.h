@@ -24,6 +24,25 @@ public:
     Map() {}
     ~Map() {}
 
+    /**
+     * Getters
+     */
+    const size_t nMapPoints() {
+        LOCK_MAP;
+        return map_points_.size();
+    }
+
+    const std::vector<MapPointPtr> refMapPoints() {
+        LOCK_MAP;
+        return ref_map_points_;
+    }
+
+    const std::vector<KeyFramePtr> refKeyFrames() {
+        LOCK_MAP;
+        return ref_key_frames_;
+    }
+
+    std::mutex& mapUpdateMutex() { return map_update_mutex_; }
 
     /**
      * Adds a new key frame to map
