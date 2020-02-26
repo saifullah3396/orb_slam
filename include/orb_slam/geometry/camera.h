@@ -121,7 +121,7 @@ protected:
      * @brief updateIntrinsicMatrix Updates the intrinsic matrix of the camera
      *     from current known parameters
      */
-    void updateIntrinsicMatrix();
+    virtual void updateIntrinsicMatrix();
 
     CameraType type_; //! Camera type
     int fps_ = {30}; //! Frames per second for the video
