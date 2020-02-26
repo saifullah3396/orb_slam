@@ -5,6 +5,8 @@
  * @author <A href="mailto:saifullah3396@gmail.com">Saifullah</A>
  */
 
+#include <opencv2/rgbd.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <orb_slam/geometry/camera.h>
 
