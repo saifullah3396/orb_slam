@@ -98,7 +98,10 @@ private:
     std::vector<KeyFramePtr> ref_key_frames_;
 
     // mutexes
-    std::mutex map_mutex_;
+    std::mutex map_mutex_; // for updating map
+
+    // for freezing map state between different threads
+    std::mutex map_update_mutex_;
 };
 
 } // namespace orb_slam
