@@ -317,8 +317,10 @@ private:
 
     // camera stream synchronizer
     typedef message_filters::sync_policies::ApproximateTime<
-        sensor_msgs::Image, sensor_msgs::CameraInfo,
-        sensor_msgs::Image, sensor_msgs::CameraInfo> SyncPolicy;
+        sensor_msgs::Image,
+        sensor_msgs::CameraInfo,
+        sensor_msgs::Image,
+        sensor_msgs::CameraInfo> SyncPolicy;
     std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> synchronizer_;
     #endif
 
