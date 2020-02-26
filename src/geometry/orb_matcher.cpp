@@ -71,6 +71,147 @@ void BruteForceWithRadiusMatcher::match(
     }
 }
 
+void BruteForceWithProjectionMatcher::match(
+    const FramePtr& frame,
+    const FramePtr& ref_frame,
+    std::vector<cv::DMatch>& matches)
+{
+    auto ref_map_points = ref_frame->obsMapPoints();
+    const auto& ref_key_points = ref_frame->featuresUndist();
+    const auto& key_points = frame->featuresUndist();
+    const auto& descriptors = frame->descriptorsUndist();
+    std::vector<int> matched(key_points.size(), -1);
+    std::vector<int> feature_dists(key_points.size(), -1);
+
+    std::vector<int> rot_hist[hist_length_];
+    for (size_t i = 0; i < hist_length_; i++)
+        rot_hist[i].reserve(500);
+    const auto factor = 1.0f / hist_length_;
+
+    // get the transform from last frame to this frame
+    for (
+        size_t ref_idx = 0; ref_idx < ref_frame->nFeaturesUndist(); ++ref_idx)
+    {
+        const auto& mp = ref_map_points[ref_idx];
+        if (mp) { // may be not every feature has a 3d correspondence
+            cv::Mat point_3d_world = mp->worldPos();
+            // convert from world to current camera frame
+            auto point_3d_cam =
+                frame->worldToCamera<float>(cv::Point3f(point_3d_world));
+            if (point_3d_cam.z < 0) // if depth is negative
+                continue;
+            auto point_2d_frame =
+                frame->cameraToFrame<float, float>(point_3d_cam);
+            // ignore if point is outside image bounds
+            if (!frame->pointWithinBounds(point_2d_frame))
+                continue;
+
+            // now create a window around the point in the level this feature
+            // was found
+            auto radius_threshold = 1.0;
+            // scale level at which point is found in reference frame
+            auto feature_level_ref = ref_key_points[ref_idx].octave;
+            auto radius =
+                radius_threshold *
+                frame->orbExtractor()->scaleFactors()[feature_level_ref];
+            std::vector<size_t> close_points;
+            //if (frame_forward) {
+                // the frame if in front of the reference frame, then the image
+                // will be bigger in size. That means that we will need to
+                // downscale it at least more than the scale (feature_level_ref)
+                // it was found in previous frame. For example... If a point is
+                // found in scale [1] -> 1.2 in first frame, then in the next
+                // frame, the same point would be found bigger (we're closer to
+                // it). So, we'd need to downsample the new bigger point by at
+                // least a factor of 1.2 to get the same point in the next
+                // frame.
+                //frame->getFeaturesAroundPoint(
+                //    point_2d_frame, radius, feature_level_ref, close_points);
+            //} else if (frame_backward) {
+                //frame->getFeaturesAroundPoint(
+                //    point_2d_frame, radius, 0, feature_level_ref, close_points);
+            //} else {
+                //frame->getFeaturesAroundPoint(
+                //    point_2d_frame,
+                //    radius,
+                //    feature_level_ref - 1,
+                //    feature_level_ref + 1,
+                //    close_points);
+            //}
+            if (!frame->getFeaturesAroundPoint(
+                point_2d_frame,
+                radius,
+                feature_level_ref - 1,
+                feature_level_ref + 1,
+                close_points)) continue; // if no points are found
+            const auto& desc = mp->bestDescriptor();
+            // finds closest of all the features in ref_frame that lies within
+            // pixel radius of feature i
+            int min_feature_dist = 256;
+            int matched_id = -1;
+            for (const auto& idx: close_points) {
+                if (matched[idx] > 0) // matched map point already assigned
+                    continue;
+                // find distance between descriptors of this point and all the
+                // close points
+                const auto dist =
+                    geometry::descriptorDistance(desc, descriptors.row(idx));
+                if (dist <= min_feature_dist) {
+                    min_feature_dist = dist;
+                    matched_id = idx;
+                }
+            }
+
+            if (min_feature_dist <= high_threshold_) {
+                matched[matched_id] = ref_idx;
+                feature_dists[matched_id] = min_feature_dist;
+                if(check_orientation_) {
+                    float rot_diff =
+                        ref_key_points[ref_idx].angle -
+                        key_points[matched_id].angle;
+                    if (rot_diff < 0.0)
+                        rot_diff += 360.0f;
+                    // add rot_diff to bin
+                    int bin = round(rot_diff * factor);
+                    if (bin == hist_length_)
+                        bin = 0;
+                    assert(bin >= 0 && bin < hist_length_);
+                    // add rotation difference to histogram
+                    rot_hist[bin].push_back(matched_id);
+                }
+            }
+        }
+    }
+
+    // apply rotation consistency
+    if(check_orientation_)
+    {
+        int ind1 = -1;
+        int ind2 = -1;
+        int ind3 = -1;
+
+        // take the 3 top most histograms
+        geometry::computeThreeMaxima(rot_hist, hist_length_, ind1, ind2, ind3);
+
+        // remove all the points that have rotation difference other than the
+        // top 3 histogram bins.
+        for (int i = 0; i < hist_length_; i++) {
+            if (i != ind1 && i != ind2 && i != ind3) {
+                for (size_t j = 0, jend = rot_hist[i].size(); j < jend; j++) {
+                    matched[rot_hist[i][j]] = false;
+                }
+            }
+        }
+    }
+
+    // create matches
+    for (size_t i = 0; i < matched.size(); ++i) {
+        if (matched[i]) // matches from frame to reference frame
+            matches.push_back(
+                cv::DMatch(
+                    i, matched[i], static_cast<float>(feature_dists[i])));
+    }
+}
 CVORBMatcher::CVORBMatcher(const ros::NodeHandle& nh) {
     std::string prefix = "orb_slam/cv_orb_matcher/";
     std::string matcher_type;
