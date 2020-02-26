@@ -57,6 +57,8 @@ void drawEpilines(
     std::vector<cv::Point2f> pts,
     std::vector<bool> inliers);
 
+int descriptorDistance(const cv::Mat &a, const cv::Mat &b);
+
 } // namespace geometry
 
 namespace utils {
