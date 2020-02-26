@@ -293,8 +293,8 @@ void RGBDCamera<T>::imageCb(
             boost::const_pointer_cast<const cv_bridge::CvImage>(
                 depth_image_temp));
     } else {
-    cv_bridge::CvImageConstPtr depth_image =
-        cv_bridge::toCvShare(depth_msg, image_encodings::TYPE_32FC1);
+        cv_bridge::CvImageConstPtr depth_image =
+            cv_bridge::toCvShare(depth_msg, image_encodings::TYPE_32FC1);
         depth_image_queue_.push(depth_image);
     }
     subscribed_ = true;
