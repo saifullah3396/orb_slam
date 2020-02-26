@@ -257,6 +257,12 @@ public:
     virtual void setupCameraStream();
 
     /**
+     * @brief registerDepth Registers depth image to rgb image.
+     */
+    void registerDepth(
+        const cv::Mat& depth_in, cv::Mat& depth_out);
+
+    /**
      * @brief Pops the front element of the queue and returns it. Returns null if queue
      * is empty
      */
