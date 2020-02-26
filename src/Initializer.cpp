@@ -30,8 +30,10 @@ bool Initializer::tryToInitialize(
     const FramePtr& frame,
     cv::Mat& best_rot_mat,
     cv::Mat& best_trans_mat,
-    std::vector<cv::Point3f> inlier_points_3d, // 3-dimensional
-    std::vector<bool>& inliers_mask)
+    std::vector<cv::Point2d>& inlier_points,
+    std::vector<cv::Point2d>& inlier_ref_points,
+    std::vector<cv::Point3d>& inlier_points_3d, // 3-dimensional
+    std::vector<size_t>& inliers_idxs)
 {
     frame_ = frame;
     if (!ref_frame_) {
@@ -42,17 +44,219 @@ bool Initializer::tryToInitialize(
     const auto& matches = frame->matches();
     const auto& undist_key_points = frame->featuresUndist();
     const auto& undist_ref_key_points = ref_frame_->featuresUndist();
-    std::vector<cv::Point2f> ref_points(n);
-    std::vector<cv::Point2f> points(n);
+    ref_points_.resize(n);
+    points_.resize(n);
     for (int i = 0; i < n; ++i) {
-        ref_points[i] = undist_ref_key_points[matches[i].trainIdx].pt;
-        points[i] = undist_key_points[matches[i].queryIdx].pt;
+        ref_points_[i] = undist_ref_key_points[matches[i].trainIdx].pt;
+        points_[i] = undist_key_points[matches[i].queryIdx].pt;
     }
 
+    ROS_DEBUG_STREAM("Finding Fundamental/Homography matrices...");
+    findFundamentalAndHomography();
+
+    // compute ratio of scores
+    float r_score = h_score_/(h_score_ + f_score_);
+    ROS_DEBUG_STREAM("Fundamental/Homography score ratio: " << r_score);
+
+    // try to reconstruct from homography or fundamental depending
+    // on the ratio (0.40-0.45)
+    if(r_score > 0.40) {
+        for (int i = 0; i < n; ++i) {
+            if (!inliers_h_[i])
+                continue;
+            const auto& p = points_[i];
+            const auto& rp = ref_points_[i];
+            inlier_points.push_back(cv::Point2d(p.x, p.y));
+            inlier_ref_points.push_back(cv::Point2d(rp.x, rp.y));
+            inliers_idxs.push_back(i);
+        }
+        if (!findRtWithHomography(
+            inlier_points, inlier_ref_points, best_rot_mat, best_trans_mat)) {
+            return false;
+        }
+    } else { //if(pF_HF>0.6)
+        for (int i = 0; i < n; ++i) {
+            if (!inliers_f_[i])
+                continue;
+            const auto& p = points_[i];
+            const auto& rp = ref_points_[i];
+            inlier_points.push_back(cv::Point2d(p.x, p.y));
+            inlier_ref_points.push_back(cv::Point2d(rp.x, rp.y));
+            inliers_idxs.push_back(i);
+        }
+        if (!findRtWithFundamental(
+            inlier_points, inlier_ref_points, best_rot_mat, best_trans_mat)) {
+            return false;
+        }
+    }
+
+    ROS_DEBUG_STREAM("Triangulating points...");
+    if (!triangulatePoints(
+        inlier_points,
+        inlier_ref_points,
+        best_rot_mat,
+        best_trans_mat,
+        inlier_points_3d)) {
+        return false;
+    }
+
+    /*std::vector<cv::Vec3f> ref_lines, lines;
+    cv::computeCorrespondEpilines(ref_points_, 1, fundamental_mat_, lines);
+    cv::computeCorrespondEpilines(points_, 2, fundamental_mat_, ref_lines);
+    geometry::drawEpilines(lines, fundamental_mat_, ref_frame_->image()->image, ref_points_, inliers_f_);
+    geometry::drawEpilines(ref_lines, fundamental_mat_, frame_->image()->image, points_, inliers_f_);*/
+    return true;
+}
+
+bool Initializer::findRtWithHomography(
+    const std::vector<cv::Point2d>& inlier_points,
+    const std::vector<cv::Point2d>& inlier_ref_points,
+    cv::Mat& R,
+    cv::Mat& t)
+{
+    const auto n = inlier_points.size();
+    ROS_DEBUG_STREAM("Finding R-t with Homography matrix.");
+    ROS_DEBUG_STREAM("Number of inlier points: " << inlier_points.size());
+
+    // find R-t from homography matrix
+    std::vector<cv::Mat> rot_mats, trans_mats, normals;
+    cv::Mat i_mat = camera_->intrinsicMatrix();
+    try {
+        decomposeHomographyMat(
+            homography_mat_,
+            i_mat,
+            rot_mats,
+            trans_mats,
+            normals);
+    } catch (cv::Exception& e) {
+        ROS_WARN_STREAM(
+            "Decomposition of homography matrix failed with following \
+            error" << e.what());
+        return false;
+    }
+
+    // Remove wrong rotations and translations
+    // R, t is wrong if a point ends up behind the camera
+    std::vector<cv::Mat> res_Rs, res_ts, res_normals;
+    cv::Mat sols;
+    try {
+        filterHomographyDecompByVisibleRefpoints(
+            rot_mats,
+            normals,
+            inlier_points,
+            inlier_ref_points,
+            sols);
+    } catch (cv::Exception& e) {
+        ROS_WARN_STREAM(
+            "Filteratoin of R-t with homography failed with following \
+            error" << e.what());
+        return false;
+    }
+
+    if (!sols.empty()) {
+        int idx = sols.at<int>(0, 0);
+        R = rot_mats[idx];
+        t = trans_mats[idx];
+    }
+    return true;
+}
+
+bool Initializer::findRtWithFundamental(
+    const std::vector<cv::Point2d>& inlier_points,
+    const std::vector<cv::Point2d>& inlier_ref_points,
+    cv::Mat& R,
+    cv::Mat& t)
+{
+    ROS_DEBUG_STREAM("Finding R-t with fundamental matrix...");
+    ROS_DEBUG_STREAM("Number of inlier points: " << inlier_points.size());
+
+    const cv::Mat& K = camera_->intrinsicMatrix();
+    auto principal_point =
+        cv::Point2f(camera_->centerX(), camera_->centerY());
+    double focal_length =
+        (camera_->focalX() + camera_->focalY()) / 2.0;
+
+    cv::Mat_<double> essential_mat = K.t() * fundamental_mat_ * K;
+    try {
+        // Recover R,t from essential matrix
+        // This only works with double!
+        recoverPose(
+            essential_mat,
+            inlier_ref_points,
+            inlier_points,
+            R,
+            t,
+            focal_length,
+            principal_point);
+    } catch (cv::Exception& e) {
+        ROS_WARN_STREAM(
+            "Pose recovery from fundamental matrix failed with following \
+            error" << e.what());
+        return false;
+    }
+    return true;
+}
+
+bool Initializer::triangulatePoints(
+    const std::vector<cv::Point2d>& inlier_points,
+    const std::vector<cv::Point2d>& inlier_ref_points,
+    const cv::Mat& R,
+    const cv::Mat& t,
+    std::vector<cv::Point3d>& inlier_points_3d)
+{
+    // set up
+    cv::Mat extrinsic_ref =
+        (cv::Mat_<double>(3, 4) << // Identity since it is the reference frame
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0);
+    cv::Mat extrinsic;
+    cv::hconcat(R, t, extrinsic);
+    ROS_DEBUG_STREAM("extrinsic:\n" << extrinsic);
+
+    cv::Mat K = camera_->intrinsicMatrix();
+    K.convertTo(K, CV_64F); // convert to double
+
+    // find projection matrices
+    cv::Mat projection_ref = K * extrinsic_ref;
+    cv::Mat projection = K * extrinsic;
+    ROS_DEBUG_STREAM("projection_ref:\n" << projection_ref);
+    ROS_DEBUG_STREAM("projection:\n" << projection);
+
+    try {
+        cv::Mat points_4d;
+        cv::triangulatePoints(
+            projection,
+            projection_ref,
+            inlier_points,
+            inlier_ref_points,
+            points_4d);
+
+        for (int i = 0; i < points_4d.cols; i++) {
+            cv::Mat x = points_4d.col(i);
+            x /= x.at<double>(3, 0); // divide by scale
+            cv::Point3d p(
+                x.at<double>(0, 0),
+                x.at<double>(1, 0),
+                x.at<double>(2, 0)
+            );
+            inlier_points_3d.push_back(p);
+        }
+    } catch (cv::Exception& e) {
+        ROS_WARN_STREAM("Failed to triangulate points with the following \
+            error" << e.what());
+        return false;
+    }
+    return true;
+}
+
+void Initializer::findFundamentalAndHomography()
+{
     // generate sets of 8 points for each RANSAC iteration
     // since F and H are to be compared, same set of randomized points are
     // used for computing both matrices. As in paper, this is done to ensure
     // the procedure is homogenous.
+    const auto n = points_.size();
     std::vector<size_t> all_indices;
     all_indices.resize(n);
     for (int i = 0; i < n; ++i) {
@@ -78,122 +282,24 @@ bool Initializer::tryToInitialize(
     // normalize the points
     std::vector<cv::Point2f> points_norm, ref_points_norm;
     cv::Mat T, ref_T;
-    geometry::normalizePoints(points, points_norm, T);
-    geometry::normalizePoints(ref_points, ref_points_norm, ref_T);
+    geometry::normalizePoints(points_, points_norm, T);
+    geometry::normalizePoints(ref_points_, ref_points_norm, ref_T);
 
     ROS_DEBUG("Computing fundamental and homography matrices...");
     // find fundamental matrix using RANSAC
     std::thread computeF(
         [&] {
             findFundamentalMat(
-                points, ref_points, points_norm, ref_points_norm, T, ref_T); });
+                points_, ref_points_, points_norm, ref_points_norm, T, ref_T); });
 
     // find homography matrix
     std::thread computeH(
         [&] {
             findHomographyMat(
-                points, ref_points, points_norm, ref_points_norm, T, ref_T); });
-
+                points_, ref_points_, points_norm, ref_points_norm, T, ref_T); });
     // wait for both threads to finish...
     computeF.join();
     computeH.join();
-
-    // compute ratio of scores
-    float r_score = h_score_/(h_score_ + f_score_);
-    ROS_DEBUG_STREAM("Fundamental/Homography score ratio: " << r_score);
-
-    // try to reconstruct from homography or fundamental depending
-    // on the ratio (0.40-0.45)
-    std::vector<cv::Point2d> inlier_points, inlier_ref_points;
-    if(r_score > 0.40) {
-        ROS_DEBUG_STREAM("Finding R-t with Homography matrix.");
-        for (int i = 0; i < n; ++i) {
-            if (!inliers_h_[i])
-                continue;
-            inlier_points.push_back(points[i]);
-            inlier_ref_points.push_back(ref_points[i]);
-        }
-
-        ROS_DEBUG_STREAM("Number of inlier points: " << inlier_points.size());
-
-        // find R-t from homography matrix
-        std::vector<cv::Mat> rot_mats, trans_mats, normals;
-        cv::Mat i_mat = camera_->intrinsicMatrix();
-        try {
-            decomposeHomographyMat(
-                homography_mat_,
-                i_mat,
-                rot_mats,
-                trans_mats,
-                normals);
-        } catch (cv::Exception& e) {
-            ROS_WARN_STREAM(
-                "Decomposition of homography matrix failed with following \
-                error" << e.what());
-            return false;
-        }
-
-        // Remove wrong rotations and translations
-        // R, t is wrong if a point ends up behind the camera
-        std::vector<cv::Mat> res_Rs, res_ts, res_normals;
-        cv::Mat sols;
-        try {
-            filterHomographyDecompByVisibleRefpoints(
-                rot_mats,
-                normals,
-                inlier_points,
-                inlier_ref_points,
-                sols);
-        } catch (cv::Exception& e) {
-            ROS_WARN_STREAM(
-                "Filteratoin of R-t with homography failed with following \
-                error" << e.what());
-            return false;
-        }
-
-        if (!sols.empty()) {
-            int idx = sols.at<int>(0, 0);
-            best_rot_mat = rot_mats[idx];
-            best_trans_mat = trans_mats[idx];
-        }
-    } else { //if(pF_HF>0.6)
-        ROS_DEBUG_STREAM("Finding R-t with fundamental matrix...");
-        for (int i = 0; i < n; ++i) {
-            if (!inliers_f_[i])
-                continue;
-            const auto& p = points[i];
-            const auto& rp = ref_points[i];
-            inlier_points.push_back(cv::Point2d(p.x, p.y));
-            inlier_ref_points.push_back(cv::Point2d(rp.x, rp.y));
-        }
-        ROS_DEBUG_STREAM("Number of inlier points: " << inlier_points.size());
-
-        const cv::Mat& K = camera_->intrinsicMatrix();
-        auto principal_point =
-            cv::Point2f(camera_->centerX(), camera_->centerY());
-        double focal_length =
-            (camera_->focalX() + camera_->focalY()) / 2.0;
-
-        cv::Mat_<double> essential_mat = K.t() * fundamental_mat_ * K;
-        try {
-            // Recover R,t from essential matrix
-            // This only works with double!
-            recoverPose(
-                essential_mat,
-                inlier_ref_points,
-                inlier_points,
-                best_rot_mat,
-                best_trans_mat,
-                focal_length,
-                principal_point);
-        } catch (cv::Exception& e) {
-            ROS_WARN_STREAM(
-                "Pose recovery from fundamental matrix failed with following \
-                error" << e.what());
-            return false;
-        }
-    }
-    return true;
 }
 
 void Initializer::findFundamentalMat(
@@ -247,6 +353,16 @@ void Initializer::findFundamentalMat(
             f_score_ = current_score;
         }
     }
+    int f = 0;
+    for (int i = 0; i <n; ++i)
+        if (inliers_f_[i]) f++;
+    float error = 0;
+    for (int i = 0; i < n; ++i) {
+        error +=
+            fabsf(cv::Mat(cv::Mat(cv::Point3f(points[i].x, points[i].y, 1.0)).t() *   f_mat       *
+            cv::Mat(cv::Point3f(points[i].x, points[i].y, 1.0))).at<float>(0, 0));
+    }
+    ROS_DEBUG_STREAM("Fundamental matrix error:" << error / n);
 }
 
 double Initializer::checkFundamentalScore(
@@ -388,7 +504,7 @@ double Initializer::checkHomographyScore(
     const cv::Mat& h_mat_inv,
     std::vector<bool>& inliers)
 {
-    const int n = frame_->nMatches();
+    const int n = points.size();
 
     const float h11 = h_mat.at<float>(0,0);
     const float h12 = h_mat.at<float>(0,1);

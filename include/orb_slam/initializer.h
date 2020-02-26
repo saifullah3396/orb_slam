@@ -2,6 +2,8 @@
  * Declares the Initializer class.
  */
 
+#pragma once
+
 #include <ros/ros.h>
 #include <random>
 #include <thread>
@@ -40,6 +42,8 @@ public:
      *     reference frame
      * @param best_trans_mat: The best translation matrix from this frame to
      *     reference frame
+     * @param inlier_points: Inlier matched points
+     * @param inlier_ref_points: Inlier matched reference points
      * @param inlier_points_3d: Points found after triangulation with R-t found
      * @param inliers_mask: A bool mask for inlier points from input points
      * @returns True if initialized successfully, false otherwise
@@ -48,8 +52,79 @@ public:
         const FramePtr& frame,
         cv::Mat& best_rot_mat,
         cv::Mat& best_trans_mat,
-        std::vector<cv::Point3f> inlier_points_3d, // 3-dimensional
-        std::vector<bool>& inliers_mask);
+        std::vector<cv::Point2d>& inlier_points,
+        std::vector<cv::Point2d>& inlier_ref_points,
+        std::vector<cv::Point3d>& inlier_points_3d, // 3-dimensional
+        std::vector<size_t>& inliers_idxs);
+
+    /**
+     * Getters
+     */
+    cv::Mat getFundamentalMat() { return fundamental_mat_; }
+    cv::Mat getHomographyMat() { return homography_mat_; }
+    std::vector<bool> getInliersF() { return inliers_f_; }
+    std::vector<bool> getInliersH() { return inliers_h_; }
+
+    /**
+     * Setters
+     */
+    void setRefPoints(const std::vector<cv::Point2f>& ref_points)
+        { ref_points_ = ref_points; }
+    void setPoints(const std::vector<cv::Point2f>& points)
+        { points_ = points; }
+
+    /**
+     * Finds the fundamental and homography matrices.
+     */
+    void findFundamentalAndHomography();
+
+    /**
+     * Finds the rotation and translation matrix of frame in reference frame
+     * from homography matrix.
+     *
+     * @param inlier_points: Inlier points found from homography.
+     * @param inlier_ref_points: Inlier reference points found from homography.
+     * @param R: Output rotation matrix
+     * @param t: Output translation matrix
+     * @returns False on failure
+     */
+    bool findRtWithHomography(
+        const std::vector<cv::Point2d>& inlier_points,
+        const std::vector<cv::Point2d>& inlier_ref_points,
+        cv::Mat& R,
+        cv::Mat& t);
+
+    /**
+     * Finds the rotation and translation matrix of frame in reference frame
+     * from fundamental matrix.
+     *
+     * @param inlier_points: Inlier points found from fundamental.
+     * @param inlier_ref_points: Inlier reference points found from fundamental.
+     * @param R: Output rotation matrix
+     * @param t: Output translation matrix
+     * @returns False on failure
+     */
+    bool findRtWithFundamental(
+        const std::vector<cv::Point2d>& inlier_points,
+        const std::vector<cv::Point2d>& inlier_ref_points,
+        cv::Mat& R,
+        cv::Mat& t);
+
+    /**
+     * Find the triangulated points for given R, t and points in two frames.
+     * @param inlier_points: Inlier points found from fundamental.
+     * @param inlier_ref_points: Inlier reference points found from fundamental.
+     * @param R: Rotation matrix from 1 to 2
+     * @param t: Translation matrix from 1 to 2
+     * @param inlier_points_3d: Output points in 3d
+     * @returns False on failure
+     */
+    bool triangulatePoints(
+        const std::vector<cv::Point2d>& inlier_points,
+        const std::vector<cv::Point2d>& inlier_ref_points,
+        const cv::Mat& R,
+        const cv::Mat& t,
+        std::vector<cv::Point3d>& inlier_points_3d);
 
 private:
     /**
@@ -122,6 +197,9 @@ private:
 
     FramePtr frame_; // The first frame to initialize against
     FramePtr ref_frame_; // The initial reference frame
+    std::vector<cv::Point2f> points_; // Points in first frame
+    std::vector<cv::Point2f> ref_points_; // Points in reference frame
+
     double sigma_; // std dev?
     double sigma_squared_; // variance?
     int iterations_; // total iterations
