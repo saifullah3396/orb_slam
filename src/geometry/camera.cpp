@@ -203,6 +203,35 @@ RGBDCamera<T>::~RGBDCamera()
 {
 }
 
+template <typename T>
+void RGBDCamera<T>::readParams()
+{
+    // base class update
+    Camera<T>::readParams();
+
+    std::string prefix = "/orb_slam/depth_camera/";
+
+    // read all the camera parameters
+    this->nh_.getParam(prefix + "fps", fps_);
+    this->nh_.getParam(prefix + "width_depth", width_depth_);
+    this->nh_.getParam(prefix + "height_depth", height_depth_);
+    this->nh_.getParam(prefix + "focal_x_depth", focal_x_depth_);
+    this->nh_.getParam(prefix + "focal_y_depth", focal_y_depth_);
+    focal_x_inv_depth_ = 1.0 / focal_x_depth_;
+    focal_y_inv_depth_ = 1.0 / focal_y_depth_;
+    this->nh_.getParam(prefix + "center_x_depth", center_x_depth_);
+    this->nh_.getParam(prefix + "center_y_depth", center_y_depth_);
+
+    // read dist coefficients list
+    std::vector<T> dist_coeffs;
+    this->nh_.getParam(
+        prefix + "dist_coeffs_depth", dist_coeffs);
+    dist_coeffs_depth_(0, 0) = dist_coeffs[0];
+    dist_coeffs_depth_(0, 1) = dist_coeffs[1];
+    dist_coeffs_depth_(0, 2) = dist_coeffs[2];
+    dist_coeffs_depth_(0, 3) = dist_coeffs[3];
+    dist_coeffs_depth_(0, 4) = dist_coeffs[4];
+}
 #ifdef ROS_CAMERA_STREAM
 template <typename T>
 void RGBDCamera<T>::imageCb(
