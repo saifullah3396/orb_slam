@@ -4,6 +4,7 @@
 
 #include <opencv2/highgui/highgui.hpp>
 #include <orb_slam/frame.h>
+#include <orb_slam/map_point.h>
 #include <thread>
 
 namespace orb_slam {
