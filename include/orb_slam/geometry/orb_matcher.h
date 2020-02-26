@@ -69,6 +69,36 @@ struct BruteForceWithRadiusMatcher : public MatcherBase {
 };
 
 /**
+ * Defines a brute force matcher for matching features between two frames after
+ * 3d to 2d projection from one frame to another
+ */
+struct BruteForceWithProjectionMatcher : public MatcherBase {
+    /**
+     * @brief Constructor
+     * @param nh: ROS node handle for reading parameters
+     */
+    BruteForceWithProjectionMatcher(const ros::NodeHandle& nh) {}
+
+    /**
+     * @brief Finds the closest feature in ref_frame for a feature in frame by
+     *     iterating over all the pixels that lie within a tolerance of feature
+     *     in ref_frame and matching their descriptors
+     * @param frame: Input frame to match
+     * @param ref_frane: Reference frame to match with
+     * @param matches: Output features that are matched
+     */
+    void match(
+        const FramePtr& frame,
+        const FramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches);
+
+    bool check_orientation_ = false;
+    const int hist_length_ = 30;
+    const int low_threshold_ = 50;
+    const int high_threshold_ = 100;
+};
+
+/**
  * Defines the opencv orb feature matcher
  */
 struct CVORBMatcher : public MatcherBase {
