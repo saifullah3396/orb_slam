@@ -90,6 +90,37 @@ bool Frame::getBoxAroundPoint(
     if (down < 0) return false;
 }
 
+bool Frame::getFeaturesAroundPoint(
+    const cv::Point2f& p,
+    const float& radius,
+    std::vector<size_t>& matches)
+{
+    int left, right, up, down;
+    if (getBoxAroundPoint(p, radius, left, right, up, down)) {
+        for (size_t x = left; x <= right; ++x) {
+            for (size_t y = up; y <= down; ++y) {
+                const auto& cell = grid_[x][y];
+                // take the points in the box:
+                // --r-----r--
+                // r         r
+                // |    X    |
+                // r         r
+                // --r-----r--
+                if (cell.empty()) continue;
+                for (size_t i = 0; i < cell.size(); ++i) {
+                    const auto& key_point = undist_key_points_[cell[i]];
+                    const auto diff_x = fabsf(key_point.pt.x - x);
+                    const auto diff_y = fabsf(key_point.pt.y - y);
+                    if (diff_x < radius && diff_y < radius)
+                        matches.push_back(cell[i]);
+                }
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
 void Frame::setupFirstFrame() {
     // since this is the first frame it acts as reference for others
     // there we set it as identity matrix
