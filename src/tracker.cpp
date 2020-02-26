@@ -7,6 +7,9 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include "orb_slam/frame.h"
+#include "orb_slam/key_frame.h"
+#include "orb_slam/map.h"
+#include "orb_slam/map_point.h"
 #include "orb_slam/tracker.h"
 #include "orb_slam/mono_tracker.h"
 #include "orb_slam/rgbd_tracker.h"
@@ -60,10 +63,24 @@ Tracker::Tracker(const ros::NodeHandle& nh, const int& camera_type) : nh_(nh)
         geometry::ORBMatcherPtr(new geometry::ORBMatcher(nh_));
 
     ROS_DEBUG("Initializing frame base variables...");
-    Frame::setCamera(camera_);
-    Frame::setORBExtractor(orb_extractor_);
-    Frame::setORBMatcher(orb_matcher_);
+    Frame::setCamera(
+        std::const_pointer_cast<const geometry::Camera<float>>(camera_));
+    Frame::setORBExtractor(
+        std::const_pointer_cast<const geometry::ORBExtractor>(orb_extractor_));
+    Frame::setORBMatcher(
+        std::const_pointer_cast<const geometry::ORBMatcher>(orb_matcher_));
+    Frame::setORBVocabulary(
+        std::const_pointer_cast<const ORBVocabulary>(orb_vocabulary_));
     Frame::setupGrid(nh_);
+
+    ROS_DEBUG("Initializing the global map...");
+    map_ = MapPtr(new Map());
+
+    ROS_DEBUG("Setting orb extractors and matchers...");
+    MapPoint::setORBExtractor(
+        std::const_pointer_cast<const geometry::ORBExtractor>(orb_extractor_));
+    MapPoint::setORBMatcher(
+        std::const_pointer_cast<const geometry::ORBMatcher>(orb_matcher_));
 
     state_ = NO_IMAGES_YET;
     ROS_DEBUG("Tracker node successfully initialized...");
