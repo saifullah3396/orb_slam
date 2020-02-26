@@ -216,7 +216,7 @@ public:
     /**
      * Getters
      */
-    std::vector<MapPointPtr> obsMapPoints();
+    std::vector<MapPointPtr> obsMapPoints() const;
     const cv::Mat& getCamInWorldT() const { return w_T_c_; }
     const cv::Mat& getCamInWorldR() const { return w_R_c_; }
     const cv::Mat& getCamInWorldt() const { return w_t_c_; }
