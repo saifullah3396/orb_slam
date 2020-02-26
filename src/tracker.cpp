@@ -107,13 +107,21 @@ void Tracker::trackFrame()
     }
     last_proc_state_ = state_;
 
-    if(state_ == NOT_INITIALIZED) {
-        if (camera_->type() == geometry::CameraType::MONO) {
-            monocularInitialization();
-        }
+    // map is frozen and cannot be accessed by other threads
+    std::unique_lock<std::mutex> lock(map_->mapUpdateMutex());
 
+    if(state_ == NOT_INITIALIZED) {
+        initializeTracking();
         if(state_ != OK)
             return;
+    } else {
+        // initialization done, starting tracking...
+        if(state_ == OK) {
+            void* motion_model = NULL; // no motion model or relocalization yet
+            if (!motion_model) {
+                trackReferenceFrame();
+            }
+        }
     }
 }
 
