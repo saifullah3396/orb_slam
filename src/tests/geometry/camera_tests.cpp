@@ -2,6 +2,7 @@
  * Defines tests for Camera class.
  */
 
+#include <memory>
 #include <opencv2/highgui/highgui.hpp>
 #include <gtest/gtest.h>
 #include <ros/ros.h>
@@ -138,11 +139,16 @@ TEST (DepthCameraTester, TestDepthCameraSubscription) {
             auto image = camera->image();
             auto depth = camera->imageDepth();
             if (image && depth) {
-                cv::Mat depth_norm;
+                cv::Mat depth_norm, rgb;
+                rgb = image->image.clone();
                 cv::normalize(depth->image, depth_norm, 0, 255, cv::NORM_MINMAX);
-                cv::imwrite(pkg_path + "/tests/test_images/image_" + std::to_string(count) + ".jpg", image->image);
-                cv::imwrite(pkg_path + "/tests/test_images/depth_" + std::to_string(count) + ".pgm", depth_norm);
-                if (count++ > 10) {
+                depth_norm.convertTo(depth_norm, CV_8UC1);
+                std::vector<cv::Mat> channels(3);
+                cv::split(rgb, channels);
+                channels[2] = depth_norm;
+                cv::merge(channels, rgb);
+                cv::imwrite(pkg_path + "/tests/test_images/subscription/image_overlay_" + std::to_string(count) + ".png", rgb);
+                if (++count > 100) {
                     break;
                 }
             }
@@ -152,6 +158,44 @@ TEST (DepthCameraTester, TestDepthCameraSubscription) {
     }
     EXPECT_TRUE(camera->subscribed());
 }
+
+/*TEST (DepthCameraTester, TestDepthCameraUndistortion) {
+    ros::NodeHandle nh;
+    auto camera =
+        CameraPtr<double>(new RGBDCamera<double>(nh));
+    std::static_pointer_cast<RGBDCamera<double>>(camera)->readParams();
+    std::static_pointer_cast<RGBDCamera<double>>(camera)->setup();
+    std::static_pointer_cast<RGBDCamera<double>>(camera)->setPreprocess(false);
+    std::static_pointer_cast<RGBDCamera<double>>(camera)->setupCameraStream();
+    int count = 0;
+    auto pkg_path = ros::package::getPath("orb_slam");
+    while (true) {
+        if (camera->subscribed()) {
+            auto image = camera->image();
+            auto depth = camera->imageDepth();
+            if (image && depth) {
+                cv::Mat undist;
+                cv::undistort(
+                    depth->image,
+                    undist,
+                    std::static_pointer_cast<RGBDCamera<double>>(camera)->intrinsicMatrixDepth(),
+                    std::static_pointer_cast<RGBDCamera<double>>(camera)->distCoeffsDepth(),
+                    std::static_pointer_cast<RGBDCamera<double>>(camera)->intrinsicMatrixDepth());
+                cv::Mat depth_norm, undist_norm, registered_norm;
+                cv::normalize(depth->image, depth_norm, 0, 255, cv::NORM_MINMAX);
+                cv::normalize(undist, undist_norm, 0, 255, cv::NORM_MINMAX);
+                cv::imwrite(pkg_path + "/tests/test_images/_depth_" + std::to_string(count) + ".pgm", depth_norm);
+                cv::imwrite(pkg_path + "/tests/test_images/_depth_undist_" + std::to_string(count) + ".pgm", undist_norm);
+                if (++count > 0) {
+                    break;
+                }
+            }
+        }
+        ros::spinOnce();
+        ros::Rate(1000).sleep();
+    }
+    EXPECT_TRUE(camera->subscribed());
+}*/
 
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
