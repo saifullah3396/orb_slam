@@ -33,6 +33,8 @@ using FramePtr = std::shared_ptr<Frame>;
 class Map;
 using MapPtr = std::shared_ptr<Map>;
 
+class PoseOptimizer;
+using PoseOptimizerPtr = std::shared_ptr<PoseOptimizer>;
 
 #define MIN_REQ_MATCHES_INIT 100
 #define MIN_REQ_MATCHES 15
@@ -88,6 +90,8 @@ protected:
     ORBVocabularyPtr orb_vocabulary_;
     MapPtr map_;
 
+    // g2o optimization
+    PoseOptimizerPtr pose_optimizer_;
 
     // Tracking states same as in original orb slam package
     enum TrackingState {

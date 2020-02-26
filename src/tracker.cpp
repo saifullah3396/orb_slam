@@ -17,6 +17,7 @@
 #include "orb_slam/geometry/camera.h"
 #include "orb_slam/geometry/orb_extractor.h"
 #include "orb_slam/geometry/orb_matcher.h"
+#include "orb_slam/g2o/pose_optimizer.h"
 
 namespace orb_slam
 {
@@ -81,6 +82,9 @@ Tracker::Tracker(const ros::NodeHandle& nh, const int& camera_type) : nh_(nh)
         std::const_pointer_cast<const geometry::ORBExtractor>(orb_extractor_));
     MapPoint::setORBMatcher(
         std::const_pointer_cast<const geometry::ORBMatcher>(orb_matcher_));
+
+    ROS_DEBUG("Initializing pose optimizer...");
+    pose_optimizer_ = PoseOptimizerPtr(new PoseOptimizer());
 
     state_ = NO_IMAGES_YET;
     ROS_DEBUG("Tracker node successfully initialized...");
