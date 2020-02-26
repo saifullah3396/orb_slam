@@ -47,4 +47,25 @@ void MapPoint::addObservation(const KeyFramePtr& key_frame, const size_t idx) {
         return;
     observations_[key_frame] = idx;
 }
+
+void MapPoint::removeObservation(const KeyFramePtr& key_frame) {
+    { // shared
+        std::unique_lock<std::mutex> observations_lock(observations_mutex_);
+        // if this key frame already exists
+        if (observations_.count(key_frame)) {
+            // get id of this point in key frame
+            auto idx = observations_[key_frame];
+            observations_.erase(key_frame); // remove the frame from this point
+
+            if (nObservations() <= MIN_REQ_OBSERVATIONS) {
+                bad_point_ = true;
+            }
+        }
+    }
+
+    if (bad_point_) {
+        removeFromMap();
+    }
+}
+
 } // namespace orb_slam
