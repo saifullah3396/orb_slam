@@ -37,11 +37,19 @@ public:
         nh_.param<int>(prefix + "score_threshold", score_threshold_, 20);
 
         scale_factors_.resize(level_pyramid_);
+        scale_sigma_sqrd_.resize(level_pyramid_);
         inv_scale_factors_.resize(level_pyramid_);
-        scale_factors_[0]=1.0f;
-        for (int i = 1; i< level_pyramid_; ++i) {
+        inv_scale_sigma_sqrd_.resize(level_pyramid_);
+        scale_factors_[0] = 1.0f;
+        scale_sigma_sqrd_[0] = 1.0f;
+        inv_scale_factors_[0] = 1.0f / scale_factors_[0];
+        inv_scale_sigma_sqrd_[0] = 1.0f / scale_sigma_sqrd_[0];
+        for (int i = 1; i < level_pyramid_; ++i) {
             scale_factors_[i] = scale_factors_[i-1] * scale_factor_;
             inv_scale_factors_[i] = 1.0f / scale_factors_[i];
+
+            scale_sigma_sqrd_[i] = scale_factors_[i] * scale_factors_[i];
+            inv_scale_sigma_sqrd_[i] = 1.0f / scale_sigma_sqrd_[i];
         }
 
         // initialize the detector
