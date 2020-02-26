@@ -68,4 +68,22 @@ void MapPoint::removeObservation(const KeyFramePtr& key_frame) {
     }
 }
 
+void MapPoint::removeFromMap() {
+    std::unique_lock<std::mutex> observations_lock(observations_mutex_);
+    std::unique_lock<std::mutex> pos_lock(pos_mutex_);
+    auto observations = observations_;
+    observations_.clear();
+
+    for (auto it = observations.begin(), end = observations.end();
+            it != end; it++)
+    {
+        auto key_frame = it->first;
+        // remove point from the key frame
+        key_frame->removeMapPointAt(it->second);
+    }
+
+    // remove this point from the map
+    map_->removeMapPoint(shared_from_this());
+}
+
 } // namespace orb_slam
