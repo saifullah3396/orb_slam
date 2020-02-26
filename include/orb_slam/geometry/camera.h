@@ -326,6 +326,21 @@ private:
 
     bool subscribed_ = {false};
     float depth_scale_ = {1.f}; // sometimes datasets have scaled depths
+
+    int fps_ = {30}; //! Frames per second for the depth image
+    int width_depth_;
+    int height_depth_;
+    T focal_x_depth_ = {0}; //! Camera focal length X
+    T focal_y_depth_ = {0};//! Camera focal length Y
+    T focal_x_inv_depth_ = {0}; //! Inverse of Camera focal length X
+    T focal_y_inv_depth_ = {0};//! Inverse of Camera focal length Y
+    T center_x_depth_ = {0}; //! Camera center offset X
+    T center_y_depth_ = {0}; //! Camera center offset Y
+    //! Depth distortion coefficients
+    cv::Mat_<T> dist_coeffs_depth_ = {cv::Mat_<T>(1, 5)};
+    cv::Mat_<T> intrinsic_matrix_depth_ = {cv::Mat_<T>(3, 3)};
+    //! Depth camera to image camera static transform
+    cv::Mat_<T> image_T_depth_;
 };
 
 template <typename T = float>
