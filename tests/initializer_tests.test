@@ -1,0 +1,25 @@
+<launch>
+    <!-- load camera paramters -->
+    <rosparam
+        command="load"
+        file="$(find orb_slam)/cfg/camera.yaml" />
+
+    <!-- load orb_extractor paramters -->
+    <rosparam
+        command="load"
+        file="$(find orb_slam)/cfg/orb_extractor.yaml" />
+
+    <!-- load orb_matcher paramters -->
+    <rosparam
+        command="load"
+        file="$(find orb_slam)/cfg/orb_matcher.yaml" />
+
+    <!-- load tracker paramters -->
+    <rosparam
+        command="load"
+        file="$(find orb_slam)/cfg/tracker.yaml" />
+
+
+    <test test-name="initializer_tests" pkg="orb_slam" type="initializer_tests" />
+    <!-- launch-prefix="xterm -e /usr/bin/gdb -args" -->
+</launch>
