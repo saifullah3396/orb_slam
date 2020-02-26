@@ -60,6 +60,26 @@ public:
      */
     void removeObservation(const KeyFramePtr& key_frame);
 
+    /**
+     * Removes this point from the map
+     */
+    void removeFromMap();
+
+    /**
+     * Computes descriptor distances between each key frame observation of this
+     * point and finds the best descriptor for this point.
+     *
+     * Based on original orb-slam repository
+     */
+    void computeBestDescriptor();
+
+    /**
+     * Computes the normal view vector from the frame to point and scale
+     * invariance min/max distances of the point.
+     *
+     * Based on original orb-slam repository
+     */
+    void updateNormalAndScale();
 private:
     // Map point details
     cv::Mat world_pos_; // Point position in world coordinates
