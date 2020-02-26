@@ -285,6 +285,8 @@ public:
         }
         return nullptr;
     }
+    const cv::Mat_<T>& distCoeffsDepth() const { return dist_coeffs_depth_; }
+    const cv::Mat_<T>& intrinsicMatrixDepth() const { return intrinsic_matrix_depth_; }
 
 private:
     #ifdef ROS_CAMERA_STREAM
