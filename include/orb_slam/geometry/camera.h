@@ -247,6 +247,11 @@ public:
     ~RGBDCamera();
 
     /**
+     * @brief readParams Reads the camera parameters
+     */
+    virtual void readParams();
+
+    /**
      * @brief setup Sets up the camera image streaming
      */
     virtual void setupCameraStream();
