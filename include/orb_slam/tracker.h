@@ -65,12 +65,12 @@ protected:
     FramePtr current_frame_;
     std::vector<cv::Mat> camera_pose_history_; // vector of poses
 
-    // monocular initialization
+    // initialization
     FramePtr ref_frame_;
     FramePtr last_frame_;
-    InitializerPtr initializer_;
-    double initializer_sigma_;
-    int initializer_iterations_;
+
+    // after triangulation
+    cv::Mat best_rot_mat, best_trans_mat;
 
     // ros node handle
     ros::NodeHandle nh_;
