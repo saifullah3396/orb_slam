@@ -30,4 +30,21 @@ MapPoint::~MapPoint()
 {
 }
 
+
+std::map<KeyFramePtr, size_t> MapPoint::observations() {
+    std::unique_lock<std::mutex> observations_lock(observations_mutex_);
+    return observations_;
+}
+
+const size_t MapPoint::nObservations() {
+    std::unique_lock<std::mutex> observations_lock(observations_mutex_);
+    return observations_.size();
+}
+
+void MapPoint::addObservation(const KeyFramePtr& key_frame, const size_t idx) {
+    std::unique_lock<std::mutex> observations_lock(observations_mutex_);
+    if (observations_.count(key_frame)) // if this key frame already exists
+        return;
+    observations_[key_frame] = idx;
+}
 } // namespace orb_slam
