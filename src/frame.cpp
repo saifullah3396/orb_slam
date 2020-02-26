@@ -121,6 +121,76 @@ bool Frame::getFeaturesAroundPoint(
     return false;
 }
 
+bool Frame::getFeaturesAroundPoint(
+    const cv::Point2f& p,
+    const float& radius,
+    const int& min_level,
+    std::vector<size_t>& matches)
+{
+    int left, right, up, down;
+    if (getBoxAroundPoint(p, radius, left, right, up, down)) {
+        for (size_t x = left; x <= right; ++x) {
+            for (size_t y = up; y <= down; ++y) {
+                const auto& cell = grid_[x][y];
+                // take the points in the box with given scale range:
+                // --r-----r--
+                // r         r
+                // |    X    |
+                // r         r
+                // --r-----r--
+                if (cell.empty()) continue;
+                for (size_t i = 0; i < cell.size(); ++i) {
+                    const auto& key_point = undist_key_points_[cell[i]];
+                    const auto& scale_level = key_point.octave;
+                    if (scale_level < min_level) continue;
+                    const auto diff_x = fabsf(key_point.pt.x - x);
+                    const auto diff_y = fabsf(key_point.pt.y - y);
+                    if (diff_x < radius && diff_y < radius)
+                        matches.push_back(cell[i]);
+                }
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
+bool Frame::getFeaturesAroundPoint(
+    const cv::Point2f& p,
+    const float& radius,
+    const int& min_level,
+    const int& max_level,
+    std::vector<size_t>& matches)
+{
+    int left, right, up, down;
+    if (getBoxAroundPoint(p, radius, left, right, up, down)) {
+        for (size_t x = left; x <= right; ++x) {
+            for (size_t y = up; y <= down; ++y) {
+                const auto& cell = grid_[x][y];
+                // take the points in the box with given scale range:
+                // --r-----r--
+                // r         r
+                // |    X    |
+                // r         r
+                // --r-----r--
+                if (cell.empty()) continue;
+                for (size_t i = 0; i < cell.size(); ++i) {
+                    const auto& key_point = undist_key_points_[cell[i]];
+                    const auto& scale_level = key_point.octave;
+                    if (scale_level < min_level ||
+                        scale_level >= max_level) continue;
+                    const auto diff_x = fabsf(key_point.pt.x - x);
+                    const auto diff_y = fabsf(key_point.pt.y - y);
+                    if (diff_x < radius && diff_y < radius)
+                        matches.push_back(cell[i]);
+                }
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
 void Frame::setupFirstFrame() {
     // since this is the first frame it acts as reference for others
     // there we set it as identity matrix
