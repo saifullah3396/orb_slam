@@ -76,6 +76,9 @@ public:
      */
     const std::vector<float>& scaleFactors() const { return scale_factors_; }
     const int& levels() const { return level_pyramid_; }
+    const std::vector<float>& scaleSigmas() const { return scale_sigma_sqrd_; }
+    const std::vector<float>& invScaleSigmas() const
+        { return inv_scale_sigma_sqrd_; }
 
     /**
      * Extracts orb features from the input image
