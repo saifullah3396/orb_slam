@@ -46,16 +46,20 @@ public:
     ~Tracker();
 
     /**
+     * Creates a tracker for a given camera type
+     */
+    static std::unique_ptr<Tracker> createTracker(
+        const ros::NodeHandle& nh, const int& camera_type);
+
+    /**
      * Updates the visual odometry tracking
      */
-    void update();
+    virtual void update() = 0;
+    virtual void initializeTracking() = 0;
 
-private:
-    void trackFrame();
-    void monocularInitialization();
-
-    // last image
-    cv_bridge::CvImageConstPtr last_image_;
+protected:
+    virtual void trackFrame();
+    virtual bool trackReferenceFrame();
 
     // latest frame
     FramePtr current_frame_;

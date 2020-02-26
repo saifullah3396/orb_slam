@@ -8,6 +8,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include "orb_slam/frame.h"
 #include "orb_slam/tracker.h"
+#include "orb_slam/mono_tracker.h"
+#include "orb_slam/rgbd_tracker.h"
 #include "orb_slam/initializer.h"
 #include "orb_slam/geometry/camera.h"
 #include "orb_slam/geometry/orb_extractor.h"
@@ -16,15 +18,17 @@
 namespace orb_slam
 {
 
-Tracker::Tracker(const ros::NodeHandle& nh) : nh_(nh)
+Tracker::Tracker(const ros::NodeHandle& nh, const int& camera_type) : nh_(nh)
 {
-    // get parameters
-    nh_.getParam("initializer_sigma", initializer_sigma_);
-    nh_.getParam("initializer_iterations", initializer_iterations_);
-
     // initialize the camera
     ROS_DEBUG("Initializing camera...");
-    camera_ = geometry::CameraPtr<float>(new geometry::MonoCamera<float>(nh_));
+    if (camera_type == static_cast<int>(geometry::CameraType::MONO)) {
+        camera_ =
+            geometry::CameraPtr<float>(new geometry::MonoCamera<float>(nh_));
+    } else if (camera_type == static_cast<int>(geometry::CameraType::RGBD)) {
+        camera_ =
+            geometry::CameraPtr<float>(new geometry::RGBDCamera<float>(nh_));
+    }
     camera_->readParams();
     camera_->setup();
     camera_->setupCameraStream();
@@ -69,34 +73,13 @@ Tracker::~Tracker()
 {
 }
 
-void Tracker::update()
-{
-    auto image = camera_->image();
-    if (!image)
-        return;
-
-    if (last_image_ && last_image_->header.seq == image->header.seq) {
-        // no new images
-        return;
+std::unique_ptr<Tracker> Tracker::createTracker(
+    const ros::NodeHandle& nh, const int& camera_type) {
+    if (camera_type == static_cast<int>(geometry::CameraType::MONO)) {
+        return std::unique_ptr<Tracker>(new MonoTracker(nh, camera_type));
+    } else if (camera_type == static_cast<int>(geometry::CameraType::RGBD)) {
+        return std::unique_ptr<Tracker>(new RGBDTracker(nh, camera_type));
     }
-
-    ROS_DEBUG("Updating tracking...");
-
-    // create a frame from the image
-    ROS_DEBUG("Creating frame...");
-    current_frame_ =
-        FramePtr(new MonoFrame(image, ros::Time::now()));
-
-    ROS_DEBUG("Extracting features from frame...");
-    // extract features from the frame
-    current_frame_->extractFeatures();
-
-    ROS_DEBUG("Tracking frame...");
-    // track the frame
-    trackFrame();
-    camera_pose_history_.push_back(current_frame_->getWorldToCamT().clone());
-
-    last_image_ = image;
 }
 
 void Tracker::trackFrame()
