@@ -125,6 +125,8 @@ private:
 
     std::vector<float> scale_factors_;
     std::vector<float> inv_scale_factors_;
+    std::vector<float> scale_sigma_sqrd_;
+    std::vector<float> inv_scale_sigma_sqrd_;
 
     //! opencv orb extractors
     cv::Ptr<cv::ORB> cv_orb_detector_;
