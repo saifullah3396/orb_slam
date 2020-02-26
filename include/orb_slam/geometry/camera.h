@@ -56,7 +56,7 @@ public:
     /**
      * @brief readParams Reads the camera parameters
      */
-    void readParams();
+    virtual void readParams();
 
     /**
      * @brief setup Sets up the camera variables.
