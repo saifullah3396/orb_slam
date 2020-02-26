@@ -38,7 +38,7 @@ public:
      * Constructor
      * @param nh: ROS node handle
      */
-    Tracker(const ros::NodeHandle& nh);
+    Tracker(const ros::NodeHandle& nh, const int& camera_type);
 
     /**
      * Destructor
