@@ -30,6 +30,7 @@ void Camera<T>::readParams()
     std::string prefix = "/orb_slam/camera/";
 
     // read all the camera parameters
+    nh_.param<bool>("preprocess", preprocess_, false);
     nh_.param<int>("/orb_slam/camera/fps", fps_, 30);
     nh_.param<int>(prefix + "width", width_, 0);
     nh_.param<int>(prefix + "height", height_, 0);
