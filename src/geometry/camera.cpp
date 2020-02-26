@@ -232,6 +232,19 @@ void RGBDCamera<T>::readParams()
     dist_coeffs_depth_(0, 3) = dist_coeffs[3];
     dist_coeffs_depth_(0, 4) = dist_coeffs[4];
 }
+
+template <typename T>
+void RGBDCamera<T>::updateIntrinsicMatrix() {
+    Camera<T>::updateIntrinsicMatrix();
+    intrinsic_matrix_depth_ =
+        (
+            cv::Mat_<T>(3, 3) <<
+                focal_x_depth_, 0, center_x_depth_,
+                0, focal_y_depth_, center_y_depth_,
+                0,        0,         1
+        );
+}
+
 #ifdef ROS_CAMERA_STREAM
 template <typename T>
 void RGBDCamera<T>::imageCb(
