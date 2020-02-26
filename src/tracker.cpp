@@ -95,6 +95,11 @@ Tracker::~Tracker()
 {
 }
 
+void Tracker::reset()
+{
+
+}
+
 std::unique_ptr<Tracker> Tracker::createTracker(
     const ros::NodeHandle& nh, const int& camera_type) {
     if (camera_type == static_cast<int>(geometry::CameraType::MONO)) {
@@ -120,13 +125,42 @@ void Tracker::trackFrame()
         if(state_ != OK)
             return;
     } else {
+        bool tracking_good = false;
         // initialization done, starting tracking...
         if(state_ == OK) {
             void* motion_model = NULL; // no motion model or relocalization yet
             if (!motion_model) {
-                trackReferenceFrame();
+                tracking_good = trackReferenceFrame();
             }
         }
+
+        // @todo: update frame drawing here...
+
+        if (tracking_good) {
+
+            // @todo: track local map here...
+
+            state_ = TrackingState::OK;
+
+            // @todo: motion_model_->update();
+
+            // @todo: draw current camera pose here
+
+            // @todo: check if we can insert a new key frame to local mapper
+
+        } else {
+            state_ = TrackingState::LOST;
+
+            if(map_->nKeyFrames() <= MIN_REQ_KEY_FRAMES_RELOC) {
+                ROS_WARN_STREAM(
+                    "Tracking lost with very few key frames. \
+                    Cannot relocalize...");
+                reset();
+                return;
+            }
+        }
+
+        last_frame_ = current_frame_;
     }
 }
 
@@ -135,8 +169,7 @@ bool Tracker::trackReferenceFrame()
     // compute bag of words vector for current frame
     current_frame_->computeBow();
 
-    // find matches between current and reference frame. If enough matches are
-    // found we setup a PnP solver
+    // find matches between current and reference frame.
     std::vector<cv::DMatch> matches;
     orb_matcher_->matchByBowFeatures( // 0.7 taken from original orb slam code
         current_frame_, ref_frame_, matches, true, 0.7);
