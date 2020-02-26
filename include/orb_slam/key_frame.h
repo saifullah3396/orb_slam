@@ -44,7 +44,17 @@ public:
      */
     const long unsigned int& id() const { return this->id_; }
     const FramePtr& frame() { return frame_; }
-    const cv::Mat& getWorldPos() const { return world_pos_; }
+    const cv::Mat& getWorldPos() const;
+    const bool& isBad() { return bad_frame_; }
+    const cv::Mat& descriptors() const;
+    cv::Mat descriptor(const size_t& idx) const;
+
+    /**
+     * Setters
+     */
+    void setRefKeyFrame(const KeyFramePtr& ref_key_frame) {
+        ref_key_frame_ = ref_key_frame;
+    }
 
     /**
      * Resizes the map to given size
@@ -64,16 +74,30 @@ public:
      * @param idx: The map point index
      */
     void removeMapPointAt(const unsigned long& idx);
+    void addChild(const KeyFramePtr& kf);
+    void removeChild(const KeyFramePtr& kf);
+    void addConnection(const KeyFramePtr& kf, const int& weight);
+    void updateBestCovisibles();
+    void updateConnections();
+
 private:
     FramePtr frame_; // Associated frame
-    cv::Mat world_pos_; // World position of camera for this frame
+    KeyFramePtr ref_key_frame_;
+    bool bad_frame_ = {false}; // Whether this frame is bad
     long unsigned int id_; // Key frame id
     static long unsigned int global_id_; // Id accumulator
 
+    // key frame connection parameters
+    std::map<KeyFramePtr, int> conn_key_frame_weights_;
+    std::vector<KeyFramePtr> ordered_conn_key_frames_;
+    std::vector<int> conn_weights_;
+    bool first_connection_ = {true};
+    KeyFramePtr parent_;
+    std::set<KeyFramePtr> childs_;
+    std::set<KeyFramePtr> loop_edges_;
+
     // const pointer to the underlying map
     MapConstPtr map_;
-
-    std::mutex mutex_map_points_; // mutex for updating map points
     std::mutex connections_mutex_; // mutex for updating connections
 };
 
