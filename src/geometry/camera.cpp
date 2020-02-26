@@ -323,6 +323,20 @@ void RGBDCamera<T>::setupCameraStream()
     #endif
 }
 
+template <typename T>
+void RGBDCamera<T>::registerDepth(
+    const cv::Mat& depth_in, cv::Mat& depth_out)
+{
+    cv::rgbd::registerDepth(
+        intrinsic_matrix_depth_,
+        this->intrinsic_matrix_,
+        this->dist_coeffs_,
+        image_T_depth_,
+        depth_in,
+        cv::Size(this->width_, this->height_),
+        depth_out);
+}
+
 template class RGBDCamera<float>;
 template class RGBDCamera<double>;
 } // namespace geometry
