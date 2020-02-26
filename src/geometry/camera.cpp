@@ -83,30 +83,30 @@ void Camera<T>::undistortPoints(
     std::vector<cv::KeyPoint>& undist_key_points) const
 {
     if (dist_coeffs_(0, 0) != 0.0) {
-    std::vector<cv::Point2f> points;
-    for(auto it = key_points.begin(); it != key_points.end(); it++) {
-        points.push_back(it->pt);
-    }
-    // perform undistortion
-    cv::undistortPoints(
-        points,
-        points,
-        intrinsic_matrix_,
-        dist_coeffs_,
-        cv::Mat(),
-        intrinsic_matrix_);
+        std::vector<cv::Point2f> points;
+        for(auto it = key_points.begin(); it != key_points.end(); it++) {
+            points.push_back(it->pt);
+        }
+        // perform undistortion
+        cv::undistortPoints(
+            points,
+            points,
+            intrinsic_matrix_,
+            dist_coeffs_,
+            cv::Mat(),
+            intrinsic_matrix_);
 
-    // Fill undistorted keypoint vector
-    auto size = key_points.size();
-    undist_key_points.resize(size);
-    for(int i = 0; i < size; i++) {
-        auto kp = key_points[i]; // copy the point
-        kp.pt = points[i];
-        undist_key_points[i] = kp;
-    }
+        // Fill undistorted keypoint vector
+        auto size = key_points.size();
+        undist_key_points.resize(size);
+        for(int i = 0; i < size; i++) {
+            auto kp = key_points[i]; // copy the point
+            kp.pt = points[i];
+            undist_key_points[i] = kp;
+        }
     } else {
         undist_key_points = key_points;
-}
+    }
 }
 
 template <typename T>
