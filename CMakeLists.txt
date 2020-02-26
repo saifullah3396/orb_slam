@@ -6,6 +6,10 @@ add_compile_options(-std=c++11)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
 
+# Set search directory for looking for our custom CMake scripts to
+# look for SuiteSparse, QGLViewer, and Eigen3.
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -17,10 +21,17 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 ## System dependencies are found with CMake's conventions
+find_package(Eigen3 REQUIRED)
+find_package(CSparse REQUIRED) # used by g2o
 find_package(OpenCV 3.4.9 REQUIRED
-    COMPONENTS core calib3d features2d imgproc highgui)
-find_package(DBoW2)
+    COMPONENTS core calib3d features2d imgproc highgui rgbd)
+find_package(DBoW2 REQUIRED)
 
+# fix g2o dependencies
+find_package(G2O REQUIRED)
+link_directories(/opt/ros/melodic/lib)
+set(g2o_INCLUDE_DIRS /opt/ros/melodic/include/g2o)
+SET(g2o_LIBRARIES "-lg2o_stuff -lg2o_core")
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -124,11 +135,22 @@ include
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
   ${DBoW2_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
+  ${CSPARSE_INCLUDE_DIR}
+  ${g2o_INCLUDE_DIRS}
 )
 
 FILE(GLOB SRC
     "src/*.cpp"
-    "src/geometry/*.cpp")
+    "src/geometry/*.cpp"
+    src/geometry/utils.cpp
+    src/geometry/orb_extractor.cpp
+    src/geometry/orb_matcher.cpp
+    src/map.cpp
+    src/map_point.cpp
+    src/key_frame.cpp
+    src/mono_tracker.cpp
+    src/rgbd_tracker.cpp)
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME} ${SRC})
@@ -154,8 +176,8 @@ add_executable(tracker_node ${SRC})
 ## add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${DBoW2_LIBRARIES})
-target_link_libraries(tracker_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${DBoW2_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${DBoW2_LIBRARIES} ${g2o_LIBRARIES})
+target_link_libraries(tracker_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${DBoW2_LIBRARIES} ${g2o_LIBRARIES})
 
 #############
 ## Install ##
@@ -214,9 +236,21 @@ if(CATKIN_ENABLE_TESTING)
         ${catkin_LIBRARIES}
         ${OpenCV_LIBRARIES}
         ${DBoW2_LIBRARIES}
+        ${g2o_LIBRARIES}
         ${GTEST_LIBRARIES}
         ${PROJECT_NAME})
   endforeach()
+
+  set(TESTS initializer_tests)
+  foreach(test ${TESTS})
+    add_rostest_gtest(${test}
+        tests/${test}.test
+        src/tests/${test}.cpp)
+    target_link_libraries(${test}
+        ${catkin_LIBRARIES}
+        ${OpenCV_LIBRARIES}
+        ${DBoW2_LIBRARIES}
+        ${g2o_LIBRARIES}
         ${GTEST_LIBRARIES}
         ${PROJECT_NAME})
   endforeach()
