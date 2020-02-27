@@ -106,6 +106,7 @@ public:
                 // git/raw/master/slam/g2o-details.pdf for details
                 edge->setRobustKernel(new g2o::RobustKernelHuber);
                 edges.push_back(edge); // add edge to vector
+                edge_to_key_point.push_back(i);
                 optimizer->addEdge(edge); // add edge to graph
                 index++;
             }
