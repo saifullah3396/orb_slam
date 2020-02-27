@@ -68,10 +68,15 @@ public:
         const auto map_points = frame->obsMapPoints();
         const auto n = key_points.size();
 
-        // the more the scale factor -> the greater the down sampling ->
-        // the greater variance. inv_scale_sigmas is inverse of variance
-        const auto& inv_scale_sigmas = frame->orbExtractor()->invScaleSigmas();
-        for (size_t i = 0; i < key_points.size(); ++i) {
+        // create edges
+        int index = 1;
+        std::vector<EdgeProjectionPoseOnly*> edges;
+        // Indices of edges corresponding to frame key points
+        std::vector<size_t> edge_to_key_point;
+        edges.reserve(n);
+        edge_to_key_point.reserve(n);
+
+        for (size_t i = 0; i < n; ++i) {
             const auto& mp = map_points[i];
             if (mp) { // if point exists
                 //features.push_back(frame_->features_left_[i]);
