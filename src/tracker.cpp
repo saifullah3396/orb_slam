@@ -176,9 +176,10 @@ bool Tracker::trackReferenceFrame()
     ROS_DEBUG_STREAM("Bow Features: " << current_frame_->bowFeatures().size());
 
     // find matches between current and reference frame.
-    std::vector<cv::DMatch> matches;
-    orb_matcher_->matchByBowFeatures( // 0.7 taken from original orb slam code
-        current_frame_, ref_frame_, matches, true, 0.7);
+    ROS_DEBUG_STREAM("Matching bow features between frames...");
+    // 0.7 taken from original orb slam code
+    current_frame_->matchByBowFeatures(ref_frame_, true, 0.7);
+    const auto& matches = current_frame_->matches();
 
     if (matches.size() < MIN_REQ_MATCHES)
         return false;
