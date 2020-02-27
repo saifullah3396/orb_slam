@@ -205,22 +205,29 @@ bool Tracker::trackReferenceFrame()
     pose_optimizer_->solve(current_frame_, opt_pose);
     current_frame_->setPose(opt_pose);
 
-    // Discard outliers
+    // discard outliers
+    ROS_DEBUG_STREAM("Discarding outliers points...");
     int map_matches = 0;
     const auto& map_points = current_frame_->obsMapPoints();
     const auto& outliers = current_frame_->outliers();
+    ROS_DEBUG_STREAM("map points:" << map_points.size());
+    ROS_DEBUG_STREAM("outliers points:" << outliers.size());
     for (int i = 0; i < current_frame_->nFeaturesUndist(); i++) {
         const auto& mp = map_points[i];
         if(!mp) continue;
         if(outliers[i]) {
+            // remove the matched map point since it is an outlier
             current_frame_->removeMapPointAt(i);
+            // reset the feature is inlier for usage next time with maybe
+            // another reference matching
             current_frame_->setOutlier(i, false);
-            //mp->setTrackInView(false);
-            //mp->setLastSeenFrame(current_frame_->id());
+            //mp->setTrackInView(false); used in orb_slam
+            //mp->setLastSeenFrame(current_frame_->id()); used in orb_slam
         } else if (mp->nObservations() > 0) {
             map_matches++;
         }
     }
+    ROS_DEBUG_STREAM("map_matches:" << map_matches);
 
     return map_matches >= 10;
 }
