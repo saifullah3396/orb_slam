@@ -131,7 +131,9 @@ void Tracker::trackFrame()
         if(state_ == OK) {
             void* motion_model = NULL; // no motion model or relocalization yet
             if (!motion_model) {
+                ROS_DEBUG_STREAM("Tracking reference frame...");
                 tracking_good = trackReferenceFrame();
+                ROS_DEBUG_STREAM("Tracking_good:" << tracking_good);
             }
         }
 
@@ -167,8 +169,11 @@ void Tracker::trackFrame()
 
 bool Tracker::trackReferenceFrame()
 {
+    ROS_DEBUG_STREAM("Computing orb bow features...");
     // compute bag of words vector for current frame
     current_frame_->computeBow();
+    ROS_DEBUG_STREAM("Bow: " << current_frame_->bow().size());
+    ROS_DEBUG_STREAM("Bow Features: " << current_frame_->bowFeatures().size());
 
     // find matches between current and reference frame.
     std::vector<cv::DMatch> matches;
