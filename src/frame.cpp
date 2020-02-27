@@ -383,8 +383,11 @@ void MonoFrame::extractFeatures()
     orb_extractor_->compute(
         image_->image, undist_key_points_, undist_descriptors_);
 
+    ROS_DEBUG_STREAM("Resizing frame obs map and outliers");
     // resize the map equal to the feature points
-    resizeMap(undist_key_points_.size());
+    const auto n = undist_key_points_.size();
+    resizeMap(n);
+    outliers_.resize(n);
 }
 
 geometry::MonoCameraConstPtr<float> MonoFrame::camera()
@@ -506,6 +509,11 @@ void RGBDFrame::extractFeatures()
     // find the orb descriptors for undistorted points
     orb_extractor_->compute(
         gray_image_, undist_key_points_, undist_descriptors_);
+
+    ROS_DEBUG_STREAM("Resizing frame obs map and outliers");
+    // resize the map equal to the feature points
+    resizeMap(n);
+    outliers_.resize(n);
 }
 
 geometry::RGBDCameraConstPtr<float> RGBDFrame::camera()
