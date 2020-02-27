@@ -81,7 +81,7 @@ public:
     virtual void computeError() override {
         const VertexPose *v = static_cast<VertexPose *>(_vertices[0]);
         SE3 T = v->estimate();
-        Vec3 pos_pixel = K_ * (pos3d_);
+        Vec3 pos_pixel = K_ * (T * pos3d_);
         pos_pixel /= pos_pixel[2];
         _error = _measurement - pos_pixel.head<2>();
     }
