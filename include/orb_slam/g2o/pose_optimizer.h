@@ -33,6 +33,7 @@ public:
         // create the vertex for camera pose
         VertexPose *vertex_pose = new VertexPose();
         vertex_pose->setId(0); // first vertex
+        vertex_pose->setFixed(false);
 
         Eigen::Matrix3d R;
         Eigen::Vector3d t;
