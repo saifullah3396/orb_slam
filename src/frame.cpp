@@ -324,19 +324,29 @@ void MonoFrame::showImageWithFeatures(
     cv::imshow(name, draw_image);
 }
 
-void MonoFrame::showMatchesWithRef(const std::string& name)
+void MonoFrame::showMatchesWithRef(const std::string& name, const size_t n)
 {
     if (!ref_frame_ || matches_.empty()) {
         return;
     }
     cv::Mat image_match;
+    std::vector<char> matches_mask;
+    if (n > 0) {
+        matches_mask = std::vector<char>(undist_key_points_.size(), 0);
+        for (int i = 0; i < n; ++i) {
+            matches_mask[i] = 1;
+        }
+    }
     drawMatches(
         image_->image,
         undist_key_points_,
         ref_frame_->image()->image,
         ref_frame_->featuresUndist(),
         matches_,
-        image_match);
+        image_match,
+        cv::Scalar::all(-1),
+        cv::Scalar::all(-1),
+        matches_mask);
     cv::imshow(name, image_match);
 }
 
@@ -418,19 +428,29 @@ void RGBDFrame::showImageWithFeatures(
     cv::imshow(name, draw_image);
 }
 
-void RGBDFrame::showMatchesWithRef(const std::string& name)
+void RGBDFrame::showMatchesWithRef(const std::string& name, const size_t n)
 {
     if (!ref_frame_ || matches_.empty()) {
         return;
     }
     cv::Mat image_match;
+    std::vector<char> matches_mask;
+    if (n > 0) {
+        matches_mask = std::vector<char>(undist_key_points_.size(), 0);
+        for (int i = 0; i < n; ++i) {
+            matches_mask[i] = 1;
+        }
+    }
     drawMatches(
         image_->image,
         undist_key_points_,
         ref_frame_->image()->image,
         ref_frame_->featuresUndist(),
         matches_,
-        image_match);
+        image_match,
+        cv::Scalar::all(-1),
+        cv::Scalar::all(-1),
+        matches_mask);
     cv::imshow(name, image_match);
 }
 

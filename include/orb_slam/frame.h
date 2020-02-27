@@ -96,7 +96,7 @@ public:
      * Shows the matches between this frame and reference frame.
      * @param name: Image output name while showing
      */
-    virtual void showMatchesWithRef(const std::string& name) {}
+    virtual void showMatchesWithRef(const std::string& name, const size_t n = 0) {}
 
     /**
      * @brief Checks whether a given point is within the image bounds
@@ -395,7 +395,7 @@ public:
 
     void drawFeatures(cv::Mat& image);
     void showImageWithFeatures(const std::string& name);
-    void showMatchesWithRef(const std::string& name);
+    void showMatchesWithRef(const std::string& name, const size_t n = 0);
 
     /**
      * Getters
@@ -437,7 +437,7 @@ public:
 
     void drawFeatures(cv::Mat& image);
     void showImageWithFeatures(const std::string& name);
-    void showMatchesWithRef(const std::string& name);
+    void showMatchesWithRef(const std::string& name, const size_t n = 0);
 
     /**
      * Getters
