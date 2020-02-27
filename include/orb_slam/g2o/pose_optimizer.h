@@ -97,7 +97,7 @@ public:
                 // remember information matrix is the opposite of covariance
                 // matrix
                 Eigen::Matrix2d info =
-                    Eigen::Matrix2d::Identity()*
+                    Eigen::Matrix2d::Identity() *
                     inv_scale_sigmas[key_points[i].octave];
                 edge->setInformation(info);
                 // set loss function as huber loss
