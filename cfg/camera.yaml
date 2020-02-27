@@ -31,16 +31,20 @@ orb_slam:
     height: 480
     fov_x: 518 # example
     fov_y: 519 # example
-    focal_x: 517.3
-    focal_y: 516.5
-    center_x: 318.6
-    center_y: 255.3
+    #focal_x: 517.3
+    #focal_y: 516.5
+    #center_x: 318.6
+    #center_y: 255.3
+    focal_x: 525.0 # ROS Defaults
+    focal_y: 525.0 # ROS Defaults
+    center_x: 319.5 # ROS Defaults
+    center_y: 239.5 # ROS Defaults
     dist_coeffs: [
-      0.2624,
-      -0.9531,
-      -0.0054,
-      0.0026,
-      1.1633
+      0.0, #0.2624,
+      0.0, #-0.9531,
+      0.0, #-0.0054,
+      0.0, #0.0026,
+      0.0 #1.1633
     ]
     fps_depth: 30
     width_depth: 640
@@ -50,9 +54,9 @@ orb_slam:
     center_x_depth: 331.0
     center_y_depth: 234.0
     dist_coeffs_depth: [
-      -0.0410,
-      0.3286,
-      0.0087,
-      0.0051,
-      -0.5643
+      0.0, #-0.0410,
+      0.0, #0.3286,
+      0.0, #0.0087,
+      0.0, #0.0051,
+      0.0 #-0.5643
     ]
