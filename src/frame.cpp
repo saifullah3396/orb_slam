@@ -274,6 +274,22 @@ void Frame::match(
     orb_matcher_->match(shared_from_this(), ref_frame_, matches_, type);
 }
 
+void Frame::matchByBowFeatures(
+    const std::shared_ptr<Frame>& ref_frame,
+    const bool check_orientation,
+    const float nn_ratio,
+    const bool filter_matches)
+{
+    ref_frame_ = ref_frame;
+    orb_matcher_->matchByBowFeatures( // 0.7 taken from original orb slam code
+        shared_from_this(),
+        ref_frame_,
+        matches_,
+        check_orientation,
+        nn_ratio,
+        filter_matches);
+}
+
 MonoFrame::MonoFrame(
     const cv_bridge::CvImageConstPtr& image,
     const ros::Time& time_stamp) :

@@ -67,6 +67,20 @@ public:
         const geometry::OrbMatcherTypes type);
 
     /**
+     * Matches the frame with a reference frame using bow feature matcher
+     *
+     * @param ref_frame: Frame to matche with
+     * @param check_orientation: Whether to check feature orientation match
+     * @param nn_ratio: First to second best match ratio
+     * @param filter_matches: Whether to filter matches afterwards
+     */
+    void matchByBowFeatures(
+        const std::shared_ptr<Frame>& ref_frame,
+        const bool check_orientation = true,
+        const float nn_ratio = 0.6,
+        const bool filter_matches = false);
+
+    /**
      * Draws the extracted features on the given image
      * @param image: Drawing image
      */
