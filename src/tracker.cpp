@@ -200,8 +200,10 @@ bool Tracker::trackReferenceFrame()
     ROS_DEBUG_STREAM("Optimizing current frame pose...");
     // set initial pose of this frame to last frame. This acts as starting point
     // for pose optimization using graph
-    current_frame_->setPose(last_frame_->getCamInWorldT());
-    pose_optimizer_->solve(current_frame_);
+    current_frame_->setPose(ref_frame_->getCamInWorldT());
+    cv::Mat opt_pose;
+    pose_optimizer_->solve(current_frame_, opt_pose);
+    current_frame_->setPose(opt_pose);
 
     // Discard outliers
     int map_matches = 0;
