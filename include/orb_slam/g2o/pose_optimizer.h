@@ -59,12 +59,14 @@ public:
         Eigen::Matrix3d K;
         cv::cv2eigen<double>(frame->camera()->intrinsicMatrix(), K);
 
-        // create edges
-        int index = 1;
-        std::vector<EdgeProjectionPoseOnly*> edges;
+        // the more the scale factor -> the greater the down sampling ->
+        // the greater variance. inv_scale_sigmas is inverse of variance
+        const auto& inv_scale_sigmas = frame->orbExtractor()->invScaleSigmas();
+
         // create edges for all the observed 3d points from this frame
         const auto& key_points = frame->featuresUndist();
         const auto map_points = frame->obsMapPoints();
+        const auto n = key_points.size();
 
         // the more the scale factor -> the greater the down sampling ->
         // the greater variance. inv_scale_sigmas is inverse of variance
