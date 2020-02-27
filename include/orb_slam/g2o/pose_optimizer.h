@@ -100,7 +100,10 @@ public:
                     Eigen::Matrix2d::Identity() *
                     inv_scale_sigmas[key_points[i].octave];
                 edge->setInformation(info);
-                // set loss function as huber loss
+                // set robust loss function as huber loss
+                // this is done for outlier rejection
+                // See https://qcloud.coding.net/u/vincentqin/p/blogResource/
+                // git/raw/master/slam/g2o-details.pdf for details
                 edge->setRobustKernel(new g2o::RobustKernelHuber);
                 edges.push_back(edge); // add edge to vector
                 optimizer->addEdge(edge); // add edge to graph
