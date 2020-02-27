@@ -133,14 +133,19 @@ public:
                     e->computeError();
                 }
                 if (e->chi2() > chi2_th) {
-                    frame->setOutlier(i, true);
+                    // if the error is greater than threshold, remove the point
+                    // we remove this point from optimization level 0, so that
+                    // it is not included in optimization in the next run
                     e->setLevel(1);
                     cnt_outlier++;
-                } else {
-                    frame->setOutlier(i, false);
+                } else { // else keep it
+                    // we add this point to optimization level 0, so that
+                    // it is included in optimization in the next run
                     e->setLevel(0);
                 };
 
+                // remove robust kernel in the last iteration to find the
+                // real quadratic error
                 if (iteration == 2) {
                     e->setRobustKernel(nullptr);
                 }
@@ -151,13 +156,8 @@ public:
             "Outlier/Inlier in pose estimating: "
             << cnt_outlier << "/" << key_points.size() - cnt_outlier);
 
-        // set optimized pose and outliers to the frame
-        cv::Mat opt_pose;
+        // set optimized pose to the output
         cv::eigen2cv(vertex_pose->estimate().matrix(), opt_pose);
-        frame->setPose(opt_pose);
-
-        ROS_DEBUG_STREAM(
-            "Current frame pose = \n" << frame->getCamInWorldT());
 
         return key_points.size() - cnt_outlier;
     }
