@@ -230,7 +230,7 @@ public:
         std::vector<cv::DMatch>& matches,
         const bool check_orientation = true,
         const float nn_ratio = 0.6,
-        const bool filter_matches = false);
+        const bool filter_matches = false) const;
 
     /**
      * Matches the input key points with output points using 3d to 2d
@@ -248,7 +248,7 @@ public:
         const FramePtr& ref_frame,
         std::vector<cv::DMatch>& matches,
         const bool check_orientation = true,
-        const bool filter_matches = false);
+        const bool filter_matches = false) const;
 
     /**
      * Filters out the matched points based on min/max distance threshold

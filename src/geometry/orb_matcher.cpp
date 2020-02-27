@@ -439,7 +439,7 @@ void ORBMatcher::matchByBowFeatures(
     std::vector<cv::DMatch>& matches,
     const bool check_orientation,
     const float nn_ratio,
-    const bool filter_matches)
+    const bool filter_matches) const
 {
     const auto& matcher = static_pointer_cast<BowOrbMatcher>(matcher_[BOW_ORB]);
     matcher->check_orientation_ = check_orientation;
@@ -454,7 +454,7 @@ void ORBMatcher::matchByProjection(
     const FramePtr& ref_frame,
     std::vector<cv::DMatch>& matches,
     const bool check_orientation,
-    const bool filter_matches)
+    const bool filter_matches) const
 {
     const auto& matcher =
         static_pointer_cast<BruteForceWithProjectionMatcher>(
