@@ -324,10 +324,11 @@ void BowOrbMatcher::match(
 
     // create matches
     for (size_t i = 0; i < matched.size(); ++i) {
-        if (matched[i]) // matches from frame to reference frame
+        if (matched[i] > 0) {// matches from frame to reference frame
             matches.push_back(
                 cv::DMatch(
                     i, matched[i], static_cast<float>(feature_dists[i])));
+        }
     }
 }
 
