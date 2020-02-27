@@ -267,6 +267,8 @@ public:
     /**
      * Setters
      */
+    void setRefFrame(const FramePtr& ref_frame)
+        { ref_frame_ = ref_frame; }
     void setPose(const cv::Mat& w_T_c) {
         w_T_c_ = w_T_c.clone(); // camera in world or world to camera
         w_R_c_ = w_T_c_.rowRange(0, 3).colRange(0, 3);
