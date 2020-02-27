@@ -128,17 +128,20 @@ public:
 
             // count the outliers
             for (size_t i = 0; i < edges.size(); ++i) {
-                auto e = edges[i];
-                if (outliers[i]) {
+                auto& e = edges[i];
+                const auto& idx = edge_to_key_point[i];
+                if (outliers[idx]) {
                     e->computeError();
                 }
                 if (e->chi2() > chi2_th) {
                     // if the error is greater than threshold, remove the point
+                    frame->setOutlier(idx, true);
                     // we remove this point from optimization level 0, so that
                     // it is not included in optimization in the next run
                     e->setLevel(1);
                     cnt_outlier++;
                 } else { // else keep it
+                    frame->setOutlier(idx, false);
                     // we add this point to optimization level 0, so that
                     // it is included in optimization in the next run
                     e->setLevel(0);
