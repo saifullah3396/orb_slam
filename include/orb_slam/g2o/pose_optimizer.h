@@ -120,6 +120,7 @@ public:
             // get eigen pose from cv pose
             cv::cv2eigen<double>(frame->getCamInWorldR(), R);
             cv::cv2eigen<double>(frame->getCamInWorldt(), t);
+            // reset the initial pose and optimize
             vertex_pose->setEstimate(Sophus::SE3d(R, t));
             optimizer->initializeOptimization();
             optimizer->optimize(10);
