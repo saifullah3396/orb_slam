@@ -181,8 +181,14 @@ bool Tracker::trackReferenceFrame()
     current_frame_->matchByBowFeatures(ref_frame_, true, 0.7);
     const auto& matches = current_frame_->matches();
 
+    ROS_DEBUG_STREAM("Matches: " << matches.size());
+
     if (matches.size() < MIN_REQ_MATCHES)
         return false;
+
+    //current_frame_->showMatchesWithRef("Matched points.");
+    //cv::waitKey(0);
+    //ROS_DEBUG_STREAM("Adding resultant map points to map.");
 
     const auto ref_map_points = ref_frame_->obsMapPoints();
     for (int i = 0; i < matches.size(); ++i) {
@@ -191,6 +197,7 @@ bool Tracker::trackReferenceFrame()
             ref_map_points[matches[i].trainIdx], matches[i].queryIdx);
     }
 
+    ROS_DEBUG_STREAM("Optimizing current frame pose...");
     // set initial pose of this frame to last frame. This acts as starting point
     // for pose optimization using graph
     current_frame_->setPose(last_frame_->getCamInWorldT());
