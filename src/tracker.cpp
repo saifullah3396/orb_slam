@@ -121,6 +121,7 @@ void Tracker::trackFrame()
     std::unique_lock<std::mutex> lock(map_->mapUpdateMutex());
 
     if(state_ == NOT_INITIALIZED) {
+        ROS_DEBUG_STREAM("Initializing tracking...");
         initializeTracking();
         if(state_ != OK)
             return;
