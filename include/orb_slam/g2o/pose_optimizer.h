@@ -27,7 +27,17 @@ public:
         optimizer = NULL;
     }
 
-    int solve(const FramePtr& frame) {
+    /**
+     * Solves the optimization problem of finding the pose of a single frame in
+     * 3d space (world coordinates) with 2d-3d point correspondences also in
+     * world coordiantes.
+     *
+     * @param frame: Frame pose to optimize
+     * @param opt_pose: Output optimized pose of the frame
+     * @returns The number of features key points - the outliers found by
+     *     optimization
+     */
+    int solve(const FramePtr& frame, cv::Mat& opt_pose) {
         optimizer->clear(); // reset optimizer
 
         // create the vertex for camera pose
