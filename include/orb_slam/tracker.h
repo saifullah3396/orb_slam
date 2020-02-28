@@ -36,6 +36,13 @@ using KeyFramePtr = std::shared_ptr<KeyFrame>;
 class Map;
 using MapPtr = std::shared_ptr<Map>;
 
+template <typename T>
+class MotionModel;
+template <typename T>
+using MotionModelPtr = std::shared_ptr<MotionModel<T>>;
+template <typename T>
+using MotionModelConstPtr = std::shared_ptr<const MotionModel<T>>;
+
 class PoseOptimizer;
 using PoseOptimizerPtr = std::shared_ptr<PoseOptimizer>;
 
@@ -86,9 +93,11 @@ protected:
     std::vector<cv::Mat> camera_pose_history_; // vector of poses
 
     // initialization
-    FramePtr ref_frame_;
     FramePtr last_frame_;
     KeyFramePtr ref_key_frame_;
+
+    // motion model
+    MotionModelPtr<float> motion_model_;
 
     // after triangulation
     cv::Mat best_rot_mat, best_trans_mat;

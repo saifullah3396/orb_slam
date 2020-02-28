@@ -13,6 +13,7 @@
 #include "orb_slam/map_point.h"
 #include "orb_slam/tracker.h"
 #include "orb_slam/mono_tracker.h"
+#include "orb_slam/motion_model.h"
 #include "orb_slam/rgbd_tracker.h"
 #include "orb_slam/initializer.h"
 #include "orb_slam/geometry/camera.h"
@@ -84,6 +85,9 @@ Tracker::Tracker(const ros::NodeHandle& nh, const int& camera_type) : nh_(nh)
     MapPoint::setORBMatcher(
         std::const_pointer_cast<const geometry::ORBMatcher>(orb_matcher_));
 
+    ROS_DEBUG("Initializing motion model...");
+    motion_model_ = MotionModelPtr<float>(new MotionModel<float>());
+
     ROS_DEBUG("Initializing pose optimizer...");
     pose_optimizer_ = PoseOptimizerPtr(new PoseOptimizer());
 
@@ -129,11 +133,10 @@ void Tracker::trackFrame()
         bool tracking_good = false;
         // initialization done, starting tracking...
         if(state_ == OK) {
-            void* motion_model = NULL; // no motion model or relocalization yet
-            if (!motion_model) {
-                ROS_DEBUG_STREAM("Tracking reference frame...");
-                tracking_good = trackReferenceFrame();
-                ROS_DEBUG_STREAM("Tracking_good:" << tracking_good);
+            if (motion_model_ && motion_model_->initialized()) {
+                tracking_good = trackWithMotionModel();
+            } else {
+                tracking_good = trackReferenceKeyFrame();
             }
         }
 
@@ -145,7 +148,8 @@ void Tracker::trackFrame()
 
             state_ = TrackingState::OK;
 
-            // @todo: motion_model_->update();
+            motion_model_->updateModel(
+                current_frame_->getWorldInCamT(), ros::Time::now());
 
             // @todo: draw current camera pose here
 
