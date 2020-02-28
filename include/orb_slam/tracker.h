@@ -48,6 +48,7 @@ using PoseOptimizerPtr = std::shared_ptr<PoseOptimizer>;
 
 #define MIN_REQ_MATCHES_INIT 100
 #define MIN_REQ_MATCHES 15
+#define MIN_REQ_MATCHES_PROJ 20
 #define MIN_REQ_KEY_FRAMES_RELOC 5
 
 class Tracker {
