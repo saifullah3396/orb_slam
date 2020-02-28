@@ -66,11 +66,8 @@ void RGBDTracker::initializeTracking()
     if(n_key_points > MIN_REQ_FEATURES) {
         ROS_DEBUG_STREAM("Number of features found: " << n_key_points);
 
-        // set frame to reference
-        ref_frame_ = current_frame_;
-
         // find bow for ref frame
-        ref_frame_->computeBow();
+        current_frame_->computeBow();
 
         // set frame pose to the origin
         ref_frame_->setPose(cv::Mat::eye(4, 4, CV_32F));
