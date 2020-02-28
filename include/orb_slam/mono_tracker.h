@@ -37,6 +37,7 @@ private:
     InitializerPtr initializer_;
     double initializer_sigma_;
     int initializer_iterations_;
+    FramePtr ref_frame_;
 
     // last image
     cv_bridge::CvImageConstPtr last_image_;
