@@ -167,7 +167,7 @@ void Tracker::trackFrame()
     }
 }
 
-bool Tracker::trackReferenceFrame()
+bool Tracker::trackReferenceKeyFrame()
 {
     ROS_DEBUG_STREAM("Computing orb bow features...");
     // compute bag of words vector for current frame
@@ -178,7 +178,7 @@ bool Tracker::trackReferenceFrame()
     // find matches between current and reference frame.
     ROS_DEBUG_STREAM("Matching bow features between frames...");
     // 0.7 taken from original orb slam code
-    current_frame_->matchByBowFeatures(ref_frame_, true, 0.7);
+    current_frame_->matchByBowFeatures(ref_key_frame_->frame(), true, 0.7);
     const auto& matches = current_frame_->matches();
 
     ROS_DEBUG_STREAM("Matches: " << matches.size());
@@ -190,7 +190,7 @@ bool Tracker::trackReferenceFrame()
     //cv::waitKey(0);
     //ROS_DEBUG_STREAM("Adding resultant map points to map.");
 
-    const auto ref_map_points = ref_frame_->obsMapPoints();
+    const auto ref_map_points = ref_key_frame_->frame()->obsMapPoints();
     for (int i = 0; i < matches.size(); ++i) {
         // add matched map points from reference to current frame
         current_frame_->addMapPoint(
@@ -200,10 +200,10 @@ bool Tracker::trackReferenceFrame()
     ROS_DEBUG_STREAM("Optimizing current frame pose...");
     // set initial pose of this frame to last frame. This acts as starting point
     // for pose optimization using graph
-    current_frame_->setPose(ref_frame_->getCamInWorldT());
+    current_frame_->setWorldInCam(ref_key_frame_->frame()->getWorldInCamT());
     cv::Mat opt_pose;
     pose_optimizer_->solve(current_frame_, opt_pose);
-    current_frame_->setPose(opt_pose);
+    current_frame_->setWorldInCam(opt_pose);
 
     // discard outliers
     ROS_DEBUG_STREAM("Discarding outliers points...");
@@ -228,6 +228,8 @@ bool Tracker::trackReferenceFrame()
         }
     }
     ROS_DEBUG_STREAM("map_matches:" << map_matches);
+    return map_matches >= 10;
+}
 
     return map_matches >= 10;
 }
