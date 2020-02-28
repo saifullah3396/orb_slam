@@ -319,6 +319,7 @@ public:
         { orb_vocabulary_ = orb_vocabulary; }
 
     void resizeMap(const size_t& n);
+    void resetMap();
     void addMapPoint(const MapPointPtr& mp, const size_t& idx);
     void removeMapPointAt(const unsigned long& idx);
 
