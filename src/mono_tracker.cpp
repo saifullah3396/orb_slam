@@ -144,7 +144,7 @@ void MonoTracker::initializeTracking()
             cv::Mat c_T_w = cv::Mat::eye(4, 4, CV_32F); // for current frame
             best_rot_mat.copyTo(c_T_w.rowRange(0,3).colRange(0,3));
             best_trans_mat.copyTo(c_T_w.rowRange(0,3).col(3));
-            current_frame_->setPose(c_T_w);
+            current_frame_->setWorldInCam(c_T_w);
             createInitialMonocularMap(
                 inlier_points,
                 inlier_ref_points,
