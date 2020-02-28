@@ -69,7 +69,7 @@ public:
     /**
      * Matches the frame with a reference frame using bow feature matcher
      *
-     * @param ref_frame: Frame to matche with
+     * @param ref_frame: Frame to match with
      * @param check_orientation: Whether to check feature orientation match
      * @param nn_ratio: First to second best match ratio
      * @param filter_matches: Whether to filter matches afterwards
