@@ -48,8 +48,8 @@ public:
         Eigen::Matrix3d R;
         Eigen::Vector3d t;
         // get eigen pose from cv pose
-        cv::cv2eigen<double>(frame->getCamInWorldR(), R);
-        cv::cv2eigen<double>(frame->getCamInWorldt(), t);
+        cv::cv2eigen<double>(frame->getWorldInCamR(), R);
+        cv::cv2eigen<double>(frame->getWorldInCamt(), t);
         vertex_pose->setEstimate(Sophus::SE3d(R, t));
 
         // add camera pose as first vertex in graph
@@ -116,10 +116,11 @@ public:
         const double chi2_th = 5.991;
         int cnt_outlier = 0;
         const auto& outliers = frame->outliers();
+        optimizer->setVerbose(true);
         for (int iteration = 0; iteration < 4; ++iteration) {
             // get eigen pose from cv pose
-            cv::cv2eigen<double>(frame->getCamInWorldR(), R);
-            cv::cv2eigen<double>(frame->getCamInWorldt(), t);
+            cv::cv2eigen<double>(frame->getWorldInCamR(), R);
+            cv::cv2eigen<double>(frame->getWorldInCamt(), t);
             // reset the initial pose and optimize
             vertex_pose->setEstimate(Sophus::SE3d(R, t));
             optimizer->initializeOptimization();
