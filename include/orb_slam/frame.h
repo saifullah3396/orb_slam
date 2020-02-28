@@ -81,6 +81,20 @@ public:
         const bool filter_matches = false);
 
     /**
+     * Matches the frame with the previous frame using map points projection
+     *
+     * @param prev_frame: Frame to match with
+     * @param check_orientation: Whether to check feature orientation match
+     * @param radius: Window size multiplier for search
+     * @param filter_matches: Whether to filter matches afterwards
+     */
+    void matchByProjection(
+        const std::shared_ptr<Frame>& prev_frame,
+        const bool check_orientation = true,
+        const float radius = 1.0,
+        const bool filter_matches = false);
+
+    /**
      * Draws the extracted features on the given image
      * @param image: Drawing image
      */

@@ -290,6 +290,21 @@ void Frame::matchByBowFeatures(
         filter_matches);
 }
 
+void Frame::matchByProjection(
+    const std::shared_ptr<Frame>& prev_frame,
+    const bool check_orientation,
+    const float radius,
+    const bool filter_matches)
+{
+    orb_matcher_->matchByProjection(
+        shared_from_this(),
+        prev_frame,
+        matches_,
+        check_orientation,
+        radius,
+        filter_matches);
+}
+
 MonoFrame::MonoFrame(
     const cv_bridge::CvImageConstPtr& image,
     const ros::Time& time_stamp) :
