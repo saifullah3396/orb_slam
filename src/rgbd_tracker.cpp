@@ -73,21 +73,21 @@ void RGBDTracker::initializeTracking()
         current_frame_->setWorldInCam(cv::Mat::eye(4, 4, CV_32F));
 
         // create KeyFrame
-        auto ref_key_frame =
+        ref_key_frame_ =
             KeyFramePtr(
-                new KeyFrame(ref_frame_,
+                new KeyFrame(current_frame_,
                     std::const_pointer_cast<const Map>(map_)));
 
         // resize local key frame map
-        ref_key_frame->resizeMap(n_key_points);
+        ref_key_frame_->resizeMap(n_key_points);
 
         // insert KeyFrame in the global map
-        map_->addKeyFrame(ref_key_frame);
-        map_->addRefKeyFrame(ref_key_frame);
+        map_->addKeyFrame(ref_key_frame_);
+        map_->addRefKeyFrame(ref_key_frame_);
 
         // create MapPoints and asscoiate to KeyFrame
-        const auto& key_points = ref_frame_->featuresUndist();
-        const auto& key_point_depths = ref_frame_->featureDepthsUndist();
+        const auto& key_points = current_frame_->featuresUndist();
+        const auto& key_point_depths = current_frame_->featureDepthsUndist();
 
         for(int i = 0; i < n_key_points; i++) {
             const auto& depth = key_point_depths[i];
