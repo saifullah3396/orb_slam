@@ -30,6 +30,9 @@ using InitializerPtr = std::unique_ptr<Initializer>;
 class Frame;
 using FramePtr = std::shared_ptr<Frame>;
 
+class KeyFrame;
+using KeyFramePtr = std::shared_ptr<KeyFrame>;
+
 class Map;
 using MapPtr = std::shared_ptr<Map>;
 
@@ -85,6 +88,7 @@ protected:
     // initialization
     FramePtr ref_frame_;
     FramePtr last_frame_;
+    KeyFramePtr ref_key_frame_;
 
     // after triangulation
     cv::Mat best_rot_mat, best_trans_mat;
