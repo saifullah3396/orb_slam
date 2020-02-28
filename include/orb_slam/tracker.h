@@ -86,7 +86,8 @@ public:
 
 protected:
     virtual void trackFrame();
-    virtual bool trackReferenceFrame();
+    virtual bool trackReferenceKeyFrame();
+    virtual bool trackWithMotionModel();
 
     // latest frame
     FramePtr current_frame_;

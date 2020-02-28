@@ -235,6 +235,75 @@ bool Tracker::trackReferenceKeyFrame()
     return map_matches >= 10;
 }
 
+bool Tracker::trackWithMotionModel()
+{
+    ROS_DEBUG_STREAM("Tracking with motion model...");
+    // compute predicted camera pose...
+    cv::Mat predicted_pose;
+    if (motion_model_->predict(predicted_pose, ros::Time::now())) {
+        ROS_WARN_STREAM("Failed to predict next pose.");
+    }
+    current_frame_->setWorldInCam(predicted_pose);
+    current_frame_->resetMap();
+
+    // project points seen in previous frame to current frame//
+    int radius; // match search radius
+    if(camera_->type() == geometry::CameraType::MONO)
+        radius = 15;
+    else
+        radius = 7;
+
+    current_frame_->matchByProjection(last_frame_, true, radius);
+    const auto& matches = current_frame_->matches();
+    ROS_DEBUG_STREAM("Matches: " << matches.size());
+    if (matches.size() < MIN_REQ_MATCHES_PROJ) {
+        radius *= 2.0;
+        current_frame_->resetMap();
+        current_frame_->matchByProjection(last_frame_, true, radius);
+    }
+
+    if (matches.size() < MIN_REQ_MATCHES_PROJ) {
+        return false;
+    }
+
+    const auto ref_map_points = ref_key_frame_->frame()->obsMapPoints();
+    for (int i = 0; i < matches.size(); ++i) {
+        // add matched map points from reference to current frame
+        current_frame_->addMapPoint(
+            ref_map_points[matches[i].trainIdx], matches[i].queryIdx);
+    }
+
+    ROS_DEBUG_STREAM("Optimizing current frame pose...");
+    // set initial pose of this frame to last frame. This acts as starting point
+    // for pose optimization using graph
+    current_frame_->setWorldInCam(ref_key_frame_->frame()->getWorldInCamT());
+    cv::Mat opt_pose;
+    pose_optimizer_->solve(current_frame_, opt_pose);
+    current_frame_->setWorldInCam(opt_pose);
+
+    // discard outliers
+    ROS_DEBUG_STREAM("Discarding outliers points...");
+    int map_matches = 0;
+    const auto& map_points = current_frame_->obsMapPoints();
+    const auto& outliers = current_frame_->outliers();
+    ROS_DEBUG_STREAM("map points:" << map_points.size());
+    ROS_DEBUG_STREAM("outliers points:" << outliers.size());
+    for (int i = 0; i < current_frame_->nFeaturesUndist(); i++) {
+        const auto& mp = map_points[i];
+        if(!mp) continue;
+        if(outliers[i]) {
+            // remove the matched map point since it is an outlier
+            current_frame_->removeMapPointAt(i);
+            // reset the feature is inlier for usage next time with maybe
+            // another reference matching
+            current_frame_->setOutlier(i, false);
+            //mp->setTrackInView(false); used in orb_slam
+            //mp->setLastSeenFrame(current_frame_->id()); used in orb_slam
+        } else if (mp->nObservations() > 0) {
+            map_matches++;
+        }
+    }
+    ROS_DEBUG_STREAM("map_matches:" << map_matches);
     return map_matches >= 10;
 }
 
