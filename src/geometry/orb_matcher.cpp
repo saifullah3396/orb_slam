@@ -106,13 +106,13 @@ void BruteForceWithProjectionMatcher::match(
             if (!frame->pointWithinBounds(point_2d_frame))
                 continue;
 
-            // now create a window around the point in the level this feature
-            // was found
-            auto radius_threshold = 1.0;
             // scale level at which point is found in reference frame
             auto feature_level_ref = ref_key_points[ref_idx].octave;
-            auto radius =
-                radius_threshold *
+
+            // now create a window around the point in the level this feature
+            // was found
+            auto radius_scaled =
+                radius_ *
                 frame->orbExtractor()->scaleFactors()[feature_level_ref];
             std::vector<size_t> close_points;
             //if (frame_forward) {
@@ -140,7 +140,7 @@ void BruteForceWithProjectionMatcher::match(
             //}
             if (!frame->getFeaturesAroundPoint(
                 point_2d_frame,
-                radius,
+                radius_scaled,
                 feature_level_ref - 1,
                 feature_level_ref + 1,
                 close_points)) continue; // if no points are found
@@ -455,12 +455,14 @@ void ORBMatcher::matchByProjection(
     const FramePtr& ref_frame,
     std::vector<cv::DMatch>& matches,
     const bool check_orientation,
+    const float radius,
     const bool filter_matches) const
 {
     const auto& matcher =
         static_pointer_cast<BruteForceWithProjectionMatcher>(
             matcher_[BF_WITH_PROJ]);
     matcher->check_orientation_ = check_orientation;
+    matcher->radius_ = radius;
     matcher->match(frame, ref_frame, matches);
     if (filter_matches)
         filterMatches(frame->descriptorsUndist(), matches);

@@ -92,6 +92,7 @@ struct BruteForceWithProjectionMatcher : public MatcherBase {
         const FramePtr& ref_frame,
         std::vector<cv::DMatch>& matches);
 
+    float radius_ = 1.0;
     bool check_orientation_ = false;
     const int hist_length_ = 30;
     const int low_threshold_ = 50;
@@ -241,6 +242,7 @@ public:
      * @param matches: Output features that are matched
      * @param check_orientation: Also checks orb feature orientations while
      *   matching if true
+     * @param radius: Window size multiplier for search
      * @param filter_matches: Matches are filtered if true
      */
     void matchByProjection(
@@ -248,6 +250,7 @@ public:
         const FramePtr& ref_frame,
         std::vector<cv::DMatch>& matches,
         const bool check_orientation = true,
+        const float radius = 1.0,
         const bool filter_matches = false) const;
 
     /**
