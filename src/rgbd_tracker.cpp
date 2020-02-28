@@ -70,7 +70,7 @@ void RGBDTracker::initializeTracking()
         current_frame_->computeBow();
 
         // set frame pose to the origin
-        ref_frame_->setPose(cv::Mat::eye(4, 4, CV_32F));
+        current_frame_->setWorldInCam(cv::Mat::eye(4, 4, CV_32F));
 
         // create KeyFrame
         auto ref_key_frame =
