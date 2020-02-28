@@ -98,20 +98,20 @@ void RGBDTracker::initializeTracking()
 
             // transform key point to 3d world space
             auto world_pos =
-                cv::Mat(ref_frame_->frameToWorld<float, float>(kp.pt, depth));
+                cv::Mat(current_frame_->frameToWorld<float, float>(kp.pt, depth));
 
             // create a map point given 2d-3d correspondence
             auto mp =
                 MapPointPtr(
-                    new MapPoint(world_pos, ref_key_frame, map_));
+                    new MapPoint(world_pos, ref_key_frame_, map_));
 
             // add the map point in local observation map of key frame
             // i corresponds to index of the map point here
-            ref_key_frame->addMapPoint(mp, i);
+            ref_key_frame_->addMapPoint(mp, i);
 
             // add the key frame to map point in which it is observed
             // i corresponds to index of the key point in frame class
-            mp->addObservation(ref_key_frame, i);
+            mp->addObservation(ref_key_frame_, i);
 
             // compute map point best descriptor out of all observing key frames
             mp->computeBestDescriptor();
@@ -129,8 +129,8 @@ void RGBDTracker::initializeTracking()
         //mpLocalMapper->InsertKeyFrame(pKFini);
 
         last_frame_ = current_frame_;
-        last_key_frame_ = ref_key_frame;
-        last_key_frame_->setRefKeyFrame(ref_key_frame); // reference is itself
+        last_key_frame_ = ref_key_frame_;
+        last_key_frame_->setRefKeyFrame(ref_key_frame_); // reference is itself
         camera_pose_history_.push_back(current_frame_->getCamInWorldT());
 
         state_ = TrackingState::OK;
