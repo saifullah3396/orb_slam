@@ -697,38 +697,6 @@ ORBMatcher::~ORBMatcher() {
 }
 
 void ORBMatcher::match(
-    const FramePtr& frame,
-    const FramePtr& ref_frame,
-    std::vector<cv::DMatch>& matches,
-    const OrbMatcherTypes type,
-    const bool filter_matches) const
-{
-    if (type == BF_WITH_RADIUS) {
-        static_pointer_cast<BruteForceWithRadiusMatcher>(matcher_[type])->
-            match(
-                frame->featuresUndist(),
-                ref_frame->featuresUndist(),
-                frame->descriptorsUndist(),
-                ref_frame->descriptorsUndist(),
-                matches);
-    } else if (type == BF_WITH_PROJ) {
-        static_pointer_cast<BruteForceWithProjectionMatcher>(matcher_[type])->
-            match(frame, ref_frame, matches);
-    } else if (type == BOW_ORB) {
-        static_pointer_cast<BowOrbMatcher>(matcher_[type])->
-            match(frame, ref_frame, matches);
-    } else if (type == CV_ORB) {
-        static_pointer_cast<CVORBMatcher>(matcher_[type])->
-            match(
-                frame->descriptorsUndist(),
-                ref_frame->descriptorsUndist(),
-                matches);
-    }
-    if (filter_matches)
-        filterMatches(frame->descriptorsUndist(), matches);
-}
-
-void ORBMatcher::match(
     const std::vector<cv::KeyPoint>& key_points,
     const std::vector<cv::KeyPoint>& ref_key_points,
     const cv::Mat& descriptors,
