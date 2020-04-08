@@ -186,6 +186,10 @@ private:
     float min_scale_distance_;
     float max_scale_distance_;
 
+    // Number of times it is seen
+    int visibility_ = 1;
+    int found_ = 1;
+
     long unsigned int id_; // Point id
     static std::atomic_uint64_t global_id_; // Thread safe points id accumulator
     // If true, the point is bad and should be removed from the map
