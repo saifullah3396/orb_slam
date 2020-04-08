@@ -790,6 +790,101 @@ void ORBMatcher::matchByEpipolarConstraint(
     matcher->match(key_frame, ref_key_frame, matches);
 }
 
+int ORBMatcher::fuse(
+    const KeyFramePtr key_frame,
+    const std::vector<MapPointPtr>& points_3d,
+    const float radius_multiplier) const
+{
+    const auto map_points = key_frame->obsMapPoints();
+    const auto& key_points = key_frame->frame()->featuresUndist();
+    const auto& descriptors = key_frame->frame()->descriptorsUndist();
+    std::vector<int> matched(key_points.size(), -1);
+    std::vector<int> feature_dists(key_points.size(), -1);
+
+    int n_fused = 0;
+    key_frame->updateWorldInCamLocal();
+    for (const auto& mp: points_3d) {
+        // if bad or already is projected, continue
+        if (!mp || mp->isBad() || mp->isObservedInKeyFrame(key_frame))
+            continue;
+
+        TrackProperties props;
+        if (!key_frame->isInCameraViewLocal(mp, props, 0.5)) {
+            continue;
+        }
+        // scale level at which point is found in reference frame
+        auto feature_level_ref = props.pred_scale_level_;
+
+        // now create a window around the point in the level this feature
+        // was found
+        auto radius_scaled =
+            radius_multiplier *
+            key_frame->frame()->orbExtractor()->scaleFactors()[feature_level_ref];
+        std::vector<size_t> close_points;
+        if (!key_frame->frame()->getFeaturesAroundPoint(
+            props.proj_xy_,
+            radius_scaled,
+            feature_level_ref - 1,
+            feature_level_ref,
+            close_points))
+        { // if no points are found
+            continue;
+        }
+
+        const auto& desc = mp->bestDescriptor();
+        // finds closest of all the features in ref_frame that lies within
+        // pixel radius of feature i
+        int min_feature_dist = 256;
+        int matched_id = -1;
+
+        int min_level= feature_level_ref - 1;
+        int max_level = feature_level_ref;
+
+        for (const auto& idx: close_points) {
+            if (matched[idx] > 0) // matched map point already assigned
+                continue;
+            const auto& key_point = key_points[idx];
+            const auto& kp_scale = key_point.octave;
+            if (kp_scale < min_level || kp_scale > max_level)
+                continue;
+
+            const float ex = props.proj_xy_.x - key_point.pt.x;
+            const float ey = props.proj_xy_.y - key_point.pt.y;
+            const float e_sqrd = ex * ex + ey * ey;
+
+            if (e_sqrd * key_frame->frame()->orbExtractor()->invScaleSigmas()[kp_scale] > 5.99)
+                continue;
+
+            // find distance between descriptors of this point and all the
+            // close points
+            const auto dist =
+                geometry::descriptorDistance(desc, descriptors.row(idx));
+            if (dist < min_feature_dist) {
+                // assign best
+                min_feature_dist = dist;
+                matched_id = idx;
+            }
+        }
+
+        // If there is already a MapPoint replace otherwise add new measurement
+        if (min_feature_dist <= low_threshold_) {
+            auto mp_kf = map_points[matched_id];
+            if (mp_kf) {
+                if (!mp_kf->isBad()) {
+                    if (mp_kf->nObservations() > mp->nObservations())
+                        mp->replace(mp_kf);
+                    else
+                        mp_kf->replace(mp);
+                }
+            } else {
+                mp->addObservation(key_frame, matched_id);
+                key_frame->setMapPointAt(mp, matched_id);
+            }
+            n_fused++;
+        }
+    }
+
+    return n_fused;
 }
 
 void ORBMatcher::filterMatches(
