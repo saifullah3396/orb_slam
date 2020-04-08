@@ -162,22 +162,27 @@ private:
     Mat33 K_;
 };
 
+
+/**
+ * Graph edge for a 2d pixel to 3d camera relationship for monocular cameras
+ * meaning the relation is [x, y, depth]' -> [X Y Z]' in se3. This edge
+ * computes both Xi and Xj jacobian matrices.
  */
-class EdgeProjection
+class EdgeProjectionMono
     : public g2o::BaseBinaryEdge<2, Vec2, VertexPose, VertexXYZ> {
 
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-    EdgeProjection(const Mat33 &K, const SE3 &cam_ext) : K_(K) {
-        _cam_ext = cam_ext;
+    EdgeProjectionMono(const Mat33 &K, const SE3 &cam_offset) : K_(K) {
+        cam_offset_ = cam_offset;
     }
 
     virtual void computeError() override {
         const VertexPose *v0 = static_cast<VertexPose *>(_vertices[0]);
         const VertexXYZ *v1 = static_cast<VertexXYZ *>(_vertices[1]);
-        SE3 T = v0->estimate();
-        Vec3 pos_pixel = K_ * (_cam_ext * (T * v1->estimate()));
+        const auto& T = v0->estimate();
+        Vec3 pos_pixel = K_ * (cam_offset_ * (T * v1->estimate()));
         pos_pixel /= pos_pixel[2];
         _error = _measurement - pos_pixel.head<2>();
     }
@@ -185,9 +190,9 @@ public:
     virtual void linearizeOplus() override {
         const VertexPose *v0 = static_cast<VertexPose *>(_vertices[0]);
         const VertexXYZ *v1 = static_cast<VertexXYZ *>(_vertices[1]);
-        SE3 T = v0->estimate();
-        Vec3 pw = v1->estimate();
-        Vec3 pos_cam = _cam_ext * T * pw;
+        const auto& T = v0->estimate();
+        const auto& pw = v1->estimate();
+        Vec3 pos_cam = cam_offset_ * T * pw;
         double fx = K_(0, 0);
         double fy = K_(1, 1);
         double X = pos_cam[0];
@@ -200,8 +205,10 @@ public:
             fy * Y * Zinv2, fy + fy * Y * Y * Zinv2, -fy * X * Y * Zinv2,
             -fy * X * Zinv;
 
-        _jacobianOplusXj = _jacobianOplusXi.block<2, 3>(0, 0) *
-                           _cam_ext.rotationMatrix() * T.rotationMatrix();
+        _jacobianOplusXj =
+            _jacobianOplusXi.block<2, 3>(0, 0) *
+            cam_offset_.rotationMatrix() *
+            T.rotationMatrix();
     }
 
     virtual bool read(std::istream &in) override { return true; }
@@ -209,7 +216,75 @@ public:
 
 private:
     Mat33 K_;
-    SE3 _cam_ext;
+    SE3 cam_offset_;
+};
+
+/**
+ * Graph edge for a 2d pixel to 3d camera relationship for monocular cameras
+ * meaning the relation is [x, y, depth]' -> [X Y Z]' in se3. This edge
+ * computes both Xi and Xj jacobian matrices.
+ */
+class EdgeProjectionDepth
+    : public g2o::BaseBinaryEdge<3, Vec3, VertexPose, VertexXYZ> {
+
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
+    EdgeProjectionDepth(const Mat33 &K, const SE3 &cam_offset = SE3()) :
+        K_(K),
+        cam_offset_(cam_offset)
+    {
+    }
+
+    virtual void computeError() override {
+        const VertexPose *v0 = static_cast<VertexPose *>(_vertices[0]);
+        const VertexXYZ *v1 = static_cast<VertexXYZ *>(_vertices[1]);
+        const auto& T = v0->estimate();
+        Vec3 pos_pixel = K_ * (cam_offset_ * (T * v1->estimate()));
+        pos_pixel.head<2>() = pos_pixel.head<2>() / pos_pixel[2];
+        _error = _measurement - pos_pixel;
+    }
+
+    virtual void linearizeOplus() override {
+        const VertexPose *v0 = static_cast<VertexPose *>(_vertices[0]);
+        const VertexXYZ *v1 = static_cast<VertexXYZ *>(_vertices[1]);
+        const auto& T = v0->estimate();
+        const auto& pw = v1->estimate();
+        Vec3 pos_cam = cam_offset_ * T * pw;
+        double fx = K_(0, 0);
+        double fy = K_(1, 1);
+        double X = pos_cam[0];
+        double Y = pos_cam[1];
+        double Z = pos_cam[2];
+        double Zinv = 1.0 / (Z + 1e-18);
+        double Zinv2 = Zinv * Zinv;
+        _jacobianOplusXi << -fx * Zinv, 0, fx * X * Zinv2, fx * X * Y * Zinv2,
+            -fx - fx * X * X * Zinv2, fx * Y * Zinv, 0, -fy * Zinv,
+            fy * Y * Zinv2, fy + fy * Y * Y * Zinv2, -fy * X * Y * Zinv2,
+            -fy * X * Zinv,
+            0, 0, 1, Y, -X, 0;
+
+        _jacobianOplusXj =
+            _jacobianOplusXi.block<3, 3>(0, 0) *
+            cam_offset_.rotationMatrix() *
+            T.rotationMatrix();
+    }
+
+    bool isDepthPositive() {
+        const VertexPose *v0 = static_cast<VertexPose *>(_vertices[0]);
+        const VertexXYZ *v1 = static_cast<VertexXYZ *>(_vertices[1]);
+        const auto& T = v0->estimate();
+        Vec3 pos_pixel = K_ * (cam_offset_ * (T * v1->estimate()));
+        return ( // R * x + t
+            T.rotationMatrix() * v1->estimate() + T.translation())(2) > 0.0;
+    }
+
+    virtual bool read(std::istream &in) override { return true; }
+    virtual bool write(std::ostream &out) const override { return true; }
+
+private:
+    Mat33 K_;
+    SE3 cam_offset_;
 };
 
 }  // namespace orb_slam
