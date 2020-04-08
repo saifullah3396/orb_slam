@@ -61,6 +61,34 @@ public:
         LOCK_POS;
         return bad_point_;
     }
+    const cv::Mat worldPos() const {
+        LOCK_POS;
+        return world_pos_.clone(); // return a copy
+    }
+    const cv::Mat viewVector() const {
+        LOCK_POS;
+        return view_vector_.clone(); // return a copy
+    }
+    const cv::Mat bestDescriptor() const {
+        LOCK_OBSERVATIONS;
+        return best_descriptor_.clone();
+    }
+    const float maxScaleInvDist() {
+        LOCK_POS;
+        return 1.2f * max_scale_distance_;
+    }
+    const float minScaleInvDist() {
+        LOCK_POS;
+        return 0.8f * min_scale_distance_;
+    }
+    const TrackProperties& trackProperties() const { return track_properties_; }
+    const KeyFramePtr refKeyFrame() {
+        LOCK_OBSERVATIONS;
+        return ref_key_frame_;
+    }
+    const int found() {
+        return found_;
+    }
 
     /**
      * Setters
