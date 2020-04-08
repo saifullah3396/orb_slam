@@ -10,9 +10,9 @@
 namespace orb_slam
 {
 
-class PoseOptimizer {
+class PoseOptimizer_ {
 public:
-    PoseOptimizer() {
+    PoseOptimizer_() {
         solver = new g2o::OptimizationAlgorithmLevenberg(
             g2o::make_unique<BlockSolverType>(
                 g2o::make_unique<LinearSolverType>()));
@@ -20,41 +20,37 @@ public:
         optimizer->setAlgorithm(solver);
     }
 
-    ~PoseOptimizer() {
+    ~PoseOptimizer_() {
         delete solver;
         delete optimizer;
         solver = NULL;
         optimizer = NULL;
     }
 
-    /**
-     * Solves the optimization problem of finding the pose of a single frame in
-     * 3d space (world coordinates) with 2d-3d point correspondences also in
-     * world coordiantes.
-     *
-     * @param frame: Frame pose to optimize
-     * @param opt_pose: Output optimized pose of the frame
-     * @returns The number of features key points - the outliers found by
-     *     optimization
-     */
-    int solve(const FramePtr& frame, cv::Mat& opt_pose) {
-        optimizer->clear(); // reset optimizer
+    virtual int solve(const FramePtr& frame, cv::Mat& opt_pose) = 0;
 
-        // create the vertex for camera pose
-        VertexPose *vertex_pose = new VertexPose();
-        vertex_pose->setId(0); // first vertex
-        vertex_pose->setFixed(false);
+protected:
+    // setup g2o
+    typedef g2o::BlockSolver_6_3 BlockSolverType;
+    typedef g2o::LinearSolverDense<BlockSolverType::PoseMatrixType>
+        LinearSolverType;
+    g2o::OptimizationAlgorithmLevenberg* solver;
+    g2o::SparseOptimizer* optimizer;
+};
 
-        Eigen::Matrix3d R;
-        Eigen::Vector3d t;
-        // get eigen pose from cv pose
-        cv::cv2eigen<double>(frame->getWorldInCamR(), R);
-        cv::cv2eigen<double>(frame->getWorldInCamt(), t);
-        vertex_pose->setEstimate(Sophus::SE3d(R, t));
+template <class Edge>
+class PoseOptimizer : public PoseOptimizer_ {
+public:
+    PoseOptimizer() {}
+    ~PoseOptimizer() {}
 
-        // add camera pose as first vertex in graph
-        optimizer->addVertex(vertex_pose);
-
+    void createEdges(
+        VertexPose* camera_pose,
+        const FramePtr& frame,
+        std::vector<EdgeProjectionPoseOnlyMono*>& edges,
+        std::vector<size_t>& edge_to_key_point,
+        int& start_node_idx)
+    {
         // get camera matrix in eigen
         Eigen::Matrix3d K;
         cv::cv2eigen<double>(frame->camera()->intrinsicMatrix(), K);
@@ -65,40 +61,34 @@ public:
 
         // create edges for all the observed 3d points from this frame
         const auto& key_points = frame->featuresUndist();
-        const auto map_points = frame->obsMapPoints();
+        const auto& map_points = frame->obsMapPoints();
         const auto n = key_points.size();
 
-        // create edges
-        int index = 1;
-        std::vector<EdgeProjectionPoseOnly*> edges;
-        // Indices of edges corresponding to frame key points
-        std::vector<size_t> edge_to_key_point;
         edges.reserve(n);
         edge_to_key_point.reserve(n);
 
-        for (size_t i = 0; i < n; ++i) {
-            const auto& mp = map_points[i];
+        for (size_t idx = 0; idx < n; ++idx) {
+            const auto& mp = map_points[idx];
+            const auto& kp = key_points[idx];
             if (mp) { // if point exists
                 //features.push_back(frame_->features_left_[i]);
                 // get world position of point in eigen
                 Eigen::Vector3d world_pos;
                 cv::cv2eigen<double>(mp->worldPos(), world_pos);
-                EdgeProjectionPoseOnly* edge = // create an edge for point pose
-                    new EdgeProjectionPoseOnly(world_pos, K);
-                edge->setId(index);
+                auto edge = // create an edge for point pose
+                    new EdgeProjectionPoseOnlyMono(world_pos, K);
+                edge->setId(start_node_idx);
                 // set vertex start point as camera pose vertex
-                edge->setVertex(0, vertex_pose);
+                edge->setVertex(0, camera_pose);
                 // get point image position in eigen
-                Eigen::Vector2d key_point_eigen(
-                    key_points[i].pt.x, key_points[i].pt.y);
+                Eigen::Vector2d key_point_eigen(kp.pt.x, kp.pt.y);
                 // set point seen in camera as measured or observed position
                 edge->setMeasurement(key_point_eigen);
                 // use scale variance to determine information matrix
                 // remember information matrix is the opposite of covariance
                 // matrix
                 Eigen::Matrix2d info =
-                    Eigen::Matrix2d::Identity() *
-                    inv_scale_sigmas[key_points[i].octave];
+                    Eigen::Matrix2d::Identity() * inv_scale_sigmas[kp.octave];
                 edge->setInformation(info);
                 // set robust loss function as huber loss
                 // this is done for outlier rejection
@@ -106,23 +96,125 @@ public:
                 // git/raw/master/slam/g2o-details.pdf for details
                 edge->setRobustKernel(new g2o::RobustKernelHuber);
                 edges.push_back(edge); // add edge to vector
-                edge_to_key_point.push_back(i);
+                edge_to_key_point.push_back(idx);
                 optimizer->addEdge(edge); // add edge to graph
-                index++;
+                start_node_idx++;
             }
         }
+    }
+
+    void createEdges(
+        VertexPose* camera_pose,
+        const FramePtr& frame,
+        std::vector<EdgeProjectionPoseOnlyDepth*>& edges,
+        std::vector<size_t>& edge_to_key_point,
+        int& start_node_idx)
+    {
+        // get camera matrix in eigen
+        Eigen::Matrix3d K;
+        cv::cv2eigen<double>(frame->camera()->intrinsicMatrix(), K);
+
+        // the more the scale factor -> the greater the down sampling ->
+        // the greater variance. inv_scale_sigmas is inverse of variance
+        const auto& inv_scale_sigmas = frame->orbExtractor()->invScaleSigmas();
+
+        // create edges for all the observed 3d points from this frame
+        const auto& key_points = frame->featuresUndist();
+        const auto& depths = frame->featureDepthsUndist();
+        const auto& map_points = frame->obsMapPoints();
+        const auto n = key_points.size();
+
+        edges.reserve(n);
+        edge_to_key_point.reserve(n);
+
+        for (size_t idx = 0; idx < n; ++idx) {
+            const auto& mp = map_points[idx];
+            const auto& kp = key_points[idx];
+            const auto& depth = depths[idx];
+            if (mp) { // if point exists
+                //features.push_back(frame_->features_left_[i]);
+                // get world position of point in eigen
+                Eigen::Vector3d world_pos;
+                cv::cv2eigen<double>(mp->worldPos(), world_pos);
+                auto edge = // create an edge for point pose
+                    new EdgeProjectionPoseOnlyDepth(world_pos, K);
+                edge->setId(start_node_idx);
+                // set vertex start point as camera pose vertex
+                edge->setVertex(0, camera_pose);
+                // get point image position in eigen
+                Eigen::Vector3d key_point_eigen(kp.pt.x, kp.pt.y, depth);
+                // set point seen in camera as measured or observed position
+                edge->setMeasurement(key_point_eigen);
+                // use scale variance to determine information matrix
+                // remember information matrix is the opposite of covariance
+                // matrix
+                Eigen::Matrix3d info =
+                    Eigen::Matrix3d::Identity() * inv_scale_sigmas[kp.octave];
+                edge->setInformation(info);
+                // set robust loss function as huber loss
+                // this is done for outlier rejection
+                // See https://qcloud.coding.net/u/vincentqin/p/blogResource/
+                // git/raw/master/slam/g2o-details.pdf for details
+                edge->setRobustKernel(new g2o::RobustKernelHuber);
+                edges.push_back(edge); // add edge to vector
+                edge_to_key_point.push_back(idx);
+                optimizer->addEdge(edge); // add edge to graph
+                start_node_idx++;
+            }
+        }
+    }
+
+    /**
+     * Solves the optimization problem of finding the pose of a single frame in
+     * 3d space (world coordinates) with 2d-3d point correspondences also in
+     * world coordiantes.
+     *
+     * @param frame: Frame pose to optimize
+     * @param opt_pose: Output optimized pose of the frame
+     * @returns The number of feature inliers found by
+     *     optimization
+     */
+    int solve(const FramePtr& frame, cv::Mat& opt_pose) {
+        optimizer->clear(); // reset optimizer
+
+        // create the vertex for camera pose
+        auto camera_pose = new VertexPose();
+        camera_pose->setId(0); // first vertex
+        camera_pose->setFixed(false);
+
+        Eigen::Matrix3d R;
+        Eigen::Vector3d t;
+        // get eigen pose from cv pose
+        cv::cv2eigen<double>(frame->worldInCameraR(), R);
+        cv::cv2eigen<double>(frame->worldInCamerat(), t);
+
+        // reinforce orthogonality
+        R = Eigen::AngleAxisd(R).toRotationMatrix();
+
+        auto init_pose_se3 = Sophus::SE3d(R, t);
+        camera_pose->setEstimate(init_pose_se3);
+
+        // add camera pose as first vertex in graph
+        optimizer->addVertex(camera_pose);
+
+        std::vector<Edge*> edges;
+        std::vector<size_t> edge_to_key_point;
+        int node_idx = 1;
+        createEdges(
+            camera_pose, frame, edges, edge_to_key_point, node_idx);
 
         // optimizer and determine the outliers for the given pose
         const double chi2_th = 5.991;
         int cnt_outlier = 0;
         const auto& outliers = frame->outliers();
-        optimizer->setVerbose(true);
+        //optimizer->setVerbose(true);
         for (int iteration = 0; iteration < 4; ++iteration) {
-            // get eigen pose from cv pose
-            cv::cv2eigen<double>(frame->getWorldInCamR(), R);
-            cv::cv2eigen<double>(frame->getWorldInCamt(), t);
-            // reset the initial pose and optimize
-            vertex_pose->setEstimate(Sophus::SE3d(R, t));
+            // first three iterations, the robust kernel is used which is used
+            // to give more weight to inliers as explained in g2o docs.
+            // the last iteration the kernel is removed to find the real error.
+
+            // reset the initial pose and optimize each iteration from start
+            camera_pose->setEstimate(init_pose_se3);
             optimizer->initializeOptimization();
             optimizer->optimize(10);
             cnt_outlier = 0;
@@ -156,25 +248,28 @@ public:
             }
         }
 
+        ROS_DEBUG_STREAM("Mean error over number of points:" <<
+            (float) optimizer->activeChi2() / (float) optimizer->activeEdges().size());
+
+        const auto& n = frame->nFeaturesUndist();
         ROS_DEBUG_STREAM(
             "Outlier/Inlier in pose estimating: "
-            << cnt_outlier << "/" << key_points.size() - cnt_outlier);
+            << cnt_outlier << "/" << n - cnt_outlier);
 
         // set optimized pose to the output
-        cv::eigen2cv(vertex_pose->estimate().matrix(), opt_pose);
+        cv::eigen2cv(camera_pose->estimate().matrix(), opt_pose);
+        opt_pose.convertTo(opt_pose, CV_32F); // convert to float
 
-        return key_points.size() - cnt_outlier;
+        return n - cnt_outlier;
     }
-
-private:
-    // setup g2o
-    typedef g2o::BlockSolver_6_3 BlockSolverType;
-    typedef g2o::LinearSolverDense<BlockSolverType::PoseMatrixType>
-        LinearSolverType;
-    g2o::OptimizationAlgorithmLevenberg* solver;
-    g2o::SparseOptimizer* optimizer;
 };
 
-using PoseOptimizerPtr = std::shared_ptr<PoseOptimizer>;
+template class PoseOptimizer<EdgeProjectionPoseOnlyMono>;
+template class PoseOptimizer<EdgeProjectionPoseOnlyDepth>;
+using PoseOptimizerMono = PoseOptimizer<EdgeProjectionPoseOnlyMono>;
+using PoseOptimizerRGBD = PoseOptimizer<EdgeProjectionPoseOnlyDepth>;
+using PoseOptimizerMonoPtr = std::shared_ptr<PoseOptimizerMono>;
+using PoseOptimizerRGBDPtr = std::shared_ptr<PoseOptimizerRGBD>;
+using PoseOptimizerPtr = std::shared_ptr<PoseOptimizer_>;
 
 } // namespace orb_slam
