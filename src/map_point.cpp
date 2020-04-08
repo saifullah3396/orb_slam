@@ -92,7 +92,7 @@ void MapPoint::removeFromMap() {
         LOCK_POS;
         bad_point_ = true;
         observations = observations_;
-    observations_.clear();
+        observations_.clear();
     }
 
     for (const auto& obs: observations) {
