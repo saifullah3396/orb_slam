@@ -34,8 +34,9 @@ Frame::~Frame()
 {
 }
 
-std::vector<MapPointPtr> Frame::obsMapPoints() const {
-    std::unique_lock<std::mutex> (mutex_map_points_);
+
+const std::vector<MapPointPtr>& Frame::obsMapPoints() const {
+    assert(thread_safe_ == false);
     return obs_map_points_;
 }
 
