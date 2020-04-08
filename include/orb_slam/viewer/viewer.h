@@ -7,7 +7,6 @@
 #include <thread>
 #include <orb_slam/map.h>
 #include <orb_slam/frame.h>
-#include <bind.hpp>
 #include <pangolin/pangolin.h>
 #include <sophus/se3.hpp>
 #include <opencv2/core/eigen.hpp>
