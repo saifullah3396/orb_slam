@@ -465,6 +465,10 @@ private:
 
     //! opencv orb extractors
     std::vector<std::shared_ptr<MatcherBase> > matcher_;
+
+    const int hist_length_ = 30;
+    const int low_threshold_ = 50;
+    const int high_threshold_ = 100;
 };
 
 using ORBMatcherPtr = std::shared_ptr<ORBMatcher>;
