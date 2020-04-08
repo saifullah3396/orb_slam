@@ -115,7 +115,7 @@ public:
     const T& invFocalY() const { return focal_y_inv_; }
     const T& centerX() const { return center_x_; }
     const T& centerY() const { return center_y_; }
-    virtual const CameraType type() = 0;
+    virtual const CameraType type() const = 0;
     virtual cv_bridge::CvImageConstPtr image() = 0;
     virtual const cv::Mat& imageL() = 0;
     virtual const cv::Mat& imageR() = 0;
@@ -205,7 +205,7 @@ public:
         }
         return nullptr;
     }
-    const CameraType type() { return CameraType::MONO; }
+    const CameraType type() const { return CameraType::MONO; }
     const cv::Mat& imageL() {
         throw std::runtime_error(
             "imageL() is undefined for monocular camera.");
@@ -282,7 +282,7 @@ public:
         }
         return nullptr;
     }
-    const CameraType type() { return CameraType::RGBD; }
+    const CameraType type() const { return CameraType::RGBD; }
     const cv::Mat& imageL() {
         throw std::runtime_error(
             "imageL() is undefined for monocular camera.");
