@@ -358,14 +358,21 @@ public:
     /**
      * Getters
      */
-    std::vector<MapPointPtr> obsMapPoints() const;
-    const cv::Mat& getCamInWorldT() const { return w_T_c_; }
-    const cv::Mat& getCamInWorldR() const { return w_R_c_; }
-    const cv::Mat& getCamInWorldt() const { return w_t_c_; }
-    const cv::Mat& getWorldInCamT() const { return c_T_w_; }
-    const cv::Mat& getWorldInCamR() const { return c_R_w_; }
-    const cv::Mat& getWorldInCamt() const { return c_t_w_; }
-    const vector<bool>& outliers() const { return outliers_; }
+    const long unsigned int& id() const { return id_; }
+    const ros::Time& timeStamp() const { return time_stamp_; }
+    const cv::Mat& cameraInWorldT() const
+        { assert(thread_safe_ == false); return w_T_c_; }
+    const cv::Mat& cameraInWorldR() const
+        { assert(thread_safe_ == false); return w_R_c_; }
+    const cv::Mat& cameraInWorldt() const
+        { assert(thread_safe_ == false); return w_t_c_; }
+    const cv::Mat& worldInCameraT() const
+        { assert(thread_safe_ == false); return c_T_w_; }
+    const cv::Mat& worldInCameraR() const
+        { assert(thread_safe_ == false); return c_R_w_; }
+    const cv::Mat& worldInCamerat() const
+        { assert(thread_safe_ == false); return c_t_w_; }
+
     const int nFeatures() const { return key_points_.size(); }
     const std::vector<cv::KeyPoint>& features() const
         { return key_points_; }
