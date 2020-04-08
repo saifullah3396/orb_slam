@@ -261,8 +261,17 @@ public:
     }
 
     /**
-     * Converts a point from camera coordinates to world coordinates
+     * Converts a point from pixel oordinates to frame camera coordinates
      */
+    template <typename U, typename V>
+    cv::Point3_<U> frameToCamera(const cv::Mat_<V>& p, const float& depth) {
+        return cv::Point3_<U>(
+                (p(0, 0) - camera_->centerX()) * depth * camera_->invFocalX(),
+                (p(1, 0) - camera_->centerY()) * depth * camera_->invFocalY(),
+                depth
+        );
+    }
+
     template <typename T>
     cv::Point3_<T> cameraToWorld(const cv::Point3_<T>& p) {
         return cv::Point3_<T>(cv::Mat(w_R_c_ * cv::Mat(p) + w_t_c_));
