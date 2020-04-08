@@ -355,27 +355,28 @@ bool Frame::pointInGrid(
 }
 
 void Frame::match(
-    const std::shared_ptr<Frame>& ref_frame,
-    const geometry::OrbMatcherTypes type)
+    const std::shared_ptr<Frame>& ref_frame)
 {
     ref_frame_ = ref_frame;
-    orb_matcher_->match(shared_from_this(), ref_frame_, matches_, type);
+    orb_matcher_->match(
+        descriptorsUndist(),
+        ref_frame_->descriptorsUndist(),
+        matches_);
 }
 
 void Frame::matchByBowFeatures(
-    const std::shared_ptr<Frame>& ref_frame,
+    const std::shared_ptr<KeyFrame>& ref_key_frame,
     const bool check_orientation,
     const float nn_ratio,
     const bool filter_matches)
 {
-    ref_frame_ = ref_frame;
+    ref_key_frame_ = ref_key_frame;
     orb_matcher_->matchByBowFeatures( // 0.7 taken from original orb slam code
         shared_from_this(),
-        ref_frame_,
+        ref_key_frame,
         matches_,
         check_orientation,
-        nn_ratio,
-        filter_matches);
+        nn_ratio);
 }
 
 void Frame::matchByProjection(
