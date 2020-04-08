@@ -36,6 +36,54 @@ enum OrbMatcherTypes {
  * Base class for all matcher types
  */
 struct MatcherBase {
+    /**
+     * Returns radius to use based on cosine of angle between vector from frame
+     * to the 3d point and global view vector of point.
+     */
+    float radiusByViewCosine(const float& view_cosine) {
+        if (view_cosine > 0.998)
+            return 2.5;
+        else
+            return 4.0;
+    }
+
+    void applyRotationConstraint(
+        std::vector<int>* rot_hist,
+        std::vector<int>& matched,
+        const int& hist_length_)
+    {
+        // apply rotation consistency
+        int ind1 = -1;
+        int ind2 = -1;
+        int ind3 = -1;
+
+        // take the 3 top most histograms
+        geometry::computeThreeMaxima(rot_hist, hist_length_, ind1, ind2, ind3);
+
+        // remove all the points that have rotation difference other than the
+        // top 3 histogram bins.
+        for (int i = 0; i < hist_length_; i++) {
+            if (i != ind1 && i != ind2 && i != ind3) {
+                for (size_t j = 0, jend = rot_hist[i].size(); j < jend; j++) {
+                    matched[rot_hist[i][j]] = false;
+                }
+            }
+        }
+    }
+
+    void createMatches(
+        const std::vector<int>& matched,
+        const std::vector<int>& feature_dists,
+        std::vector<cv::DMatch>& matches) {
+        // create matches
+        for (size_t i = 0; i < matched.size(); ++i) {
+            if (matched[i] > 0) { // matches from frame to reference frame
+                matches.push_back(
+                    cv::DMatch(
+                        i, matched[i], static_cast<float>(feature_dists[i])));
+            }
+        }
+    }
 };
 
 /**
