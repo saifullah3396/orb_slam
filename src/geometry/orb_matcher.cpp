@@ -4,7 +4,9 @@
  * @author <A href="mailto:saifullah3396@gmail.com">Saifullah</A>
  */
 
+#include <memory>
 #include <orb_slam/frame.h>
+#include <orb_slam/key_frame.h>
 
 namespace orb_slam
 {
