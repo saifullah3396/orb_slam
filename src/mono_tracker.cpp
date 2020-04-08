@@ -8,10 +8,12 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include "orb_slam/frame.h"
+#include "orb_slam/mono_frame.h"
 #include "orb_slam/key_frame.h"
 #include "orb_slam/map.h"
 #include "orb_slam/map_point.h"
 #include "orb_slam/mono_tracker.h"
+#include "orb_slam/g2o/pose_optimizer.h"
 #include "orb_slam/initializer.h"
 #include "orb_slam/geometry/camera.h"
 #include "orb_slam/geometry/orb_extractor.h"
@@ -27,6 +29,9 @@ MonoTracker::MonoTracker(
     nh_.getParam("/orb_slam/tracker/initializer_sigma", initializer_sigma_);
     nh_.getParam(
         "/orb_slam/tracker/initializer_iterations", initializer_iterations_);
+
+    ROS_DEBUG("Initializing pose optimizer...");
+    pose_optimizer_ = PoseOptimizerMonoPtr(new PoseOptimizerMono());
 }
 
 void MonoTracker::update()
@@ -54,7 +59,7 @@ void MonoTracker::update()
     ROS_DEBUG("Tracking frame...");
     // track the frame
     trackFrame();
-    camera_pose_history_.push_back(current_frame_->getCamInWorldT().clone());
+    camera_pose_history_.push_back(current_frame_->cameraInWorldT());
 
     last_image_ = image;
 }
@@ -104,7 +109,7 @@ void MonoTracker::initializeTracking()
         //cv::waitKey(0);
 
         // find correspondences between current frame and first reference frame
-        current_frame_->match(ref_frame_, geometry::OrbMatcherTypes::CV_ORB);
+        current_frame_->match(ref_frame_);
 
         // check if there are enough matches
         if(current_frame_->nMatches() < MIN_REQ_MATCHES_INIT)
@@ -170,13 +175,11 @@ void MonoTracker::createInitialMonocularMap(
     ROS_DEBUG_STREAM("Defining key frames...");
     auto ref_key_frame =
         KeyFramePtr(
-            new KeyFrame(ref_frame_,
-                std::const_pointer_cast<const Map>(map_)));
+            new KeyFrame(ref_frame_, map_));
 
     auto key_frame =
         KeyFramePtr(
-            new KeyFrame(current_frame_,
-                std::const_pointer_cast<const Map>(map_)));
+            new KeyFrame(current_frame_, map_));
 
     ROS_DEBUG_STREAM("Adding key frames to map...");
     // add key frames to map
@@ -198,8 +201,8 @@ void MonoTracker::createInitialMonocularMap(
 
         ROS_DEBUG_STREAM("Adding point to frames...");
         // add the map point to both key frames
-        ref_key_frame->addMapPoint(mp, i);
-        key_frame->addMapPoint(mp, i);
+        ref_key_frame->setMapPointAt(mp, i);
+        key_frame->setMapPointAt(mp, i);
 
         ROS_DEBUG_STREAM("Adding frames to point...");
         // add both key frames as observers to the map point

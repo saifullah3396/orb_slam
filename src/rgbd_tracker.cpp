@@ -8,14 +8,18 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include "orb_slam/frame.h"
+#include "orb_slam/rgbd_frame.h"
 #include "orb_slam/key_frame.h"
 #include "orb_slam/map.h"
 #include "orb_slam/map_point.h"
 #include "orb_slam/rgbd_tracker.h"
 #include "orb_slam/initializer.h"
+#include "orb_slam/motion_model.h"
+#include "orb_slam/g2o/pose_optimizer.h"
 #include "orb_slam/geometry/camera.h"
 #include "orb_slam/geometry/orb_extractor.h"
 #include "orb_slam/geometry/orb_matcher.h"
+#include "orb_slam/viewer/viewer.h"
 
 namespace orb_slam
 {
@@ -26,6 +30,8 @@ RGBDTracker::RGBDTracker(
     const ros::NodeHandle& nh, const int& camera_type) :
     Tracker(nh, camera_type)
 {
+    ROS_DEBUG("Initializing pose optimizer...");
+    pose_optimizer_ = PoseOptimizerRGBDPtr(new PoseOptimizerRGBD());
 }
 
 void RGBDTracker::update()
@@ -44,7 +50,7 @@ void RGBDTracker::update()
     // create a frame from the image
     ROS_DEBUG("Creating frame...");
     current_frame_ =
-        FramePtr(new RGBDFrame(image, depth, ros::Time::now()));
+        FramePtr(new RGBDFrame(image, depth, image->header.stamp));
 
     ROS_DEBUG("Extracting features from frame...");
     // extract features from the frame
@@ -75,8 +81,7 @@ void RGBDTracker::initializeTracking()
         // create KeyFrame
         ref_key_frame_ =
             KeyFramePtr(
-                new KeyFrame(current_frame_,
-                    std::const_pointer_cast<const Map>(map_)));
+                new KeyFrame(current_frame_, map_));
 
         // resize local key frame map
         ref_key_frame_->resizeMap(n_key_points);
@@ -107,7 +112,7 @@ void RGBDTracker::initializeTracking()
 
             // add the map point in local observation map of key frame
             // i corresponds to index of the map point here
-            ref_key_frame_->addMapPoint(mp, i);
+            ref_key_frame_->setMapPointAt(mp, i);
 
             // add the key frame to map point in which it is observed
             // i corresponds to index of the key point in frame class
@@ -126,12 +131,18 @@ void RGBDTracker::initializeTracking()
         ROS_DEBUG_STREAM(
             "New map created with " << map_->nMapPoints() << " points.");
 
+        // initialize the motion model
+        auto current_pose = current_frame_->worldInCameraT();
+        motion_model_->updateModel(current_pose, current_frame_->timeStamp());
+
+        // add the frame to viewer
+        viewer_->addFrame(current_frame_);
         //mpLocalMapper->InsertKeyFrame(pKFini);
 
         last_frame_ = current_frame_;
         last_key_frame_ = ref_key_frame_;
         last_key_frame_->setRefKeyFrame(ref_key_frame_); // reference is itself
-        camera_pose_history_.push_back(current_frame_->getCamInWorldT());
+        camera_pose_history_.push_back(current_frame_->cameraInWorldT());
 
         state_ = TrackingState::OK;
     }
