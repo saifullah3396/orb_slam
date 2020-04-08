@@ -334,22 +334,6 @@ public:
     ~ORBMatcher();
 
     /**
-     * Matches the key points in two frames
-     *
-     * @param frame: Input frame to match
-     * @param ref_frame: Reference frame to match with
-     * @param matches: Output features that are matched
-     * @param type: Type of orb matcher to use
-     * @param filter_matches: Matches are filtered if true
-     */
-    void match(
-        const FramePtr& frame,
-        const FramePtr& ref_frame,
-        std::vector<cv::DMatch>& matches,
-        const OrbMatcherTypes type,
-        bool filter_matches = true) const;
-
-    /**
      * Matches the input key points
      *
      * @param key_points: Input key points to match
