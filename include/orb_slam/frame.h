@@ -474,7 +474,7 @@ protected:
         const cv::KeyPoint& key_point, int& pos_x, int& pos_y);
 
     // frame info
-    int id_; // frame id
+    long unsigned int id_; // frame id
     ros::Time time_stamp_; // frame time stamp
     cv::Mat w_T_c_; // camera in world transformation matrix
     cv::Mat w_R_c_; // camera in world rotation
@@ -482,6 +482,7 @@ protected:
     cv::Mat c_T_w_; // world in camera transformation matrix
     cv::Mat c_R_w_; // world in camera rotation
     cv::Mat c_t_w_; // world in camera translation
+
     std::vector<cv::KeyPoint> key_points_;
     std::vector<cv::KeyPoint> undist_key_points_;
     std::vector<bool> outliers_;
