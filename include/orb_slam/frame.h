@@ -520,95 +520,10 @@ protected:
 
     // define key frame as friend for access
     friend class KeyFrame;
-};
 
-class MonoFrame : public Frame {
-public:
-    /**
-     * Constructor
-     *
-     * @param image: Image assigned to this frame
-     * @param time_stamp: Frame time stamp on creation
-     */
-    MonoFrame(
-        const cv_bridge::CvImageConstPtr& image, const ros::Time& time_stamp);
-
-    /**
-     * Destructor
-     */
-    ~MonoFrame();
-
-    /**
-     * Extracts orb features from the frame image
-     */
-    virtual void extractFeatures();
-
-    void drawFeatures(cv::Mat& image);
-    void showImageWithFeatures(const std::string& name);
-    void showMatchesWithRef(const std::string& name, const size_t n = 0);
-
-    /**
-     * Getters
-     */
-    const cv_bridge::CvImageConstPtr& image() { return image_; }
-
-private:
-    /**
-     * Returns the derived camera class
-     */
-    geometry::MonoCameraConstPtr<float> camera();
-
-    cv_bridge::CvImageConstPtr image_; // Frame image
-};
-
-class RGBDFrame : public Frame {
-public:
-    /**
-     * Constructor
-     *
-     * @param image: Image assigned to this frame
-     * @param depth: Image depth assigned to this frame
-     * @param time_stamp: Frame time stamp on creation
-     */
-    RGBDFrame(
-        const cv_bridge::CvImageConstPtr& image,
-        const cv_bridge::CvImageConstPtr& depth,
-        const ros::Time& time_stamp);
-
-    /**
-     * Destructor
-     */
-    ~RGBDFrame();
-
-    /**
-     * Extracts orb features from the frame image
-     */
-    virtual void extractFeatures();
-
-    void drawFeatures(cv::Mat& image);
-    void showImageWithFeatures(const std::string& name);
-    void showMatchesWithRef(const std::string& name, const size_t n = 0);
-
-    /**
-     * Getters
-     */
-    const cv_bridge::CvImageConstPtr& image() { return image_; }
-    const cv_bridge::CvImageConstPtr& depth() { return depth_; }
-    const std::vector<float>& featureDepthsUndist() const {
-        return undist_key_point_depths_;
-    }
-
-private:
-    /**
-     * Returns the derived camera class
-     */
-    geometry::RGBDCameraConstPtr<float> camera();
-
-    cv_bridge::CvImageConstPtr image_; // Frame image
-    cv_bridge::CvImageConstPtr depth_; // Frame image depth
-    cv::Mat gray_image_; // gray_scale image
-    bool rgb_ = {false};
-    std::vector<float> undist_key_point_depths_;
+    // a flag that is set to true when the frame is supposed
+    // to be thread safe
+    bool thread_safe_ = {false};
 };
 
 //! pointer alias
