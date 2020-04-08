@@ -366,6 +366,8 @@ void BowOrbMatcher::match(
 
     const auto& ref_key_points = ref_frame->featuresUndist();
     const auto& key_points = frame->featuresUndist();
+    // matched is the map from key points -> reference key points
+    // matched[key_point_i] = ref_key_point_k
     std::vector<int> matched(key_points.size(), -1);
     std::vector<int> feature_dists(key_points.size(), -1);
 
@@ -384,8 +386,16 @@ void BowOrbMatcher::match(
             const auto& idxs = f->second;
             const auto& ref_idxs = ref_f->second;
             for (const auto& ref_idx: ref_idxs) {
-                // if the feature at this index is bad for any reason
-                //if (ref_frame->isBadFeature(ref_idx)) continue;
+                // first see if this feature has a map point associated with it
+                // or not. If it is, see if it is not a bad point. Since at the
+                // end we need to attach matched map points from reference frame
+                // to frame
+                if (
+                        !ref_map_points[ref_idx] ||
+                        ref_map_points[ref_idx]->isBad())
+                    continue;
+
+                // get reference key point descriptor
                 const auto& ref_desc = ref_descs.row(ref_idx);
 
                 // finds closest of all the features in ref_frame that lies within
