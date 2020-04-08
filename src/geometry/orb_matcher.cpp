@@ -704,7 +704,7 @@ void ORBMatcher::match(
     std::vector<cv::DMatch>& matches,
     bool filter_matches) const
 {
-    static_pointer_cast<BruteForceWithRadiusMatcher>(matcher_[BF_WITH_RADIUS])->
+    std::static_pointer_cast<BruteForceWithRadiusMatcher>(matcher_[BF_WITH_RADIUS])->
         match(
             key_points,
             ref_key_points,
@@ -722,7 +722,7 @@ void ORBMatcher::match(
     std::vector<cv::DMatch>& matches,
     bool filter_matches) const
 {
-    static_pointer_cast<CVORBMatcher>(matcher_[CV_ORB])->
+    std::static_pointer_cast<CVORBMatcher>(matcher_[CV_ORB])->
         match(
             descriptors,
             ref_descriptors,
@@ -734,18 +734,15 @@ void ORBMatcher::match(
 
 void ORBMatcher::matchByBowFeatures(
     const FramePtr& frame,
-    const FramePtr& ref_frame,
+    const KeyFramePtr& ref_key_frame,
     std::vector<cv::DMatch>& matches,
     const bool check_orientation,
-    const float nn_ratio,
-    const bool filter_matches) const
+    const float nn_ratio) const
 {
-    const auto& matcher = static_pointer_cast<BowOrbMatcher>(matcher_[BOW_ORB]);
+    const auto& matcher = std::static_pointer_cast<BowOrbMatcher>(matcher_[BOW_ORB]);
     matcher->check_orientation_ = check_orientation;
     matcher->nn_ratio_ = nn_ratio;
-    matcher->match(frame, ref_frame, matches);
-    if (filter_matches)
-        filterMatches(frame->descriptorsUndist(), matches);
+    matcher->match(frame, ref_key_frame, matches);
 }
 
 void ORBMatcher::matchByProjection(
@@ -753,17 +750,46 @@ void ORBMatcher::matchByProjection(
     const FramePtr& ref_frame,
     std::vector<cv::DMatch>& matches,
     const bool check_orientation,
-    const float radius,
-    const bool filter_matches) const
+    const float radius) const
 {
     const auto& matcher =
-        static_pointer_cast<BruteForceWithProjectionMatcher>(
+        std::static_pointer_cast<BruteForceWithProjectionMatcher>(
             matcher_[BF_WITH_PROJ]);
     matcher->check_orientation_ = check_orientation;
     matcher->radius_ = radius;
     matcher->match(frame, ref_frame, matches);
-    if (filter_matches)
-        filterMatches(frame->descriptorsUndist(), matches);
+}
+
+void ORBMatcher::matchByProjection(
+    const FramePtr& frame,
+    const std::vector<MapPointPtr>& points_3d,
+    std::vector<cv::DMatch>& matches,
+    const bool compute_track_info,
+    const float nn_ratio,
+    const float radius) const
+{
+    const auto& matcher =
+        std::static_pointer_cast<BruteForceWithProjectionMatcher>(
+            matcher_[BF_WITH_PROJ]);
+    matcher->nn_ratio_ = nn_ratio;
+    matcher->radius_ = radius;
+    matcher->compute_track_info_ = compute_track_info;
+    matcher->match(frame, points_3d, matches);
+}
+
+void ORBMatcher::matchByEpipolarConstraint(
+    const KeyFramePtr& key_frame,
+    const KeyFramePtr& ref_key_frame,
+    std::vector<cv::DMatch>& matches,
+    const bool check_orientation) const
+{
+    const auto& matcher =
+        std::static_pointer_cast<EpipolarConstraintWithBowMatcher>(
+            matcher_[EPIPOLAR_CONSTRAINT]);
+    matcher->check_orientation_ = check_orientation;
+    matcher->match(key_frame, ref_key_frame, matches);
+}
+
 }
 
 void ORBMatcher::filterMatches(
