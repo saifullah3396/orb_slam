@@ -114,11 +114,10 @@ void BruteForceWithProjectionMatcher::match(
         size_t ref_idx = 0; ref_idx < ref_frame->nFeaturesUndist(); ++ref_idx)
     {
         const auto& mp = ref_map_points[ref_idx];
-        if (mp) { // may be not every feature has a 3d correspondence
+        if (mp) { // every feature may not have 3d correspondence
             cv::Mat point_3d_world = mp->worldPos();
             // convert from world to current camera frame
-            auto point_3d_cam =
-                frame->worldToCamera<float>(cv::Point3f(point_3d_world));
+            auto point_3d_cam = frame->worldToCamera<float>(point_3d_world);
             if (point_3d_cam.z < 0) // if depth is negative
                 continue;
             auto point_2d_frame =
