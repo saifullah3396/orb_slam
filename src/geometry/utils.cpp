@@ -250,6 +250,17 @@ namespace utils {
         }
     }
 
+    cv::Mat skew(const cv::Mat& vec)
+    {
+        return
+            (
+                cv::Mat_<float>(3,3) <<
+                                    0, -vec.at<float>(2),  vec.at<float>(1),
+                     vec.at<float>(2),                 0, -vec.at<float>(0),
+                    -vec.at<float>(1),  vec.at<float>(0),                 0
+            );
+    }
+
 } // namespace utils
 
 } // namespace orb_slam
