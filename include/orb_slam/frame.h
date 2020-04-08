@@ -340,6 +340,18 @@ public:
         return ref_frame->worldInCameraT() * w_T_c_;
     }
 
+    /**
+     * Returns true if the map point in 3d space lies in the view or frustum of
+     * current frame.
+     * @param mp: Map point to check
+     * @param view_cos_limit: Angle limit
+     * @param track_res: Tracking resulting info
+     * @returns boolean
+     */
+    bool isInCameraView(
+        const MapPointPtr& mp,
+        TrackProperties& track_res,
+        const float view_cos_limit = 0.5);
 
     /**
      * Computes the fundamental matrix from this frame to another
