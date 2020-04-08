@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <assert.h>
 #include <array>
 #include <memory>
 #include <orb_slam/geometry/camera.h>
