@@ -23,6 +23,8 @@ using Grid = std::vector<std::vector<T>>;
 class MapPoint;
 using MapPointPtr = std::shared_ptr<MapPoint>;
 
+struct TrackProperties;
+
 class Frame : public std::enable_shared_from_this<Frame> {
 public:
     static void computeFundamentalMat(
