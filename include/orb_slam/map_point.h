@@ -200,6 +200,8 @@ private:
     // Pointer to the map
     MapPtr map_;
 
+    // Poiter to replacing point if required
+    MapPointPtr replaced_by;
 
     // Mutexes
     mutable std::mutex pos_mutex_;
