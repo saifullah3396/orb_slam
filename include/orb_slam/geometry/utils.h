@@ -71,6 +71,11 @@ namespace utils {
      * @param vec_mat: Outout vector of matrices
      */
     void matToVectorMat(const cv::Mat& mat, std::vector<cv::Mat>& vec_mat);
+
+    /**
+     * Makes a skew symmetric matrix from a vector matrix
+     */
+    cv::Mat skew(const cv::Mat& vec);
 } // namespace utils
 
 } // namespace orb_slam
