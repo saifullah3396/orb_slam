@@ -513,10 +513,7 @@ protected:
     static int grid_rows_;
     static int grid_cols_;
 
-    static int id_global_; // global ids accumulator
-
-    // map points access mutex
-    std::mutex mutex_map_points_;
+    static long unsigned int id_global_; // global ids accumulator
 
     // define key frame as friend for access
     friend class KeyFrame;
