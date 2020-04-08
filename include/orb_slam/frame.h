@@ -234,6 +234,21 @@ public:
     }
 
     /**
+     * Converts a point from frame camera coordinates to pixel coordinates
+     *
+     * @param p: Point in camera coordinates
+     */
+    template <typename U, typename V>
+    cv::Point_<U> cameraToFrame(const cv::Mat_<V>& p) {
+        return cv::Point_<U>(
+                camera_->focalX() * p.at(0, 0) /
+                    p.at(2, 0) + camera_->centerX(),
+                camera_->focalY() * p.at(1, 0) /
+                    p.at(2, 0) + camera_->centerY()
+        );
+    }
+
+    /**
      * Converts a point from pixel oordinates to frame camera coordinates
      */
     template <typename U, typename V>
