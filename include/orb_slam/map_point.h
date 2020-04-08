@@ -160,6 +160,19 @@ public:
      * Based on original orb-slam repository
      */
     void updateNormalAndScale();
+
+    /**
+     * Replace this map point with another map point.
+     * @param other: Other map point
+     */
+    void replace(const MapPointPtr& other);
+
+    int predictScale(const float& dist);
+
+    float foundRatio() {
+        LOCK_OBSERVATIONS;
+        return static_cast<float>(found_) / static_cast<float>(visibility_);
+    }
 private:
     // Properties of map point related to tracking in a frame
     TrackProperties track_properties_;
