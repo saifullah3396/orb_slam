@@ -433,9 +433,10 @@ public:
         const ORBVocabularyConstPtr& orb_vocabulary)
         { orb_vocabulary_ = orb_vocabulary; }
 
+    void setRefKeyFrame(const KeyFramePtr& ref_key_frame);
     void resizeMap(const size_t& n);
     void resetMap();
-    void addMapPoint(const MapPointPtr& mp, const size_t& idx);
+    void setMapPointAt(const MapPointPtr& mp, const size_t& idx);
     void removeMapPointAt(const unsigned long& idx);
 
     void setOutlier(const size_t& idx, const bool is_outlier) {
