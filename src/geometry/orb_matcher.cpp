@@ -402,34 +402,40 @@ void BowOrbMatcher::match(
                 // pixel radius of feature i
                 int min_feature_dist = 256;
                 int min_feature_dist_2 = 256; // second minimum
-                int matched_id = -1;
+                int matched_idx = -1;
                 for (const auto& idx: idxs) {
                     if (matched[idx] > 0) // match already assigned
                         continue;
                     // find distance between descriptors of this point and all the
                     // close points
                     const auto& desc = descs.row(idx);
+
+                    // find descriptor distance
                     const auto dist =
                         geometry::descriptorDistance(ref_desc, desc);
                     if (dist <= min_feature_dist) {
                         min_feature_dist = dist;
-                        matched_id = idx;
+                        // matched id is the match found in idxs for ref_idx
+                        matched_idx = idx;
                     } else if (dist < min_feature_dist_2) {
                         min_feature_dist_2 = dist;
                     }
                 }
 
+                // if minimum dist is within lower threshold annd nn ratio
+                // is satisfied
                 if (min_feature_dist <= low_threshold_ &&
                     // not sure what nn ratio is
                     static_cast<float>(min_feature_dist) <
                     nn_ratio_ * static_cast<float>(min_feature_dist_2))
                 {
-                    matched[matched_id] = ref_idx;
-                    feature_dists[matched_id] = min_feature_dist;
+                    // set matching from frame point at idx to reference point at ref_idx
+                    matched[matched_idx] = ref_idx;
+                    feature_dists[matched_idx] = min_feature_dist;
                     if(check_orientation_) {
                         float rot_diff =
                             ref_key_points[ref_idx].angle -
-                            key_points[matched_id].angle;
+                            key_points[matched_idx].angle;
                         if (rot_diff < 0.0)
                             rot_diff += 360.0f;
                         // add rot_diff to bin
@@ -438,7 +444,7 @@ void BowOrbMatcher::match(
                             bin = 0;
                         assert(bin >= 0 && bin < hist_length_);
                         // add rotation difference to histogram
-                        rot_hist[bin].push_back(matched_id);
+                        rot_hist[bin].push_back(matched_idx);
                     }
                 }
             }
@@ -452,8 +458,12 @@ void BowOrbMatcher::match(
         }
     }
 
-    // apply rotation consistency
     if(check_orientation_)
+        applyRotationConstraint(rot_hist, matched, hist_length_);
+
+    // create matches
+    createMatches(matched, feature_dists, matches);
+}
     {
         int ind1 = -1;
         int ind2 = -1;
