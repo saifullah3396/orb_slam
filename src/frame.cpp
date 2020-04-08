@@ -10,7 +10,7 @@
 namespace orb_slam {
 
 //! static variable definitions
-int Frame::id_global_ = 0;
+long unsigned int Frame::id_global_ = 0;
 geometry::CameraConstPtr<float> Frame::camera_;
 geometry::ORBExtractorConstPtr Frame::orb_extractor_;
 geometry::ORBMatcherConstPtr Frame::orb_matcher_;
