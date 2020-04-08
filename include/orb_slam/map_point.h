@@ -61,6 +61,14 @@ public:
         LOCK_POS;
         return bad_point_;
     }
+    const bool isInLocalMapOf(const long unsigned int& id) const
+        { return this->is_in_local_map_of_ == id; }
+    const bool trackedInFrame(const long unsigned int& id) const
+        { return this->tracked_in_frame_ == id; }
+    const bool isFuseCandidateOf(const long unsigned int& id) const
+        { return this->is_fuse_candidate_of_ == id; }
+    const bool inLocalAdjustmentOf(const long unsigned int& id) const
+        { return this->in_local_adjustment_of_ == id; }
     const cv::Mat worldPos() const {
         LOCK_POS;
         return world_pos_.clone(); // return a copy
@@ -100,6 +108,14 @@ public:
     void resetTrackProperties() { track_properties_.reset(); }
     void setTrackProperties(const TrackProperties& track_properties)
         { track_properties_ = track_properties; }
+    void setTrackedInFrame(const long unsigned int& id)
+        { tracked_in_frame_ = id; }
+    void setIsInLocalMapOf(const long unsigned int& id)
+        { is_in_local_map_of_ = id; }
+    void setFuseCandidateOf(const long unsigned int& id)
+        { is_fuse_candidate_of_ = id; }
+    void setInLocalAdjustmentOf(const long unsigned int& id)
+        { this->in_local_adjustment_of_ = id; }
     void setWorldPos(const cv::Mat& world_pos) {
         LOCK_POS;
         world_pos.copyTo(world_pos_);
@@ -176,6 +192,15 @@ public:
 private:
     // Properties of map point related to tracking in a frame
     TrackProperties track_properties_;
+    // id of frame whose local bundle adjustment this point is in
+    int in_local_adjustment_of_;
+    // id of frame whose local map this map point is in
+    long int is_in_local_map_of_;
+    // id of the frame in which it is last seen
+    long int tracked_in_frame_;
+    // id of frame whose fuse candidate this map point is
+    long int is_fuse_candidate_of_;
+
     // Map point details
     cv::Mat world_pos_; // Point position in world coordinates
     cv::Mat view_vector_; // Mean viewing direction
