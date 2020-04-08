@@ -78,7 +78,14 @@ void BruteForceWithProjectionMatcher::match(
     const FramePtr& ref_frame,
     std::vector<cv::DMatch>& matches)
 {
-    auto ref_map_points = ref_frame->obsMapPoints();
+
+void BruteForceWithProjectionMatcher::match(
+    const FramePtr& frame,
+    const FramePtr& ref_frame,
+    const cv::Mat& ref_T_f,
+    const std::vector<MapPointPtr>& ref_map_points,
+    std::vector<cv::DMatch>& matches)
+{
     const auto& ref_key_points = ref_frame->featuresUndist();
     const auto& key_points = frame->featuresUndist();
     const auto& descriptors = frame->descriptorsUndist();
