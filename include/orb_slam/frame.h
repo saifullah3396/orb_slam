@@ -403,12 +403,13 @@ public:
         throw std::runtime_error("Not implemented for this frame type.");
     }
     const cv::Mat& descriptorsUndist() const { return undist_descriptors_; }
-    const int nDescriptorsUnDist() const { return undist_descriptors_.rows; }
-    const std::vector<cv::DMatch> matches() const { return matches_; }
+    const int& nDescriptorsUnDist() const { return undist_descriptors_.rows; }
+    const std::vector<cv::DMatch>& matches() const { return matches_; }
     const int nMatches() const { return matches_.size(); }
     const DBoW2::BowVector& bow() const { return bow_vec_; }
     const DBoW2::FeatureVector& bowFeatures() const { return feature_vec_; }
-    virtual const cv_bridge::CvImageConstPtr& image() = 0;
+    const KeyFramePtr& refKeyFrame() const { return ref_key_frame_; }
+    virtual const cv_bridge::CvImageConstPtr& image() const = 0;
 
     static const geometry::CameraConstPtr<float>& camera()
         { return camera_; }
