@@ -12,6 +12,7 @@
 #include <string>
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d.hpp>
+#include <orb_slam/geometry/utils.h>
 
 namespace orb_slam
 {
