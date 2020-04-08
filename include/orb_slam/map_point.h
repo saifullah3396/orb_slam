@@ -22,6 +22,19 @@ using KeyFramePtr = std::shared_ptr<KeyFrame>;
 class Map;
 using MapPtr = std::shared_ptr<Map>;
 
+struct TrackProperties {
+    void reset() {
+        in_view_ = false;
+    }
+
+    bool in_view_; // whether this point is in view or not
+    cv::Point2f proj_xy_; // projection x-y in frame
+    int proj_xr_; // projection x in right camera for stereo
+    // predicted scale level in which this point is tracked
+    int pred_scale_level_;
+    float view_cosine_; // cosine of angle
+};
+
 class MapPoint : public std::enable_shared_from_this<MapPoint>
 {
 public:
