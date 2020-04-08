@@ -30,4 +30,5 @@
 
     <node
         pkg="orb_slam" name="tracker_node" type="tracker_node" output="screen"/>
+        <!-- launch-prefix="xterm -e /usr/bin/gdb -args" -->
 </launch>
