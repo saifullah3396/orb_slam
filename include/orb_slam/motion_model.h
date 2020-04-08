@@ -62,6 +62,10 @@ public:
             velocity_ =
                 (current_pose * last_pose_.inverse()).log() /
                 time_diff_.toSec();
+            //std::cout << "time_diff:" << time_diff_ << std::endl;
+            //std::cout << "velocity_:" << velocity_ << std::endl;
+            //std::cout << "current_pose:" << current_pose.log() << std::endl;
+            //std::cout << "last_pose_:" << last_pose_.log() << std::endl;
         }
         last_pose_ = current_pose;
         last_time_ = time;
