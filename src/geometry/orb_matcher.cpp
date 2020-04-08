@@ -94,6 +94,26 @@ void BruteForceWithProjectionMatcher::match(
 
 void BruteForceWithProjectionMatcher::match(
     const FramePtr& frame,
+    const KeyFramePtr& ref_key_frame,
+    std::vector<cv::DMatch>& matches)
+{
+    // find frame in reference frame...
+    const cv::Mat ref_T_f =
+        ref_key_frame->worldInCameraT() *
+        frame->cameraInWorldT();
+
+    // get the transform from last frame to this frame, copy if thread safe
+    const auto ref_map_points = ref_key_frame->obsMapPoints();
+    match(
+        frame,
+        ref_key_frame->frame(),
+        ref_T_f,
+        ref_map_points,
+        matches);
+}
+
+void BruteForceWithProjectionMatcher::match(
+    const FramePtr& frame,
     const FramePtr& ref_frame,
     const cv::Mat& ref_T_f,
     const std::vector<MapPointPtr>& ref_map_points,
