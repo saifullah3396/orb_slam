@@ -205,6 +205,56 @@ bool Frame::getFeaturesAroundPoint(
     return false;
 }
 
+bool Frame::isInCameraView(
+    const MapPointPtr& mp,
+    TrackProperties& track_res,
+    const float view_cos_limit)
+{
+    // get 3d position of map point
+    auto pos = worldToCamera<float>(mp->worldPos());
+
+    // check depth to see if the point is in front or not
+    if (pos.z < 0.0f)
+        return false;
+
+    // project the point to image to see if it lies inside the bounds
+    auto img = cameraToFrame<float, float>(pos);
+
+    if (!pointWithinBounds(img))
+        return false;
+
+    // check point distance is within the scale invariance region
+    const auto& max_dist = mp->maxScaleInvDist();
+    const auto& min_dist = mp->minScaleInvDist();
+    const float dist = cv::norm(pos);
+
+    // return false if out of range
+    if(dist < min_dist || dist > max_dist)
+        return false;
+
+    // check viewing angle
+    cv::Mat view_vec =  mp->viewVector();
+
+    // view_vec is already norm 1
+    // cos (angle) = a.b / |a| |b|
+    const float cosine = (cv::Mat(pos) - w_t_c_).dot(view_vec) / dist;
+    if(cosine < view_cos_limit) // outside angle range...
+        return false;
+
+    // predict the scale of this point in this image
+    const int predicted_scale_level = mp->predictScale(dist);
+
+    // Data used by the tracking
+    track_res.in_view_ = true;
+    track_res.proj_xy_ = img;
+    //if (camera_->type() == geometry::CameraType::STEREO)
+        //track_properties.proj_xr = toRightCam(img.x);
+    track_res.pred_scale_level_ = predicted_scale_level;
+    track_res.view_cosine_ = cosine;
+
+    return true;
+}
+
 void Frame::setupFirstFrame() {
     // since this is the first frame it acts as reference for others
     // there we set it as identity matrix
