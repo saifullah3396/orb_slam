@@ -200,9 +200,10 @@ private:
     // Pointer to the map
     MapPtr map_;
 
+
     // Mutexes
-    std::mutex pos_mutex_;
-    std::mutex observations_mutex_;
+    mutable std::mutex pos_mutex_;
+    mutable std::mutex observations_mutex_;
 
     // Orb matcher for descriptor distances
     static geometry::ORBMatcherConstPtr orb_matcher_;
