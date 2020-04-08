@@ -43,28 +43,29 @@ const std::vector<MapPointPtr>& Frame::obsMapPoints() const {
     return obs_map_points_;
 }
 
+
 void Frame::resizeMap(const size_t& n)
 {
-    std::unique_lock<std::mutex> lock(mutex_map_points_);
+    assert(thread_safe_ == false);
     obs_map_points_.resize(n);
 }
 
 void Frame::resetMap()
 {
-    std::unique_lock<std::mutex> lock(mutex_map_points_);
+    assert(thread_safe_ == false);
     for (auto& mp: obs_map_points_) {
         mp.reset();
     }
 }
 
-void Frame::addMapPoint(const MapPointPtr& mp, const size_t& idx)
+void Frame::setMapPointAt(const MapPointPtr& mp, const size_t& idx)
 {
-    std::unique_lock<std::mutex> lock(mutex_map_points_);
+    assert(thread_safe_ == false);
     obs_map_points_[idx] = mp;
 }
 
 void Frame::removeMapPointAt(const unsigned long& idx) {
-    std::unique_lock<std::mutex> lock(mutex_map_points_);
+    assert(thread_safe_ == false);
     obs_map_points_[idx].reset();
 }
 
