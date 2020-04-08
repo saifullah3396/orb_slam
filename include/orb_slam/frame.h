@@ -423,33 +423,6 @@ public:
     /**
      * Setters
      */
-    void setCamInWorld(const cv::Mat& w_T_c) {
-        w_T_c_ = w_T_c.clone(); // camera in world or world to camera
-        w_R_c_ = w_T_c_.rowRange(0, 3).colRange(0, 3);
-        w_t_c_ = w_T_c_.rowRange(0, 3).col(3);
-
-        c_R_w_ = w_R_c_.t(); // transposed = inverse
-        c_t_w_ = -c_R_w_ * w_t_c_; // -R.t() * t = translation inverse
-
-         // world in camera or camera to world
-        c_T_w_ = cv::Mat::eye(4, 4, CV_32F);
-        c_R_w_.copyTo(c_T_w_.rowRange(0, 3).colRange(0, 3));
-        c_t_w_.copyTo(c_T_w_.rowRange(0, 3).col(3));
-    }
-
-    void setWorldInCam(const cv::Mat& c_T_w) {
-        c_T_w_ = c_T_w.clone(); // camera in world or world to camera
-        c_R_w_ = c_T_w_.rowRange(0, 3).colRange(0, 3);
-        c_t_w_ = c_T_w_.rowRange(0, 3).col(3);
-
-        w_R_c_ = c_R_w_.t(); // transposed = inverse
-        w_t_c_ = -w_R_c_ * c_t_w_; // -R.t() * t = translation inverse
-
-        // world in camera or camera to world
-        w_T_c_ = cv::Mat::eye(4, 4, CV_32F);
-        w_R_c_.copyTo(w_T_c_.rowRange(0, 3).colRange(0, 3));
-        w_t_c_.copyTo(w_T_c_.rowRange(0, 3).col(3));
-    }
     static void setCamera(const geometry::CameraConstPtr<float>& camera)
         { camera_ = camera; }
     static void setORBExtractor(const geometry::ORBExtractorConstPtr& orb_extractor)
