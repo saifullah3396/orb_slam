@@ -25,6 +25,27 @@ using MapPointPtr = std::shared_ptr<MapPoint>;
 
 class Frame : public std::enable_shared_from_this<Frame> {
 public:
+    static void computeFundamentalMat(
+        cv::Mat& f_mat,
+        const cv::Mat& from_c_R_w,
+        const cv::Mat& from_c_t_w,
+        const cv::Mat& to_w_R_c,
+        const cv::Mat& to_w_t_c,
+        const cv::Mat& from_K,
+        const cv::Mat& to_K)
+    {
+        // 1_R_2 = 1_R_w * w_R_2
+        auto this_R_frame = from_c_R_w * to_w_R_c;
+        auto this_t_frame = from_c_R_w * to_w_R_c + from_c_t_w;
+
+        // K^-T t[x] R K^-1
+        f_mat =
+            from_K.t().inv() *
+            utils::skew(this_t_frame) *
+            this_R_frame *
+            to_K.inv();
+    }
+
     /**
      * Constructor
      *
