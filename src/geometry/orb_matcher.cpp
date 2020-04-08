@@ -178,9 +178,9 @@ void BruteForceWithProjectionMatcher::match(
                 // it). So, we'd need to downsample the new bigger point by at
                 // least a factor of 1.2 to get the same point in the next
                 // frame.
-            if (!frame->getFeaturesAroundPoint(
-                point_2d_frame,
-                radius_scaled,
+                if (!frame->getFeaturesAroundPoint(
+                        point_2d_frame,
+                        radius_scaled,
                         feature_level_ref,
                         close_points))
                 { // if no points are found in region
@@ -200,8 +200,8 @@ void BruteForceWithProjectionMatcher::match(
                 if (!frame->getFeaturesAroundPoint(
                     point_2d_frame,
                     radius_scaled,
-                feature_level_ref - 1,
-                feature_level_ref + 1,
+                    feature_level_ref - 1,
+                    feature_level_ref + 1,
                     close_points))
                 { // if no points are found in region
                     continue;
@@ -258,7 +258,7 @@ void BruteForceWithProjectionMatcher::match(
     const FramePtr& frame,
     const std::vector<MapPointPtr>& points_3d,
     std::vector<cv::DMatch>& matches)
-    {
+{
     const auto& key_points = frame->featuresUndist();
     const auto& descriptors = frame->descriptorsUndist();
     std::vector<int> matched(key_points.size(), -1);
@@ -281,7 +281,7 @@ void BruteForceWithProjectionMatcher::match(
             const auto& props = mp->trackProperties();
             if (!props.in_view_ || mp->isBad()) { // not in view or bad
                 continue;
-                }
+            }
 
             // scale level at which point is found in reference frame
             auto feature_level_ref = props.pred_scale_level_;
@@ -328,7 +328,7 @@ void BruteForceWithProjectionMatcher::match(
                     // assign second best
                     min_2_feature_dist = dist;
                     matched_id_2 = idx;
-        }
+                }
 
                 // apply ratio to second match
                 // (only if best and second are in the same scale level)
@@ -339,7 +339,7 @@ void BruteForceWithProjectionMatcher::match(
                         min_feature_dist > nn_ratio_ * min_2_feature_dist)
                     {
                         continue;
-    }
+                    }
                     matched[matched_id] = ref_idx;
                     feature_dists[matched_id] = min_feature_dist;
                 }
@@ -349,7 +349,7 @@ void BruteForceWithProjectionMatcher::match(
 
     // create matches
     createMatches(matched, feature_dists, matches);
-    }
+}
 
 void BowOrbMatcher::match(
     const FramePtr& frame,
@@ -500,7 +500,7 @@ void EpipolarConstraintWithBowMatcher::match(
     const KeyFramePtr& key_frame,
     const KeyFramePtr& ref_key_frame,
     std::vector<cv::DMatch>& matches)
-    {
+{
     const auto map_points = key_frame->obsMapPoints();
     const auto ref_map_points = ref_key_frame->obsMapPoints();
 
@@ -623,7 +623,7 @@ void EpipolarConstraintWithBowMatcher::match(
 
     // create matches
     createMatches(matched, feature_dists, matches);
-    }
+}
 
 bool EpipolarConstraintWithBowMatcher::check_epipolar_dist(
         const cv::KeyPoint& kp1,

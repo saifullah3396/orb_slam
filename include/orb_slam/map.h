@@ -25,6 +25,10 @@ public:
     Map() {}
     ~Map() {}
 
+    const void lock() const {
+        LOCK_MAP;
+    }
+
     /**
      * Getters
      */
