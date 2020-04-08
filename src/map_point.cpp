@@ -32,25 +32,26 @@ MapPoint::~MapPoint()
 
 
 std::map<KeyFramePtr, size_t> MapPoint::observations() {
-    std::unique_lock<std::mutex> observations_lock(observations_mutex_);
+    LOCK_OBSERVATIONS;
     return observations_;
 }
 
 const size_t MapPoint::nObservations() {
-    std::unique_lock<std::mutex> observations_lock(observations_mutex_);
+    LOCK_OBSERVATIONS;
     return observations_.size();
 }
 
 void MapPoint::addObservation(const KeyFramePtr& key_frame, const size_t idx) {
-    std::unique_lock<std::mutex> observations_lock(observations_mutex_);
+    LOCK_OBSERVATIONS;
     if (observations_.count(key_frame)) // if this key frame already exists
         return;
     observations_[key_frame] = idx;
 }
 
 void MapPoint::removeObservation(const KeyFramePtr& key_frame) {
+    auto bad_point = false;
     { // shared
-        std::unique_lock<std::mutex> observations_lock(observations_mutex_);
+        LOCK_OBSERVATIONS;
         // if this key frame already exists
         if (observations_.count(key_frame)) {
             // get id of this point in key frame
@@ -58,28 +59,47 @@ void MapPoint::removeObservation(const KeyFramePtr& key_frame) {
             observations_.erase(key_frame); // remove the frame from this point
 
             if (nObservations() <= MIN_REQ_OBSERVATIONS) {
-                bad_point_ = true;
+                bad_point = true;
             }
         }
     }
 
-    if (bad_point_) {
+    if (bad_point) {
         removeFromMap();
     }
 }
 
-void MapPoint::removeFromMap() {
-    std::unique_lock<std::mutex> observations_lock(observations_mutex_);
-    std::unique_lock<std::mutex> pos_lock(pos_mutex_);
-    auto observations = observations_;
-    observations_.clear();
+bool MapPoint::isObservedInKeyFrame(const KeyFramePtr& key_frame)
+{
+    LOCK_OBSERVATIONS;
+    return observations_.count(key_frame) > 0;
+}
 
-    for (auto it = observations.begin(), end = observations.end();
-            it != end; it++)
-    {
-        auto key_frame = it->first;
+int MapPoint::getIndexInKeyFrame(const KeyFramePtr& key_frame)
+{
+    LOCK_OBSERVATIONS;
+    if (observations_.count(key_frame) > 0) {
+        return observations_[key_frame];
+    } else {
+        return -1;
+    }
+}
+
+void MapPoint::removeFromMap() {
+    std::map<KeyFramePtr, size_t> observations;
+    { // shared
+        LOCK_OBSERVATIONS;
+        LOCK_POS;
+        bad_point_ = true;
+        observations = observations_;
+    observations_.clear();
+    }
+
+    for (const auto& obs: observations) {
+        auto key_frame = obs.first;
+
         // remove point from the key frame
-        key_frame->removeMapPointAt(it->second);
+        key_frame->removeMapPointAt(obs.second);
     }
 
     // remove this point from the map
@@ -92,7 +112,7 @@ void MapPoint::computeBestDescriptor()
     std::vector<cv::Mat> descriptors;
     std::map<KeyFramePtr, size_t> observations;
     { // shared
-        std::unique_lock<std::mutex> observations_lock(observations_mutex_);
+        LOCK_OBSERVATIONS;
         if (bad_point_ || observations_.empty()) // return if bad point since it has to be deleted
             return;
         observations = observations_; // get a local copy of observations
@@ -140,7 +160,7 @@ void MapPoint::computeBestDescriptor()
     }
 
     { // shared
-        std::unique_lock<std::mutex> observations_lock(observations_mutex_);
+        LOCK_OBSERVATIONS;
         best_descriptor_ = descriptors[best_idx].clone();
     }
 }
@@ -151,8 +171,8 @@ void MapPoint::updateNormalAndScale()
     KeyFramePtr ref_key_frame;
     cv::Mat pos;
     { // shared
-        std::unique_lock<std::mutex> observations_lock(observations_mutex_);
-        std::unique_lock<std::mutex> pos_lock(pos_mutex_);
+        LOCK_OBSERVATIONS;
+        LOCK_POS;
         if(bad_point_)
             return;
 
@@ -183,7 +203,7 @@ void MapPoint::updateNormalAndScale()
     const int n_levels = orb_extractor_->levels();
 
     { // shared
-        std::unique_lock<std::mutex> pos_lock(pos_mutex_);
+        LOCK_POS;
         // the maximum distance from which this point can be found again. The
         // scale_factor is from the pyramid level this point is found in the
         // image. scale_factor increases with levels [1, 1.2, 1.44, 1.728, ...]
