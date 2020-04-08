@@ -97,7 +97,19 @@ void BruteForceWithProjectionMatcher::match(
         rot_hist[i].reserve(500);
     const auto factor = 1.0f / hist_length_;
 
-    // get the transform from last frame to this frame
+    // camera z is pointing to the front
+    //    z
+    //   /
+    //  /
+    // ----- x
+    // |
+    // | y
+    //
+    const auto z = ref_T_f.at<float>(2, 3);
+    float min_base_line = 0.1;
+    const bool frame_in_front = z > min_base_line; // frame is in front of reference frame
+    const bool frame_behind = -z > min_base_line; // frame is behind reference frame
+
     for (
         size_t ref_idx = 0; ref_idx < ref_frame->nFeaturesUndist(); ++ref_idx)
     {
