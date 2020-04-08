@@ -142,17 +142,7 @@ include
   ${Pangolin_INCLUDE_DIRS}
 )
 
-FILE(GLOB SRC
-    "src/*.cpp"
-    "src/geometry/*.cpp"
-    src/geometry/utils.cpp
-    src/geometry/orb_extractor.cpp
-    src/geometry/orb_matcher.cpp
-    src/map.cpp
-    src/map_point.cpp
-    src/key_frame.cpp
-    src/mono_tracker.cpp
-    src/rgbd_tracker.cpp)
+FILE(GLOB SRC "src/*.cpp" "src/geometry/*.cpp" "src/local_mapping/*.cpp" "src/viewer/*.cpp")
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME} ${SRC})
