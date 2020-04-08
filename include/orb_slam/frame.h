@@ -495,8 +495,8 @@ protected:
 
     // frame matching info
     std::shared_ptr<Frame> ref_frame_;
-    std::vector<cv::DMatch> matches_;
 
+    std::vector<cv::DMatch> matches_; // matches with reference frame
     // map points associated with frame
     std::vector<MapPointPtr> obs_map_points_;
 
