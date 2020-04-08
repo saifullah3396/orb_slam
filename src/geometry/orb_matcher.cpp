@@ -135,7 +135,7 @@ void BruteForceWithProjectionMatcher::match(
                 radius_ *
                 frame->orbExtractor()->scaleFactors()[feature_level_ref];
             std::vector<size_t> close_points;
-            //if (frame_forward) {
+            if (frame_in_front) {
                 // the frame if in front of the reference frame, then the image
                 // will be bigger in size. That means that we will need to
                 // downscale it at least more than the scale (feature_level_ref)
@@ -145,25 +145,35 @@ void BruteForceWithProjectionMatcher::match(
                 // it). So, we'd need to downsample the new bigger point by at
                 // least a factor of 1.2 to get the same point in the next
                 // frame.
-                //frame->getFeaturesAroundPoint(
-                //    point_2d_frame, radius, feature_level_ref, close_points);
-            //} else if (frame_backward) {
-                //frame->getFeaturesAroundPoint(
-                //    point_2d_frame, radius, 0, feature_level_ref, close_points);
-            //} else {
-                //frame->getFeaturesAroundPoint(
-                //    point_2d_frame,
-                //    radius,
-                //    feature_level_ref - 1,
-                //    feature_level_ref + 1,
-                //    close_points);
-            //}
             if (!frame->getFeaturesAroundPoint(
                 point_2d_frame,
                 radius_scaled,
+                        feature_level_ref,
+                        close_points))
+                { // if no points are found in region
+                    continue;
+                }
+            } else if (frame_behind) {
+                if (!frame->getFeaturesAroundPoint(
+                        point_2d_frame,
+                        radius_scaled,
+                        0,
+                        feature_level_ref,
+                        close_points))
+                { // if no points are found in region
+                    continue;
+                }
+            } else {
+                if (!frame->getFeaturesAroundPoint(
+                    point_2d_frame,
+                    radius_scaled,
                 feature_level_ref - 1,
                 feature_level_ref + 1,
-                close_points)) continue; // if no points are found
+                    close_points))
+                { // if no points are found in region
+                    continue;
+                };
+            }
             const auto& desc = mp->bestDescriptor();
             // finds closest of all the features in ref_frame that lies within
             // pixel radius of feature i
