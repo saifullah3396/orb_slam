@@ -340,6 +340,21 @@ public:
         return ref_frame->worldInCameraT() * w_T_c_;
     }
 
+
+    /**
+     * Computes the fundamental matrix from this frame to another
+     */
+    void computeFundamentalMat(
+        cv::Mat& f_mat,
+        const FramePtr& frame);
+
+    /**
+     * Computes the fundamental matrix from this frame to another key frame
+     */
+    void computeFundamentalMat(
+        cv::Mat& f_mat,
+        const KeyFramePtr& key_frame);
+
     /**
      * Getters
      */
