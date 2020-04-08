@@ -446,6 +446,10 @@ public:
         outliers_ = outliers;
     }
 
+    void setThreadSafe(const bool& thread_safe) {
+        thread_safe_ = thread_safe;
+    }
+
 protected:
     /**
      * Extracts key points uniformly over the image in a grid
