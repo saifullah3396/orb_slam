@@ -217,6 +217,40 @@ void MapPoint::updateNormalAndScale()
     }
 }
 
+void MapPoint::replace(const MapPointPtr& other)
+{
+    if (id_ == other->id())
+        return;
+
+    int n_visible, n_found;
+    std::map<KeyFramePtr, size_t> observations;
+    { // shared
+        LOCK_OBSERVATIONS;
+        LOCK_POS;
+        bad_point_ = true;
+        observations = observations_;
+        observations_.clear();
+        bad_point_ = true;
+        n_visible = visibility_;
+        n_found = found_;
+        replaced_by = other;
+    }
+
+    for (const auto& obs: observations) {
+        const auto& kf = obs.first;
+        if (!other->isObservedInKeyFrame(kf)) {
+            kf->setMapPointAt(other, obs.second);
+            other->addObservation(kf, obs.second);
+        } else {
+            kf->removeMapPointAt(obs.second);
+        }
+    }
+    other->increaseFound();
+    other->increaseVisibility();
+    other->computeBestDescriptor();
+
+    map_->removeMapPoint(shared_from_this());
+}
 
 int MapPoint::predictScale(const float& dist)
 {
