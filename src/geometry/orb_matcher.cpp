@@ -495,11 +495,27 @@ void BowOrbMatcher::match(
     // create matches
     createMatches(matched, feature_dists, matches);
 }
-    {
-        int ind1 = -1;
-        int ind2 = -1;
-        int ind3 = -1;
 
+void EpipolarConstraintWithBowMatcher::match(
+    const KeyFramePtr& key_frame,
+    const KeyFramePtr& ref_key_frame,
+    std::vector<cv::DMatch>& matches)
+    {
+    const auto map_points = key_frame->obsMapPoints();
+    const auto ref_map_points = ref_key_frame->obsMapPoints();
+
+    // compute the fundamental matrix from frame to ref_frame
+    cv::Mat fundamental_mat;
+    key_frame->computeFundamentalMat(
+        fundamental_mat, ref_key_frame);
+    match(
+        key_frame->frame(),
+        ref_key_frame->frame(),
+        fundamental_mat,
+        map_points,
+        ref_map_points,
+        matches);
+}
 
 void EpipolarConstraintWithBowMatcher::match(
     const FramePtr& frame,
