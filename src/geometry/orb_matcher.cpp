@@ -213,8 +213,13 @@ void BruteForceWithProjectionMatcher::match(
         }
     }
 
-    // apply rotation consistency
+    // apply rotation constraint
     if(check_orientation_)
+        applyRotationConstraint(rot_hist, matched, hist_length_);
+
+    // create matches
+    createMatches(matched, feature_dists, matches);
+}
     {
         int ind1 = -1;
         int ind2 = -1;
