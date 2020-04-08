@@ -624,6 +624,40 @@ void EpipolarConstraintWithBowMatcher::match(
     // create matches
     createMatches(matched, feature_dists, matches);
     }
+
+bool EpipolarConstraintWithBowMatcher::check_epipolar_dist(
+        const cv::KeyPoint& kp1,
+        const cv::KeyPoint& kp2,
+        const cv::Mat& f_mat,
+        const FramePtr& ref_frame) const
+{
+    const auto& p1 = kp1.pt;
+    const auto& p2 = kp2.pt;
+    // epipolar line in second image l = x1'f_mat = [a b c]
+    const float a =
+        p1.x * f_mat.at<float>(0, 0) +
+        p1.y * f_mat.at<float>(1, 0) +
+        f_mat.at<float>(2, 0);
+    const float b =
+        p1.x * f_mat.at<float>(0, 1) +
+        p1.y * f_mat.at<float>(1, 1) +
+        f_mat.at<float>(2, 1);
+    const float c =
+        p1.x * f_mat.at<float>(0, 2) +
+        p1.y * f_mat.at<float>(1, 2) +
+        f_mat.at<float>(2, 2);
+
+    const float num = a * p2.x + b * p2.y + c;
+    const float den = a * a + b * b;
+
+    if(den==0)
+        return false;
+
+    // perpendicular distance point to line
+    const float dsqr = num*num/den;
+
+    return // see if distance is within threshold
+        dsqr < 3.84 * ref_frame->orbExtractor()->scaleSigmas()[kp2.octave];
 }
 
 CVORBMatcher::CVORBMatcher(const ros::NodeHandle& nh) {
