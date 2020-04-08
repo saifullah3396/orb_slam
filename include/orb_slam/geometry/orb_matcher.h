@@ -255,6 +255,50 @@ struct BowOrbMatcher : public MatcherBase {
 };
 
 /**
+ * Defines a matcher for matching features between two frames based on epipolar
+ * constraint and speed-up based on bow features.
+ */
+struct EpipolarConstraintWithBowMatcher : public MatcherBase {
+    /**
+     * @brief Constructor
+     * @param nh: ROS node handle for reading parameters
+     */
+    EpipolarConstraintWithBowMatcher(const ros::NodeHandle& nh) {}
+
+    /**
+     * @brief Finds the closest feature in ref_frame for a feature in frame by
+     *     iterating over all features within the same orb vocabulary word and
+     *     with minimum distance to epipolar lines.
+     * @param frame: Input frame to match
+     * @param ref_frane: Reference frame to match with
+     * @param matches: Output features that are matched
+     */
+    void match(
+        const KeyFramePtr& key_frame,
+        const KeyFramePtr& ref_key_frame,
+        std::vector<cv::DMatch>& matches);
+
+    void match(
+        const FramePtr& frame,
+        const FramePtr& ref_frame,
+        const cv::Mat& fundamental_mat,
+        const std::vector<MapPointPtr>& map_points,
+        const std::vector<MapPointPtr>& ref_map_points,
+        std::vector<cv::DMatch>& matches);
+
+    bool check_epipolar_dist(
+        const cv::KeyPoint& kp1,
+        const cv::KeyPoint& kp2,
+        const cv::Mat& f_mat,
+        const FramePtr& ref_frame) const;
+
+    bool check_orientation_ = false;
+    const int hist_length_ = 30;
+    const int low_threshold_ = 50;
+    const int high_threshold_ = 100;
+};
+
+/**
  * Defines the opencv orb feature matcher
  */
 struct CVORBMatcher : public MatcherBase {
