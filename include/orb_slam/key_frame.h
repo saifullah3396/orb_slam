@@ -26,6 +26,15 @@ using FramePtr = std::shared_ptr<Frame>;
 class KeyFrame;
 using KeyFramePtr = std::shared_ptr<KeyFrame>;
 
+class TrackProperties;
+
+#define LOCK_CONNECTIONS \
+    std::unique_lock<std::mutex> connections_lock(connections_mutex_)
+#define LOCK_FRAME_MAP \
+    std::unique_lock<std::mutex> map_points_lock(map_points_mutex_)
+#define LOCK_FRAME_POSE \
+    std::unique_lock<std::mutex> frame_pose_lock(pose_mutex_)
+
 class KeyFrame : public std::enable_shared_from_this<KeyFrame> {
 public:
     /**
