@@ -81,22 +81,20 @@ public:
      * Matches the frame with a reference frame using the orb feature matcher.
      *
      * @param ref_frame: Frame to matche with
-     * @param type: Matcher type to use
      */
     void match(
-        const std::shared_ptr<Frame>& ref_frame,
-        const geometry::OrbMatcherTypes type);
+        const std::shared_ptr<Frame>& ref_frame);
 
     /**
      * Matches the frame with a reference frame using bow feature matcher
      *
-     * @param ref_frame: Frame to match with
+     * @param ref_key_frame: Key frame to match with
      * @param check_orientation: Whether to check feature orientation match
      * @param nn_ratio: First to second best match ratio
      * @param filter_matches: Whether to filter matches afterwards
      */
     void matchByBowFeatures(
-        const std::shared_ptr<Frame>& ref_frame,
+        const std::shared_ptr<KeyFrame>& ref_key_frame,
         const bool check_orientation = true,
         const float nn_ratio = 0.6,
         const bool filter_matches = false);
