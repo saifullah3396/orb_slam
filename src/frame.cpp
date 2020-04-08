@@ -43,6 +43,9 @@ const std::vector<MapPointPtr>& Frame::obsMapPoints() const {
     return obs_map_points_;
 }
 
+const std::vector<MapPointPtr>& Frame::unmatchedMapPoints() const {
+    return unmatched_map_points_;
+}
 
 void Frame::resizeMap(const size_t& n)
 {
@@ -67,6 +70,15 @@ void Frame::setMapPointAt(const MapPointPtr& mp, const size_t& idx)
 void Frame::removeMapPointAt(const unsigned long& idx) {
     assert(thread_safe_ == false);
     obs_map_points_[idx].reset();
+}
+
+void Frame::copyMapPointsForBA() {
+    assert(thread_safe_ == false);
+    obs_map_points_ba_ = obs_map_points_;
+}
+
+void Frame::addUnmatchedMapPoint(const MapPointPtr& mp) {
+    unmatched_map_points_.push_back(mp);
 }
 
 bool Frame::pointWithinBounds(const cv::Point2f& p)

@@ -392,6 +392,7 @@ public:
     // accessed from other threads until a key frame from it is formed
     // this allows not copying obs_map_points when used by frame
     const std::vector<MapPointPtr>& obsMapPoints() const;
+    const std::vector<MapPointPtr>& unmatchedMapPoints() const;
     const std::vector<bool>& outliers() const { return outliers_; }
     const int nFeatures() const { return key_points_.size(); }
     const std::vector<cv::KeyPoint>& features() const
@@ -405,6 +406,7 @@ public:
     const cv::Mat& descriptorsUndist() const { return undist_descriptors_; }
     const int& nDescriptorsUnDist() const { return undist_descriptors_.rows; }
     const std::vector<cv::DMatch>& matches() const { return matches_; }
+    const std::vector<cv::DMatch>& localMatches() const { return local_matches_; }
     const int nMatches() const { return matches_.size(); }
     const DBoW2::BowVector& bow() const { return bow_vec_; }
     const DBoW2::FeatureVector& bowFeatures() const { return feature_vec_; }
@@ -438,6 +440,8 @@ public:
     void resetMap();
     void setMapPointAt(const MapPointPtr& mp, const size_t& idx);
     void removeMapPointAt(const unsigned long& idx);
+    void copyMapPointsForBA();
+    void addUnmatchedMapPoint(const MapPointPtr& mp);
 
     void setOutlier(const size_t& idx, const bool is_outlier) {
         outliers_[idx] = is_outlier;
@@ -497,8 +501,20 @@ protected:
     std::shared_ptr<Frame> ref_frame_;
 
     std::vector<cv::DMatch> matches_; // matches with reference frame
+    std::vector<cv::DMatch> local_matches_; // matches with local map points
+
+    // local map matching info
+    KeyFramePtr ref_key_frame_;
+
     // map points associated with frame
     std::vector<MapPointPtr> obs_map_points_;
+
+    // all the points that are not matched but added as observed
+    // map points in the key frame because they are close (within a certain)
+    // depth threshold
+    std::vector<MapPointPtr> unmatched_map_points_;
+    // map points used in bundle adjustment
+    std::vector<MapPointPtr> obs_map_points_ba_;
 
     // static class pointers
     static geometry::CameraConstPtr<float> camera_; // camera info
