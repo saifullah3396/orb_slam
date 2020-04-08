@@ -297,9 +297,6 @@ public:
         return cameraToWorld<U>(frameToCamera<U, V>(p, depth));
     }
 
-    /**
-     * Converts a point from pixel coordinates to world coordinates
-     */
     template <typename U, typename V>
     cv::Point3_<U> worldToFrame(const cv::Point3_<V>& p) {
         return cameraToFrame<U, V>(worldToCamera<V>(p));
