@@ -141,7 +141,52 @@ struct BruteForceWithProjectionMatcher : public MatcherBase {
         const FramePtr& ref_frame,
         std::vector<cv::DMatch>& matches);
 
+    /**
+     * @brief Finds the closest feature in ref_key_frame for a feature in frame by
+     *     iterating over all the pixels that lie within a tolerance of feature
+     *     in ref_key_frame and matching their descriptors
+     * @param frame: Input frame to match
+     * @param ref_frane: Reference frame to match with
+     * @param matches: Output features that are matched
+     */
+    void match(
+        const FramePtr& frame,
+        const KeyFramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches);
+
+    /**
+     * @brief Finds the closest feature in ref_frame for a feature in frame by
+     *     iterating over all the pixels that lie within a tolerance of feature
+     *     in ref_key_frame and matching their descriptors
+     * @param frame: Input frame to match
+     * @param ref_frane: Reference frame to match with
+     * @param ref_T_f: Transformation from frame to reference frame
+     * @param ref_map_points: Map points observed in reference frame
+     * @param matches: Output features that are matched
+     */
+    void match(
+        const FramePtr& frame,
+        const FramePtr& ref_frame,
+        const cv::Mat& ref_T_f,
+        const std::vector<MapPointPtr>& ref_map_points,
+        std::vector<cv::DMatch>& matches);
+
+    /**
+     * @brief Finds the closest point in points_3d for a feature in frame by
+     *     iterating over all the pixels that lie within a tolerance of projected
+     *     point in frame and matching their descriptors
+     * @param frame: Input frame to match
+     * @param points_3d: Reference frame to match with
+     * @param matches: Output features that are matched
+     */
+    void match(
+        const FramePtr& frame,
+        const std::vector<MapPointPtr>& points_3d,
+        std::vector<cv::DMatch>& matches);
+
     float radius_ = 1.0;
+    float nn_ratio_ = 0.6;
+    bool compute_track_info_ = true;
     bool check_orientation_ = false;
     const int hist_length_ = 30;
     const int low_threshold_ = 50;
