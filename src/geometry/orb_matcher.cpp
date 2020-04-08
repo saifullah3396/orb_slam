@@ -253,31 +253,102 @@ void BruteForceWithProjectionMatcher::match(
     // create matches
     createMatches(matched, feature_dists, matches);
 }
+
+void BruteForceWithProjectionMatcher::match(
+    const FramePtr& frame,
+    const std::vector<MapPointPtr>& points_3d,
+    std::vector<cv::DMatch>& matches)
     {
-        int ind1 = -1;
-        int ind2 = -1;
-        int ind3 = -1;
+    const auto& key_points = frame->featuresUndist();
+    const auto& descriptors = frame->descriptorsUndist();
+    std::vector<int> matched(key_points.size(), -1);
+    std::vector<int> feature_dists(key_points.size(), -1);
 
-        // take the 3 top most histograms
-        geometry::computeThreeMaxima(rot_hist, hist_length_, ind1, ind2, ind3);
+    // get the transform from last frame to this frame
+    for (
+        size_t ref_idx = 0; ref_idx < points_3d.size(); ++ref_idx)
+    {
+        const auto& mp = points_3d[ref_idx];
+        if (mp) { // may be not every feature has a 3d correspondence
+            if (compute_track_info_) {
+                TrackProperties track_results;
+                mp->resetTrackProperties();
+                if (frame->isInCameraView(mp, track_results, 0.5)) {
+                    mp->setTrackProperties(track_results);
+                }
+            }
 
-        // remove all the points that have rotation difference other than the
-        // top 3 histogram bins.
-        for (int i = 0; i < hist_length_; i++) {
-            if (i != ind1 && i != ind2 && i != ind3) {
-                for (size_t j = 0, jend = rot_hist[i].size(); j < jend; j++) {
-                    matched[rot_hist[i][j]] = false;
+            const auto& props = mp->trackProperties();
+            if (!props.in_view_ || mp->isBad()) { // not in view or bad
+                continue;
+                }
+
+            // scale level at which point is found in reference frame
+            auto feature_level_ref = props.pred_scale_level_;
+
+            // now create a window around the point in the level this feature
+            // was found
+            auto radius_scaled =
+                radius_ * radiusByViewCosine(props.view_cosine_) *
+                frame->orbExtractor()->scaleFactors()[feature_level_ref];
+            std::vector<size_t> close_points;
+            if (!frame->getFeaturesAroundPoint(
+                props.proj_xy_,
+                radius_scaled,
+                feature_level_ref - 1,
+                feature_level_ref,
+                close_points))
+            { // if no points are found
+                continue;
+            }
+
+            const auto& desc = mp->bestDescriptor();
+            // finds closest of all the features in ref_frame that lies within
+            // pixel radius of feature i
+            int min_feature_dist = 256;
+            int matched_id = -1;
+            int min_2_feature_dist = 256;
+            int matched_id_2 = -1;
+            for (const auto& idx: close_points) {
+                if (matched[idx] > 0) // matched map point already assigned
+                    continue;
+                // find distance between descriptors of this point and all the
+                // close points
+                const auto dist =
+                    geometry::descriptorDistance(desc, descriptors.row(idx));
+                if (dist < min_feature_dist) {
+                    // assign second best
+                    min_2_feature_dist = min_feature_dist;
+                    matched_id_2 = matched_id;
+
+                    // assign best
+                    min_feature_dist = dist;
+                    matched_id = idx;
+                } else if (dist < min_2_feature_dist) {
+                    // assign second best
+                    min_2_feature_dist = dist;
+                    matched_id_2 = idx;
+        }
+
+                // apply ratio to second match
+                // (only if best and second are in the same scale level)
+                if(min_feature_dist <= high_threshold_) {
+                    if(
+                        key_points[matched_id].octave ==
+                        key_points[matched_id_2].octave &&
+                        min_feature_dist > nn_ratio_ * min_2_feature_dist)
+                    {
+                        continue;
+    }
+                    matched[matched_id] = ref_idx;
+                    feature_dists[matched_id] = min_feature_dist;
                 }
             }
         }
     }
 
     // create matches
-    for (size_t i = 0; i < matched.size(); ++i) {
-        if (matched[i]) // matches from frame to reference frame
-            matches.push_back(
-                cv::DMatch(
-                    i, matched[i], static_cast<float>(feature_dists[i])));
+    createMatches(matched, feature_dists, matches);
     }
 }
 
