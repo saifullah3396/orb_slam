@@ -217,4 +217,25 @@ void MapPoint::updateNormalAndScale()
     }
 }
 
+
+int MapPoint::predictScale(const float& dist)
+{
+    float ratio;
+    { // shared
+        // don't change point position
+        LOCK_POS;
+        ratio = max_scale_distance_ / dist;
+    }
+
+    // find scale factor the same way orb slam original code does
+    int scale = ceil(log(ratio) / orb_extractor_->logScaleFactor());
+    const auto& levels = orb_extractor_->levels();
+    if(scale < 0)
+        scale = 0;
+    else if(scale >= levels)
+        scale = levels - 1;
+
+    return scale;
+}
+
 } // namespace orb_slam
