@@ -350,6 +350,37 @@ void BruteForceWithProjectionMatcher::match(
     // create matches
     createMatches(matched, feature_dists, matches);
     }
+
+void BowOrbMatcher::match(
+    const FramePtr& frame,
+    const KeyFramePtr& ref_key_frame,
+    std::vector<cv::DMatch>& matches)
+{
+    // get the transform from last frame to this frame, don't copy
+    const auto& map_points = frame->obsMapPoints();
+    const auto ref_map_points = ref_key_frame->obsMapPoints();
+    match(
+        frame,
+        ref_key_frame->frame(),
+        map_points,
+        ref_map_points,
+        matches);
+}
+
+void BowOrbMatcher::match(
+    const KeyFramePtr& key_frame,
+    const KeyFramePtr& ref_key_frame,
+    std::vector<cv::DMatch>& matches)
+{
+    // get the transform from last frame to this frame, copy if thread safe
+    const auto map_points = key_frame->obsMapPoints();
+    const auto ref_map_points = ref_key_frame->obsMapPoints();
+    match(
+        key_frame->frame(),
+        ref_key_frame->frame(),
+        map_points,
+        ref_map_points,
+        matches);
 }
 
 void BowOrbMatcher::match(
