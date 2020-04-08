@@ -255,6 +255,34 @@ bool Frame::isInCameraView(
     return true;
 }
 
+void Frame::computeFundamentalMat(
+    cv::Mat& f_mat,
+    const FramePtr& frame)
+{
+    computeFundamentalMat(
+        f_mat,
+        worldInCameraR(),
+        worldInCamerat(),
+        frame->cameraInWorldR(),
+        frame->cameraInWorldt(),
+        this->camera()->intrinsicMatrix(),
+        frame->camera()->intrinsicMatrix());
+}
+
+void Frame::computeFundamentalMat(
+    cv::Mat& f_mat,
+    const KeyFramePtr& key_frame)
+{
+    computeFundamentalMat(
+        f_mat,
+        worldInCameraR(),
+        worldInCamerat(),
+        key_frame->cameraInWorldR(),
+        key_frame->cameraInWorldt(),
+        this->camera()->intrinsicMatrix(),
+        key_frame->frame()->camera()->intrinsicMatrix());
+}
+
 void Frame::setupFirstFrame() {
     // since this is the first frame it acts as reference for others
     // there we set it as identity matrix
