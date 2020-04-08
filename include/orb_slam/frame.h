@@ -277,17 +277,21 @@ public:
         return cv::Point3_<T>(cv::Mat(w_R_c_ * cv::Mat(p) + w_t_c_));
     }
 
-    /**
-     * Converts a point from world coordinates to camera coordinates
-     */
+    template <typename T>
+    cv::Point3_<T> cameraToWorld(const cv::Mat_<T>& p) {
+        return cv::Point3_<T>(cv::Mat(w_R_c_ * p + w_t_c_));
+    }
+
     template <typename T>
     cv::Point3_<T> worldToCamera(const cv::Point3_<T>& p) {
         return cv::Point3_<T>(cv::Mat(c_R_w_ * cv::Mat(p) + c_t_w_));
     }
 
-    /**
-     * Converts a point from pixel coordinates to world coordinates
-     */
+    template <typename T>
+    cv::Point3_<T> worldToCamera(const cv::Mat_<T>& p) {
+        return cv::Point3_<T>(cv::Mat(c_R_w_ * p + c_t_w_));
+    }
+
     template <typename U, typename V>
     cv::Point3_<U> frameToWorld(const cv::Point_<V>& p, const float& depth) {
         return cameraToWorld<U>(frameToCamera<U, V>(p, depth));
