@@ -54,11 +54,13 @@ public:
     /**
      * Getters
      */
+    const long unsigned int& id() const { return id_; }
     const size_t nObservations();
-    const bool& isBad() { return bad_point_; }
-    const cv::Mat& worldPos() const { return world_pos_; }
-    const cv::Mat& viewVector() const { return view_vector_; }
-    const cv::Mat& bestDescriptor() const { return best_descriptor_; }
+    const bool isBad() {
+        LOCK_OBSERVATIONS;
+        LOCK_POS;
+        return bad_point_;
+    }
 
     /**
      * Setters
