@@ -128,6 +128,19 @@ public:
     void removeObservation(const KeyFramePtr& key_frame);
 
     /**
+     * Returns true if this map point is observed in the given key frame.
+     * @param key_frame: Key frame to check the point in
+     * @returns boolean
+     */
+    bool isObservedInKeyFrame(const KeyFramePtr& key_frame);
+
+    /**
+     * Returns the index of this point in given key frame
+     * @param key_frame: Key frame to check the point in
+     */
+    int getIndexInKeyFrame(const KeyFramePtr& key_frame);
+
+    /**
      * Removes this point from the map
      */
     void removeFromMap();
