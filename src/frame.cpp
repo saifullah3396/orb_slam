@@ -191,11 +191,10 @@ bool Frame::getFeaturesAroundPoint(
                 if (cell.empty()) continue;
                 for (size_t i = 0; i < cell.size(); ++i) {
                     const auto& key_point = undist_key_points_[cell[i]];
-                    const auto& scale_level = key_point.octave;
-                    if (scale_level < min_level ||
-                        scale_level >= max_level) continue;
-                    const auto diff_x = fabsf(key_point.pt.x - x);
-                    const auto diff_y = fabsf(key_point.pt.y - y);
+                    if (key_point.octave < min_level || // octave = scale level
+                        key_point.octave > max_level) continue;
+                    const auto diff_x = fabsf(key_point.pt.x - p.x);
+                    const auto diff_y = fabsf(key_point.pt.y - p.y);
                     if (diff_x < radius && diff_y < radius)
                         matches.push_back(cell[i]);
                 }
