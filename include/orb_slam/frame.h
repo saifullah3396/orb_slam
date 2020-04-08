@@ -134,19 +134,19 @@ public:
      * Draws the extracted features on the given image
      * @param image: Drawing image
      */
-    virtual void drawFeatures(cv::Mat& image) {}
+    virtual void drawFeatures(cv::Mat& image) const {}
 
     /**
      * Draws the extracted features on a copy image and shows it
      * @param name: Image output name while showing
      */
-    virtual void showImageWithFeatures(const std::string& name) {}
+    virtual void showImageWithFeatures(const std::string& name) const {}
 
     /**
      * Shows the matches between this frame and reference frame.
      * @param name: Image output name while showing
      */
-    virtual void showMatchesWithRef(const std::string& name, const size_t n = 0) {}
+    virtual void showMatchesWithRef(const std::string& name, const size_t n = 0) const {}
 
     /**
      * @brief Checks whether a given point is within the image bounds
