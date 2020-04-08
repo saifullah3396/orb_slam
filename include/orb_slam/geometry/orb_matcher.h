@@ -205,16 +205,46 @@ struct BowOrbMatcher : public MatcherBase {
     BowOrbMatcher(const ros::NodeHandle& nh) {}
 
     /**
-     * @brief Finds the closest feature in ref_frame for a feature in frame by
+     * @brief Finds the closest feature in ref_key_frame for a feature in frame by
      *     iterating over all the pixels that lie within a tolerance of feature
-     *     in ref_frame and matching their descriptors
+     *     in ref_key_frame and matching their descriptors
      * @param frame: Input frame to match
      * @param ref_frane: Reference frame to match with
      * @param matches: Output features that are matched
      */
     void match(
         const FramePtr& frame,
+        const KeyFramePtr& ref_key_frame,
+        std::vector<cv::DMatch>& matches);
+
+    /**
+     * @brief Finds the closest feature in ref_key_frame for a feature in key_frame by
+     *     iterating over all the pixels that lie within a tolerance of feature
+     *     in ref_key_frame and matching their descriptors
+     * @param frame: Input frame to match
+     * @param ref_frane: Reference frame to match with
+     * @param matches: Output features that are matched
+     */
+    void match(
+        const KeyFramePtr& key_frame,
+        const KeyFramePtr& ref_key_frame,
+        std::vector<cv::DMatch>& matches);
+
+    /**
+     * @brief Finds the closest feature in ref_frame for a feature in frame by
+     *     iterating over all the pixels that lie within a tolerance of feature
+     *     in ref_frame and matching their descriptors
+     * @param frame: Input frame to match
+     * @param ref_frane: Reference frame to match with
+     * @param map_points: Map points associated with frame
+     * @param ref_map_points: Map points associated with ref_frame
+     * @param matches: Output features that are matched
+     */
+    void match(
+        const FramePtr& frame,
         const FramePtr& ref_frame,
+        const std::vector<MapPointPtr>& map_points,
+        const std::vector<MapPointPtr>& ref_map_points,
         std::vector<cv::DMatch>& matches);
 
     bool check_orientation_ = false;
