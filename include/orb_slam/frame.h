@@ -388,6 +388,11 @@ public:
     const cv::Mat& worldInCamerat() const
         { assert(thread_safe_ == false); return c_t_w_; }
 
+    // from frame a const refernce is returned since frame map points are
+    // accessed from other threads until a key frame from it is formed
+    // this allows not copying obs_map_points when used by frame
+    const std::vector<MapPointPtr>& obsMapPoints() const;
+    const std::vector<bool>& outliers() const { return outliers_; }
     const int nFeatures() const { return key_points_.size(); }
     const std::vector<cv::KeyPoint>& features() const
         { return key_points_; }
