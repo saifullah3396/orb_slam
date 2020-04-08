@@ -34,6 +34,7 @@ enum OrbMatcherTypes {
     BF_WITH_RADIUS,
     BF_WITH_PROJ,
     BOW_ORB,
+    EPIPOLAR_CONSTRAINT,
     CV_ORB,
     MATCHER_TYPES
 };
