@@ -12,6 +12,11 @@
 #include <orb_slam/geometry/orb_extractor.h>
 #include <orb_slam/geometry/orb_matcher.h>
 
+#define LOCK_OBSERVATIONS \
+    std::unique_lock<std::mutex> observations_lock(observations_mutex_);
+#define LOCK_POS \
+    std::unique_lock<std::mutex> pos_lock(pos_mutex_);
+
 namespace orb_slam
 {
 
