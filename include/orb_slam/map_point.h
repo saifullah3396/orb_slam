@@ -100,6 +100,18 @@ public:
     void resetTrackProperties() { track_properties_.reset(); }
     void setTrackProperties(const TrackProperties& track_properties)
         { track_properties_ = track_properties; }
+    void setWorldPos(const cv::Mat& world_pos) {
+        LOCK_POS;
+        world_pos.copyTo(world_pos_);
+    }
+    void increaseVisibility(const int& n = 1) {
+        LOCK_OBSERVATIONS;
+        visibility_ += n;
+    }
+    void increaseFound(const int& n = 1) {
+        LOCK_OBSERVATIONS;
+        found_ += n;
+    }
 
     /**
      * Adds an observation for this point.
