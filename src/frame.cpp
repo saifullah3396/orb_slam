@@ -298,9 +298,6 @@ void Frame::setupGrid(const ros::NodeHandle& nh)
     grid_size_y_ = camera_->undistHeight() / grid_rows_;
 }
 
-/**
- * Computes the bag of words from orb vocabulary and frame features
- */
 void Frame::computeBow() {
     if(bow_vec_.empty() || feature_vec_.empty()) {
         std::vector<cv::Mat> vec_descriptors;
