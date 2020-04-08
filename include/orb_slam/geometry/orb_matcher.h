@@ -446,6 +446,17 @@ public:
         const bool check_orientation = true
     ) const;
 
+    /**
+     * Projects the points in 3d on to the frame and removes duplicates.
+     * @param key_frame: Frame to project on
+     * @param points_3d: Points in 3d to project
+     * @param radius_multiplier: Threshold radius for matching
+     */
+    int fuse(
+        const KeyFramePtr key_frame,
+        const std::vector<MapPointPtr>& points_3d,
+        const float radius_multiplier = 3.0
+    ) const;
 
     /**
      * Filters out the matched points based on min/max distance threshold
