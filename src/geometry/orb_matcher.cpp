@@ -355,6 +355,8 @@ void BruteForceWithProjectionMatcher::match(
 void BowOrbMatcher::match(
     const FramePtr& frame,
     const FramePtr& ref_frame,
+    const std::vector<MapPointPtr>& map_points,
+    const std::vector<MapPointPtr>& ref_map_points,
     std::vector<cv::DMatch>& matches)
 {
     std::vector<int> rot_hist[hist_length_];
