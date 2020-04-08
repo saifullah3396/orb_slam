@@ -84,24 +84,24 @@ bool Frame::getBoxAroundPoint(
 {
     left =
         std::max( //
-            0, (int)(p.x - camera_->minX() - box_radius) / grid_size_x_);
+            0, (int) floor(p.x - camera_->minX() - box_radius) / grid_size_x_);
     if (left >= grid_cols_) return false;
 
     right =
-        std::max(
-            (int)(p.x - camera_->minX() + box_radius) / grid_size_x_,
-            grid_cols_ - 1);
+        std::min(
+            grid_cols_ - 1,
+            (int) ceil(p.x - camera_->minX() + box_radius) / grid_size_x_);
     if (right < 0) return false;
 
     up =
         std::max( //
-            0, (int)(p.y - camera_->minY() - box_radius) / grid_size_y_);
+            0, (int) floor(p.y - camera_->minY() - box_radius) / grid_size_y_);
     if (up >= grid_rows_) return false;
 
     down =
-        std::max(
-            (int)(p.y - camera_->minY() + box_radius) / grid_size_y_,
-            grid_rows_ - 1);
+        std::min(
+            grid_rows_ - 1,
+            (int) ceil(p.y - camera_->minY() + box_radius) / grid_size_y_);
     if (down < 0) return false;
 }
 
