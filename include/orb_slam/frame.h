@@ -331,6 +331,16 @@ public:
     }
 
     /**
+     * Finds the relative transformation of this frame in given frame
+     * @param ref_frame: Frame in which relative transformation is found
+     * @returns cv::Mat: The relative transformation matrix ref_T_f
+     */
+    cv::Mat transFromFrame(const FramePtr& ref_frame) const {
+        // ref_T_c = ref_T_w * w_T_c;
+        return ref_frame->worldInCameraT() * w_T_c_;
+    }
+
+    /**
      * Getters
      */
     std::vector<MapPointPtr> obsMapPoints() const;
