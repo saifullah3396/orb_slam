@@ -686,6 +686,8 @@ ORBMatcher::ORBMatcher(const ros::NodeHandle& nh): nh_(nh) {
         std::shared_ptr<MatcherBase>(new BruteForceWithProjectionMatcher(nh_));
     matcher_[BOW_ORB] =
         std::shared_ptr<MatcherBase>(new BowOrbMatcher(nh_));
+    matcher_[EPIPOLAR_CONSTRAINT] =
+        std::shared_ptr<MatcherBase>(new EpipolarConstraintWithBowMatcher(nh_));
     matcher_[CV_ORB] =
         std::shared_ptr<MatcherBase>(new CVORBMatcher(nh_));
 }
