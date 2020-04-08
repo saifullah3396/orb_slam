@@ -69,18 +69,20 @@ public:
 };
 
 /**
- * Graph edge for a 2d pixel to 3d camera relationship
+ * Graph edge for a 2d pixel to 3d camera relationship for monocular cameras
+ * meaning the relation is [x, y]' -> [X Y Z]' in se3. This edge only
+ * computes jacobian Xi.
  */
-class EdgeProjectionPoseOnly : public g2o::BaseUnaryEdge<2, Vec2, VertexPose> {
+class EdgeProjectionPoseOnlyMono : public g2o::BaseUnaryEdge<2, Vec2, VertexPose> {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-    EdgeProjectionPoseOnly(const Vec3 &pos, const Mat33 &K)
+    EdgeProjectionPoseOnlyMono(const Vec3 &pos, const Mat33 &K)
         : pos3d_(pos), K_(K) {}
 
     virtual void computeError() override {
         const VertexPose *v = static_cast<VertexPose *>(_vertices[0]);
-        SE3 T = v->estimate();
+        const auto& T = v->estimate();
         Vec3 pos_pixel = K_ * (T * pos3d_);
         pos_pixel /= pos_pixel[2];
         _error = _measurement - pos_pixel.head<2>();
@@ -88,7 +90,7 @@ public:
 
     virtual void linearizeOplus() override {
         const VertexPose *v = static_cast<VertexPose *>(_vertices[0]);
-        SE3 T = v->estimate();
+        const auto& T = v->estimate();
         Vec3 pos_cam = T * pos3d_;
         double fx = K_(0, 0);
         double fy = K_(1, 1);
@@ -113,7 +115,53 @@ private:
 };
 
 /**
- * Graph edge for a 2d pixel to 3d camera relationship
+ * Graph edge for a 2d pixel to 3d camera relationship for monocular cameras
+ * meaning the relation is [x, y, depth]' -> [X Y Z]' in se3. This edge only
+ * computes jacobian Xi.
+ */
+class EdgeProjectionPoseOnlyDepth : public g2o::BaseUnaryEdge<3, Vec3, VertexPose> {
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
+    EdgeProjectionPoseOnlyDepth(const Vec3 &pos, const Mat33 &K)
+        : pos3d_(pos), K_(K) {}
+
+    virtual void computeError() override {
+        const VertexPose *v = static_cast<VertexPose *>(_vertices[0]);
+        const auto& T = v->estimate();
+        Vec3 pos_pixel = K_ * (T * pos3d_);
+        pos_pixel.head<2>() = pos_pixel.head<2>() / pos_pixel[2];
+        _error = _measurement - pos_pixel;
+    }
+
+    virtual void linearizeOplus() override {
+        const VertexPose *v = static_cast<VertexPose *>(_vertices[0]);
+        const auto& T = v->estimate();
+        Vec3 pos_cam = T * pos3d_;
+        double fx = K_(0, 0);
+        double fy = K_(1, 1);
+        double X = pos_cam[0];
+        double Y = pos_cam[1];
+        double Z = pos_cam[2];
+        double Zinv = 1.0 / (Z + 1e-18);
+        double Zinv2 = Zinv * Zinv;
+        _jacobianOplusXi <<
+            -fx * Zinv, 0, fx * X * Zinv2,
+            fx * X * Y * Zinv2, -fx - fx * X * X * Zinv2, fx * Y * Zinv,
+            0, -fy * Zinv, fy * Y * Zinv2,
+            fy + fy * Y * Y * Zinv2, -fy * X * Y * Zinv2, -fy * X * Zinv,
+            0, 0, 1,
+            Y, -X, 0;
+    }
+
+    virtual bool read(std::istream &in) override { return true; }
+    virtual bool write(std::ostream &out) const override { return true; }
+
+private:
+    Vec3 pos3d_;
+    Mat33 K_;
+};
+
  */
 class EdgeProjection
     : public g2o::BaseBinaryEdge<2, Vec2, VertexPose, VertexXYZ> {
