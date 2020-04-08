@@ -62,6 +62,9 @@ public:
         { orb_matcher_ = orb_matcher; }
     static void setORBExtractor(const geometry::ORBExtractorConstPtr& orb_extractor)
         { orb_extractor_ = orb_extractor; }
+    void resetTrackProperties() { track_properties_.reset(); }
+    void setTrackProperties(const TrackProperties& track_properties)
+        { track_properties_ = track_properties; }
 
     /**
      * Adds an observation for this point.
@@ -98,6 +101,8 @@ public:
      */
     void updateNormalAndScale();
 private:
+    // Properties of map point related to tracking in a frame
+    TrackProperties track_properties_;
     // Map point details
     cv::Mat world_pos_; // Point position in world coordinates
     cv::Mat view_vector_; // Mean viewing direction
