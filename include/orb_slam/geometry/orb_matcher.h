@@ -381,16 +381,14 @@ public:
      * @param check_orientation: Also checks orb feature orientations while
      *   matching if true
      * @param nn_ratio: Best to second best match ratio threshold. Best match
-     *   distance should be at least smaller than nn_ratio * second best match.
-     * @param filter_matches: Matches are filtered if true
+     *   distance should be at least smaller than nn_ratio.
      */
     void matchByBowFeatures(
         const FramePtr& frame,
-        const FramePtr& ref_frame,
+        const KeyFramePtr& ref_frame,
         std::vector<cv::DMatch>& matches,
         const bool check_orientation = true,
-        const float nn_ratio = 0.6,
-        const bool filter_matches = false) const;
+        const float nn_ratio = 0.6) const;
 
     /**
      * Matches the input key points with output points using 3d to 2d
@@ -402,15 +400,52 @@ public:
      * @param check_orientation: Also checks orb feature orientations while
      *   matching if true
      * @param radius: Window size multiplier for search
-     * @param filter_matches: Matches are filtered if true
      */
     void matchByProjection(
         const FramePtr& frame,
         const FramePtr& ref_frame,
         std::vector<cv::DMatch>& matches,
         const bool check_orientation = true,
-        const float radius = 1.0,
-        const bool filter_matches = false) const;
+        const float radius = 1.0) const;
+
+    /**
+     * Matches the input key points with output points using 3d to 2d
+     * projection from reference frame over frame
+     *
+     * @param frame: Input frame to match
+     * @param ponits_3d: Points to project and match
+     * @param matches: Output features that are matched
+     * @param compute_track_info: Whether to compute map points track info for
+     *     processing or should consider it to be already computed
+     * @param nn_ratio: Best to second best match ratio threshold. Best match
+     *   distance should be at least smaller than nn_ratio.
+     * @param radius: Window size multiplier for search
+     */
+    void matchByProjection(
+        const FramePtr& frame,
+        const std::vector<MapPointPtr>& points_3d,
+        std::vector<cv::DMatch>& matches,
+        const bool compute_track_info,
+        const float nn_ratio = 0.6,
+        const float radius = 1.0) const;
+
+    /**
+     * Matches the features of one frame by another using the epipolar
+     * constraint.
+     * @param frame: Input frame to match
+     * @param ref_frame: Reference frame to match with
+     * @param matches: Output features that are matched
+     * @param check_orientation: Also checks orb feature orientations while
+     *   matching if true
+     * @param filter_matches: Matches are filtered if true
+     */
+    void matchByEpipolarConstraint(
+        const KeyFramePtr& frame,
+        const KeyFramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches,
+        const bool check_orientation = true
+    ) const;
+
 
     /**
      * Filters out the matched points based on min/max distance threshold
