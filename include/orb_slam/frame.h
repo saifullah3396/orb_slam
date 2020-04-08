@@ -114,6 +114,23 @@ public:
         const bool filter_matches = false);
 
     /**
+     * Matches the frame with the previous frame using map points projection
+     *
+     * @param prev_frame: Frame to match with
+     * @param compute_track_info: Whether to compute map points track info for
+     *     processing or should consider it to be already computed
+     * @param nn_ratio: First to second best match ratio
+     * @param radius: Window size multiplier for search
+     * @param filter_matches: Whether to filter matches afterwards
+     */
+    void matchByProjection(
+        const std::vector<MapPointPtr>& map_points,
+        const bool compute_track_info,
+        const float nn_ratio = 0.6,
+        const float radius = 1.0,
+        const bool filter_matches = false);
+
+    /**
      * Draws the extracted features on the given image
      * @param image: Drawing image
      */
