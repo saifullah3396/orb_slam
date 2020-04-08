@@ -34,6 +34,9 @@ Frame::~Frame()
 {
 }
 
+void Frame::setRefKeyFrame(const KeyFramePtr& ref_key_frame) {
+    ref_key_frame_ = ref_key_frame;
+}
 
 const std::vector<MapPointPtr>& Frame::obsMapPoints() const {
     assert(thread_safe_ == false);
