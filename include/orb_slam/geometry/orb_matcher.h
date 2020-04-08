@@ -20,6 +20,12 @@ namespace orb_slam
 class Frame;
 using FramePtr = std::shared_ptr<Frame>;
 
+class KeyFrame;
+using KeyFramePtr = std::shared_ptr<KeyFrame>;
+
+class MapPoint;
+using MapPointPtr = std::shared_ptr<MapPoint>;
+
 namespace geometry
 {
 
