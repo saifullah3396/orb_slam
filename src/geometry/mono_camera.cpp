@@ -42,7 +42,7 @@ std::shared_ptr<MonoCamera<T>> MonoCamera<T>::makeCamera(
 
     if (input_type == "ros") {
         return geometry::MonoCameraPtr<T>(
-            new geometry::ROSMonoCamera<float>(nh_));
+            new geometry::ROSMonoCamera<T>(nh));
     }
 }
 
