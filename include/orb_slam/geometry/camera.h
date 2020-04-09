@@ -6,18 +6,11 @@
 
 #pragma once
 
-#include <iostream>
-#include <queue>
 #include <opencv2/core/core.hpp>
 #include <string>
 #include <ros/ros.h>
-#include <image_transport/image_transport.h>
-#include <message_filters/subscriber.h>
-#include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
 #include <cv_bridge/cv_bridge.h>
 
-#define ROS_CAMERA_STREAM 1
 using namespace sensor_msgs;
 
 namespace orb_slam
@@ -34,6 +27,11 @@ enum class CameraType {
     RGBD,
     STEREO
 };
+
+template <typename T = float>
+class Camera;
+template <typename T = float>
+using CameraPtr = std::shared_ptr<Camera<T>>;
 
 /**
  * @struct Camera
@@ -53,6 +51,12 @@ public:
      * @brief ~Camera Destructor
      */
     virtual ~Camera();
+
+    /**
+     * @brief makeCamera Constructs a camera of given type
+     */
+    static CameraPtr<T> makeCamera(
+        const ros::NodeHandle& nh, const geometry::CameraType& type);
 
     /**
      * @brief readParams Reads the camera parameters
@@ -95,9 +99,7 @@ public:
     /**
      * Getters
      */
-    #ifdef ROS_CAMERA_STREAM
     virtual const bool subscribed() = 0;
-    #endif
     const int& fps() const { return fps_; }
     const int& width() const { return width_; }
     const int& height() const { return height_; }
@@ -169,208 +171,10 @@ protected:
     ros::NodeHandle nh_;
 };
 
-/**
- * @struct MonoCamera
- * @brief Holds information about a single monocular camera
- */
-template <typename T = float>
-class MonoCamera : public Camera<T>
-{
-public:
-    /**
-     * @brief Camera Constructor
-     * @param nh: ROS node handle
-     */
-    MonoCamera(const ros::NodeHandle& nh);
-
-    /**
-     * @brief ~Camera Destructor
-     */
-    ~MonoCamera();
-
-    /**
-     * @brief setup Sets up the camera image streaming
-     */
-    virtual void setupCameraStream();
-
-    /**
-     * @brief Pops the front element of the queue and returns it. Returns null if queue
-     * is empty
-     */
-    cv_bridge::CvImageConstPtr image() {
-        if (!cv_image_queue_.empty()) {
-            auto image = cv_image_queue_.front();
-            cv_image_queue_.pop();
-            return image;
-        }
-        return nullptr;
-    }
-    const CameraType type() const { return CameraType::MONO; }
-    const cv::Mat& imageL() {
-        throw std::runtime_error(
-            "imageL() is undefined for monocular camera.");
-    }
-    const cv::Mat& imageR() {
-        throw std::runtime_error(
-            "imageR() is undefined for monocular camera.");
-    }
-    cv_bridge::CvImageConstPtr imageDepth() {
-        throw std::runtime_error(
-            "imageDepth() is undefined for monocular camera.");
-    }
-
-private:
-    #ifdef ROS_CAMERA_STREAM
-    virtual const bool subscribed() {
-        return rgb_image_subscriber_.getNumPublishers() > 0;
-    }
-    void imageCb(
-        const sensor_msgs::ImageConstPtr& image_msg,
-        const sensor_msgs::CameraInfoConstPtr& camera_info_msg);
-
-    sensor_msgs::CameraInfoConstPtr rgb_image_info_;
-    std::queue<cv_bridge::CvImageConstPtr> cv_image_queue_;
-    image_transport::CameraSubscriber rgb_image_subscriber_;
-    std::shared_ptr<image_transport::ImageTransport> image_transport;
-    #endif
-};
-
-/**
- * @struct RGBDCamera
- * @brief Holds information about a single rgbd camera
- */
-template <typename T = float>
-class RGBDCamera : public Camera<T>
-{
-public:
-    /**
-     * @brief Camera Constructor
-     * @param nh: ROS node handle
-     */
-    RGBDCamera(const ros::NodeHandle& nh);
-
-    /**
-     * @brief ~Camera Destructor
-     */
-    ~RGBDCamera();
-
-    /**
-     * @brief readParams Reads the camera parameters
-     */
-    virtual void readParams();
-
-    /**
-     * @brief setup Sets up the camera image streaming
-     */
-    virtual void setupCameraStream();
-
-    /**
-     * @brief registerDepth Registers depth image to rgb image.
-     */
-    void registerDepth(
-        const cv::Mat& depth_in, cv::Mat& depth_out);
-
-    /**
-     * @brief Pops the front element of the queue and returns it. Returns null if queue
-     * is empty
-     */
-    cv_bridge::CvImageConstPtr image() {
-        if (!cv_image_queue_.empty()) {
-            auto image = cv_image_queue_.front();
-            cv_image_queue_.pop();
-            return image;
-        }
-        return nullptr;
-    }
-    const CameraType type() const { return CameraType::RGBD; }
-    const cv::Mat& imageL() {
-        throw std::runtime_error(
-            "imageL() is undefined for monocular camera.");
-    }
-    const cv::Mat& imageR() {
-        throw std::runtime_error(
-            "imageR() is undefined for monocular camera.");
-    }
-    cv_bridge::CvImageConstPtr imageDepth() {
-        if (!depth_image_queue_.empty()) {
-            auto image = depth_image_queue_.front();
-            depth_image_queue_.pop();
-            return image;
-        }
-        return nullptr;
-    }
-    const cv::Mat_<T>& distCoeffsDepth() const { return dist_coeffs_depth_; }
-    const cv::Mat_<T>& intrinsicMatrixDepth() const { return intrinsic_matrix_depth_; }
-
-private:
-    /**
-     * @brief updateIntrinsicMatrix Updates the intrinsic matrix of the camera
-     *     from current known parameters
-     */
-    void updateIntrinsicMatrix();
-
-    #ifdef ROS_CAMERA_STREAM
-    virtual const bool subscribed() {
-        return subscribed_;
-    }
-    void imageCb(
-        const sensor_msgs::ImageConstPtr& image_msg,
-        const sensor_msgs::CameraInfoConstPtr& image_info_msg,
-        const sensor_msgs::ImageConstPtr& depth_msg,
-        const sensor_msgs::CameraInfoConstPtr& depth_info_msg);
-
-    sensor_msgs::CameraInfoConstPtr rgb_image_info_;
-    sensor_msgs::CameraInfoConstPtr depth_image_info_;
-    std::queue<cv_bridge::CvImageConstPtr> cv_image_queue_;
-    std::queue<cv_bridge::CvImageConstPtr> depth_image_queue_;
-
-    std::shared_ptr<message_filters::Subscriber<Image>> rgb_image_subscriber_;
-    std::shared_ptr<message_filters::Subscriber<Image>> depth_image_subscriber_;
-    std::shared_ptr<message_filters::Subscriber<CameraInfo>> rgb_info_subscriber_;
-    std::shared_ptr<message_filters::Subscriber<CameraInfo>> depth_info_subscriber_;
-
-    // camera stream synchronizer
-    typedef message_filters::sync_policies::ApproximateTime<
-        sensor_msgs::Image,
-        sensor_msgs::CameraInfo,
-        sensor_msgs::Image,
-        sensor_msgs::CameraInfo> SyncPolicy;
-    std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> synchronizer_;
-    #endif
-
-    bool subscribed_ = {false};
-    float depth_scale_ = {1.f}; // sometimes datasets have scaled depths
-
-    int fps_ = {30}; //! Frames per second for the depth image
-    int width_depth_;
-    int height_depth_;
-    T focal_x_depth_ = {0}; //! Camera focal length X
-    T focal_y_depth_ = {0};//! Camera focal length Y
-    T focal_x_inv_depth_ = {0}; //! Inverse of Camera focal length X
-    T focal_y_inv_depth_ = {0};//! Inverse of Camera focal length Y
-    T center_x_depth_ = {0}; //! Camera center offset X
-    T center_y_depth_ = {0}; //! Camera center offset Y
-    //! Depth distortion coefficients
-    cv::Mat_<T> dist_coeffs_depth_ = {cv::Mat_<T>(1, 5)};
-    cv::Mat_<T> intrinsic_matrix_depth_ = {cv::Mat_<T>(3, 3)};
-    //! Depth camera to image camera static transform
-    cv::Mat_<T> image_T_depth_;
-};
-
 template <typename T = float>
 using CameraPtr = std::shared_ptr<Camera<T>>;
 template <typename T = float>
 using CameraConstPtr = std::shared_ptr<const Camera<T>>;
-
-template <typename T = float>
-using MonoCameraPtr = std::shared_ptr<MonoCamera<T>>;
-template <typename T = float>
-using MonoCameraConstPtr = std::shared_ptr<const MonoCamera<T>>;
-
-template <typename T = float>
-using RGBDCameraPtr = std::shared_ptr<RGBDCamera<T>>;
-template <typename T = float>
-using RGBDCameraConstPtr = std::shared_ptr<const RGBDCamera<T>>;
 
 } // namespace geometry
 

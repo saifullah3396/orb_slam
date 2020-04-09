@@ -30,17 +30,10 @@ Tracker::Tracker(const ros::NodeHandle& nh, const int& camera_type) : nh_(nh)
 {
     // initialize the camera
     ROS_DEBUG("Initializing camera...");
-    if (camera_type == static_cast<int>(geometry::CameraType::MONO)) {
-        camera_ =
-            geometry::CameraPtr<float>(new geometry::MonoCamera<float>(nh_));
-    } else if (camera_type == static_cast<int>(geometry::CameraType::RGBD)) {
-        camera_ =
-            geometry::CameraPtr<float>(new geometry::RGBDCamera<float>(nh_));
-    }
-    camera_->readParams();
-    camera_->setup();
-    camera_->setupCameraStream();
-
+    camera_ =
+        geometry::Camera<float>::makeCamera(
+            nh_,
+            static_cast<geometry::CameraType>(camera_type));
     n_min_frames_ = 0;
     n_max_frames_ = camera_->fps();
 
