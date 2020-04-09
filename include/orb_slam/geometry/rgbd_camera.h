@@ -61,18 +61,6 @@ public:
     void registerDepth(
         const cv::Mat& depth_in, cv::Mat& depth_out);
 
-    /**
-     * @brief Pops the front element of the queue and returns it. Returns null if queue
-     * is empty
-     */
-    cv_bridge::CvImageConstPtr image() {
-        if (!cv_image_queue_.empty()) {
-            auto image = cv_image_queue_.front();
-            cv_image_queue_.pop();
-            return image;
-        }
-        return nullptr;
-    }
     const CameraType type() const { return CameraType::RGBD; }
     const cv::Mat& imageL() {
         throw std::runtime_error(
@@ -82,18 +70,10 @@ public:
         throw std::runtime_error(
             "imageR() is undefined for monocular camera.");
     }
-    cv_bridge::CvImageConstPtr imageDepth() {
-        if (!depth_image_queue_.empty()) {
-            auto image = depth_image_queue_.front();
-            depth_image_queue_.pop();
-            return image;
-        }
-        return nullptr;
-    }
     const cv::Mat_<T>& distCoeffsDepth() const { return dist_coeffs_depth_; }
     const cv::Mat_<T>& intrinsicMatrixDepth() const { return intrinsic_matrix_depth_; }
 
-private:
+protected:
     /**
      * @brief updateIntrinsicMatrix Updates the intrinsic matrix of the camera
      *     from current known parameters
@@ -141,6 +121,36 @@ public:
      * @brief setup Sets up the camera image streaming
      */
     virtual void setupCameraStream();
+
+    /**
+     * @brief Pops the front element of the queue and returns it. Returns null if queue
+     * is empty
+     */
+    virtual cv_bridge::CvImageConstPtr image() {
+        if (!cv_image_queue_.empty()) {
+            auto image = cv_image_queue_.front();
+            cv_image_queue_.pop();
+            return image;
+        }
+        return nullptr;
+    }
+    const CameraType type() const { return CameraType::RGBD; }
+    const cv::Mat& imageL() {
+        throw std::runtime_error(
+            "imageL() is undefined for monocular camera.");
+    }
+    const cv::Mat& imageR() {
+        throw std::runtime_error(
+            "imageR() is undefined for monocular camera.");
+    }
+    virtual cv_bridge::CvImageConstPtr imageDepth() {
+        if (!depth_image_queue_.empty()) {
+            auto image = depth_image_queue_.front();
+            depth_image_queue_.pop();
+            return image;
+        }
+        return nullptr;
+    }
 private:
     virtual const bool subscribed() {
         return subscribed_;
@@ -170,6 +180,62 @@ private:
     std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> synchronizer_;
 
     bool subscribed_ = {false};
+};
+
+/**
+ * @struct TUMRGBDCamera
+ * @brief RGBDCamera with TUM dataset based input
+ */
+template <typename T = float>
+class TUMRGBDCamera : public RGBDCamera<T>
+{
+public:
+    /**
+     * @brief Camera Constructor
+     * @param nh: ROS node handle
+     */
+    TUMRGBDCamera(const ros::NodeHandle& nh);
+
+    /**
+     * @brief ~Camera Destructor
+     */
+    ~TUMRGBDCamera();
+
+    virtual cv_bridge::CvImageConstPtr image() {
+        if (count < rgb_files_.size()) {
+            cv_bridge::CvImagePtr cv_image = cv_bridge::CvImagePtr(new cv_bridge::CvImage());
+            cv_image->header.stamp = ros::Time(time_stamps_[count]);
+            cv_image->image = cv::imread(rgb_files_[count], CV_LOAD_IMAGE_UNCHANGED);
+            return boost::static_pointer_cast<cv_bridge::CvImageConstPtr>(cv_image);
+        } else {
+            return nullptr;
+        }
+    }
+    virtual cv_bridge::CvImageConstPtr imageDepth() {
+        if (count < depth_files_.size()) {
+            cv_bridge::CvImagePtr cv_image = cv_bridge::CvImagePtr(new cv_bridge::CvImage());
+            cv_image->header.stamp = ros::Time(time_stamps_[count]);
+            cv_image->image = cv::imread(depth_files_[count], CV_LOAD_IMAGE_UNCHANGED);
+            return boost::static_pointer_cast<cv_bridge::CvImageConstPtr>(cv_image);
+        } else {
+            return nullptr;
+        }
+    }
+
+    /**
+     * @brief setup Sets up the camera image streaming
+     */
+    virtual void setupCameraStream();
+private:
+    virtual const bool subscribed() {
+        return subscribed_;
+    }
+    bool subscribed_ = {false};
+
+    std::vector<std::string> rgb_files_;
+    std::vector<std::string> depth_files_;
+    std::vector<double> time_stamps_;
+    int count = 0;
 };
 
 template <typename T = float>
