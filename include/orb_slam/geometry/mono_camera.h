@@ -73,6 +73,7 @@ public:
 template <typename T = float>
 class ROSMonoCamera : public MonoCamera<T>
 {
+public:
     /**
      * @brief Camera Constructor
      * @param nh: ROS node handle
