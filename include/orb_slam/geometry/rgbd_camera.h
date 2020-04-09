@@ -206,7 +206,7 @@ public:
             cv_bridge::CvImagePtr cv_image = cv_bridge::CvImagePtr(new cv_bridge::CvImage());
             cv_image->header.stamp = ros::Time(time_stamps_[count]);
             cv_image->image = cv::imread(rgb_files_[count], CV_LOAD_IMAGE_UNCHANGED);
-            return boost::static_pointer_cast<cv_bridge::CvImageConstPtr>(cv_image);
+            return boost::static_pointer_cast<const cv_bridge::CvImage>(cv_image);
         } else {
             return nullptr;
         }
@@ -216,7 +216,7 @@ public:
             cv_bridge::CvImagePtr cv_image = cv_bridge::CvImagePtr(new cv_bridge::CvImage());
             cv_image->header.stamp = ros::Time(time_stamps_[count]);
             cv_image->image = cv::imread(depth_files_[count], CV_LOAD_IMAGE_UNCHANGED);
-            return boost::static_pointer_cast<cv_bridge::CvImageConstPtr>(cv_image);
+            return boost::static_pointer_cast<const cv_bridge::CvImage>(cv_image);
         } else {
             return nullptr;
         }
