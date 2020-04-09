@@ -198,7 +198,7 @@ void ROSRGBDCamera<T>::setupCameraStream()
                 *depth_info_subscriber_));
     synchronizer_->registerCallback(
         boost::bind(
-            &RGBDCamera<T>::imageCb, this, _1, _2, _3, _4));
+            &ROSRGBDCamera<T>::imageCb, this, _1, _2, _3, _4));
 }
 
 template <typename T>
