@@ -7,6 +7,7 @@
 #include <array>
 #include <memory>
 #include <orb_slam/frame.h>
+#include <orb_slam/geometry/rgbd_camera.h>
 
 namespace orb_slam {
 
