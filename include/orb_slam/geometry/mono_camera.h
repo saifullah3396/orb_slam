@@ -51,18 +51,6 @@ public:
     static std::shared_ptr<MonoCamera<T>> makeCamera(
         const ros::NodeHandle& nh, const std::string& input_type);
 
-    /**
-     * @brief Pops the front element of the queue and returns it. Returns null if queue
-     * is empty
-     */
-    cv_bridge::CvImageConstPtr image() {
-        if (!cv_image_queue_.empty()) {
-            auto image = cv_image_queue_.front();
-            cv_image_queue_.pop();
-            return image;
-        }
-        return nullptr;
-    }
     const CameraType type() const { return CameraType::MONO; }
     const cv::Mat& imageL() {
         throw std::runtime_error(
@@ -76,9 +64,6 @@ public:
         throw std::runtime_error(
             "imageDepth() is undefined for monocular camera.");
     }
-
-private:
-    std::queue<cv_bridge::CvImageConstPtr> cv_image_queue_;
 };
 
 /**
@@ -103,6 +88,19 @@ class ROSMonoCamera : public MonoCamera<T>
      * @brief setup Sets up the camera image streaming
      */
     virtual void setupCameraStream();
+
+    /**
+     * @brief Pops the front element of the queue and returns it. Returns null if queue
+     * is empty
+     */
+    cv_bridge::CvImageConstPtr image() {
+        if (!cv_image_queue_.empty()) {
+            auto image = cv_image_queue_.front();
+            cv_image_queue_.pop();
+            return image;
+        }
+        return nullptr;
+    }
 private:
     const bool subscribed() {
         return rgb_image_subscriber_.getNumPublishers() > 0;
@@ -115,6 +113,7 @@ private:
     sensor_msgs::CameraInfoConstPtr rgb_image_info_;
     image_transport::CameraSubscriber rgb_image_subscriber_;
     std::shared_ptr<image_transport::ImageTransport> image_transport;
+    std::queue<cv_bridge::CvImageConstPtr> cv_image_queue_;
 };
 
 template <typename T = float>
