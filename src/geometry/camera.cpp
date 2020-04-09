@@ -9,6 +9,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <orb_slam/geometry/camera.h>
+#include <orb_slam/geometry/mono_camera.h>
+#include <orb_slam/geometry/rgbd_camera.h>
 
 namespace orb_slam
 {
@@ -33,12 +35,12 @@ CameraPtr<T> Camera<T>::makeCamera(
     const ros::NodeHandle& nh, const geometry::CameraType& type) {
     std::string prefix = "/orb_slam/camera/";
     std::string input_type;
-    nh_.param<std::string>("input_type", input_type, "ros");
+    nh.param<std::string>("input_type", input_type, "ros");
 
-    if (type == static_cast<int>(geometry::CameraType::MONO)) {
-        return geometry::MonoCamera<T>::makeCamera(const std::string& input_type);
-    } else if (type == static_cast<int>(geometry::CameraType::RGBD)) {
-        return geometry::RGBDCamera<T>::makeCamera(const std::string& input_type);
+    if (type == geometry::CameraType::MONO) {
+        return geometry::MonoCamera<T>::makeCamera(nh, input_type);
+    } else if (type == geometry::CameraType::RGBD) {
+        return geometry::RGBDCamera<T>::makeCamera(nh, input_type);
     }
 }
 
