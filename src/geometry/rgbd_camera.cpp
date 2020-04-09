@@ -35,7 +35,10 @@ std::shared_ptr<RGBDCamera<T>> RGBDCamera<T>::makeCamera(
 
     if (input_type == "ros") {
         return geometry::RGBDCameraPtr<T>(
-            new geometry::ROSRGBDCamera<float>(nh_));
+            new geometry::ROSRGBDCamera<T>(nh));
+    } else if (input_type == "tum_dataset") {
+        return geometry::RGBDCameraPtr<T>(
+            new geometry::TUMRGBDCamera<T>(nh));
     }
 }
 
@@ -122,17 +125,17 @@ void ROSRGBDCamera<T>::imageCb(
     if (this->preprocess_) {
         auto depth_image_temp =
             cv_bridge::toCvCopy(depth_msg, image_encodings::TYPE_32FC1);
-        if ((fabs(depth_scale_ - 1.f) > 1e-5)) {
+        if ((fabs(this->depth_scale_ - 1.f) > 1e-5)) {
             depth_image_temp->image.convertTo(
-                depth_image_temp->image, CV_16UC1, depth_scale_);
+                depth_image_temp->image, CV_16UC1, this->depth_scale_);
         }
         cv::Mat undist;
         cv::undistort(
             depth_image_temp->image,
             undist,
-            intrinsic_matrix_depth_,
-            dist_coeffs_depth_,
-            intrinsic_matrix_depth_);
+            this->intrinsic_matrix_depth_,
+            this->dist_coeffs_depth_,
+            this->intrinsic_matrix_depth_);
         //cv::Mat registered;
         //registerDepth(depth_image_temp->image, registered);
         //depth_image_temp->image = registered;
