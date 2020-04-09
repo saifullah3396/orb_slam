@@ -5,6 +5,7 @@
 #include <orb_slam/frame.h>
 #include <orb_slam/initializer.h>
 #include <orb_slam/geometry/camera.h>
+#include <orb_slam/geometry/mono_camera.h>
 #include <orb_slam/geometry/utils.h>
 
 namespace orb_slam {
