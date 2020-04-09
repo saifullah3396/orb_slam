@@ -5,6 +5,8 @@
  * @author <A href="mailto:saifullah3396@gmail.com">Saifullah</A>
  */
 
+#include <fstream>
+#include <sstream>
 #include <opencv2/rgbd.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -197,6 +199,39 @@ void ROSRGBDCamera<T>::setupCameraStream()
     synchronizer_->registerCallback(
         boost::bind(
             &RGBDCamera<T>::imageCb, this, _1, _2, _3, _4));
+}
+
+template <typename T>
+void TUMRGBDCamera<T>::setupCameraStream()
+{
+    std::string prefix = "/orb_slam/depth_camera/", assoc_file_name;
+
+    // get file associations
+    this->nh_.getParam(
+        prefix + "tum_assoc_file", assoc_file_name);
+
+    std::ifstream assoc_file;
+    assoc_file.open(assoc_file_name.c_str());
+    while (!assoc_file.eof()) {
+        std::string s;
+        getline(assoc_file, s);
+        if (!s.empty()) {
+            std::stringstream ss;
+            ss << s;
+            double t;
+            std::string rgb, depth;
+            ss >> t;
+            time_stamps_.push_back(t);
+            ss >> rgb;
+            rgb_files_.push_back(rgb);
+            ss >> t;
+            ss >> depth;
+            depth_files_.push_back(depth);
+
+        }
+    }
+
+    assert(!rgb_files_.empty() && rgb_files_.size() == depth_files_.size());
 }
 
 template class RGBDCamera<float>;
