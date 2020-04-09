@@ -28,11 +28,6 @@ enum class CameraType {
     STEREO
 };
 
-template <typename T = float>
-class Camera;
-template <typename T = float>
-using CameraPtr = std::shared_ptr<Camera<T>>;
-
 /**
  * @struct Camera
  * @brief Holds information about a single camera
@@ -55,7 +50,7 @@ public:
     /**
      * @brief makeCamera Constructs a camera of given type
      */
-    static CameraPtr<T> makeCamera(
+    static std::shared_ptr<Camera<T>> makeCamera(
         const ros::NodeHandle& nh, const geometry::CameraType& type);
 
     /**
