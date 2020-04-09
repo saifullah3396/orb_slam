@@ -201,6 +201,17 @@ void ROSRGBDCamera<T>::setupCameraStream()
             &ROSRGBDCamera<T>::imageCb, this, _1, _2, _3, _4));
 }
 
+
+template <typename T>
+TUMRGBDCamera<T>::TUMRGBDCamera(const ros::NodeHandle& nh) : RGBDCamera<T>(nh)
+{
+}
+
+template <typename T>
+TUMRGBDCamera<T>::~TUMRGBDCamera()
+{
+}
+
 template <typename T>
 void TUMRGBDCamera<T>::setupCameraStream()
 {
