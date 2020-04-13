@@ -11,6 +11,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <orb_slam/geometry/rgbd_camera.h>
+#include <ros/package.h>
 
 namespace orb_slam
 {
@@ -205,6 +206,7 @@ void ROSRGBDCamera<T>::setupCameraStream()
 template <typename T>
 TUMRGBDCamera<T>::TUMRGBDCamera(const ros::NodeHandle& nh) : RGBDCamera<T>(nh)
 {
+    ROS_DEBUG_STREAM("Created TUMRGBDCamera...");
 }
 
 template <typename T>
@@ -215,14 +217,18 @@ TUMRGBDCamera<T>::~TUMRGBDCamera()
 template <typename T>
 void TUMRGBDCamera<T>::setupCameraStream()
 {
-    std::string prefix = "/orb_slam/depth_camera/", assoc_file_name;
+    ROS_DEBUG_STREAM("Created TUMRGBDCamera setupCameraStream...");
+
+    std::string prefix = "/orb_slam/depth_camera/";
+    std::string path = ros::package::getPath("orb_slam");
 
     // get file associations
     this->nh_.getParam(
-        prefix + "tum_assoc_file", assoc_file_name);
+        prefix + "dataset_dir", dataset_dir_);
+    dataset_dir_ = path + dataset_dir_;
 
     std::ifstream assoc_file;
-    assoc_file.open(assoc_file_name.c_str());
+    assoc_file.open((dataset_dir_ + "assoc.txt").c_str());
     while (!assoc_file.eof()) {
         std::string s;
         getline(assoc_file, s);
