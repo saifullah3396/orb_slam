@@ -202,21 +202,33 @@ public:
     ~TUMRGBDCamera();
 
     virtual cv_bridge::CvImageConstPtr image() {
-        if (count < rgb_files_.size()) {
-            cv_bridge::CvImagePtr cv_image = cv_bridge::CvImagePtr(new cv_bridge::CvImage());
-            cv_image->header.stamp = ros::Time(time_stamps_[count]);
-            cv_image->image = cv::imread(rgb_files_[count], CV_LOAD_IMAGE_UNCHANGED);
-            return boost::static_pointer_cast<const cv_bridge::CvImage>(cv_image);
+        if (img_count_ < rgb_files_.size()) {
+            cv_bridge::CvImagePtr cv_image =
+                cv_bridge::CvImagePtr(new cv_bridge::CvImage());
+            cv_image->header.seq = img_count_++;
+            cv_image->header.stamp = ros::Time(time_stamps_[img_count_]);
+            cv_image->image =
+                cv::imread(
+                    dataset_dir_ + rgb_files_[img_count_],
+                    CV_LOAD_IMAGE_UNCHANGED);
+            return
+                boost::static_pointer_cast<const cv_bridge::CvImage>(cv_image);
         } else {
             return nullptr;
         }
     }
     virtual cv_bridge::CvImageConstPtr imageDepth() {
-        if (count < depth_files_.size()) {
-            cv_bridge::CvImagePtr cv_image = cv_bridge::CvImagePtr(new cv_bridge::CvImage());
-            cv_image->header.stamp = ros::Time(time_stamps_[count]);
-            cv_image->image = cv::imread(depth_files_[count], CV_LOAD_IMAGE_UNCHANGED);
-            return boost::static_pointer_cast<const cv_bridge::CvImage>(cv_image);
+        if (depth_count_ < depth_files_.size()) {
+            cv_bridge::CvImagePtr cv_image =
+                cv_bridge::CvImagePtr(new cv_bridge::CvImage());
+            cv_image->header.seq = depth_count_++;
+            cv_image->header.stamp = ros::Time(time_stamps_[depth_count_]);
+            cv_image->image =
+                cv::imread(
+                    dataset_dir_ + depth_files_[depth_count_],
+                    CV_LOAD_IMAGE_UNCHANGED);
+            return
+                boost::static_pointer_cast<const cv_bridge::CvImage>(cv_image);
         } else {
             return nullptr;
         }
@@ -235,7 +247,9 @@ private:
     std::vector<std::string> rgb_files_;
     std::vector<std::string> depth_files_;
     std::vector<double> time_stamps_;
-    int count = 0;
+    int img_count_ = 0;
+    int depth_count_ = 0;
+    std::string dataset_dir_;
 };
 
 template <typename T = float>
