@@ -34,6 +34,10 @@ Tracker::Tracker(const ros::NodeHandle& nh, const int& camera_type) : nh_(nh)
         geometry::Camera<float>::makeCamera(
             nh_,
             static_cast<geometry::CameraType>(camera_type));
+    camera_->readParams();
+    camera_->setup();
+    camera_->setupCameraStream();
+
     n_min_frames_ = 0;
     n_max_frames_ = camera_->fps();
 
@@ -43,9 +47,10 @@ Tracker::Tracker(const ros::NodeHandle& nh, const int& camera_type) : nh_(nh)
     std::string vocabulary_path;
     ROS_DEBUG_STREAM("pkg_path:" << pkg_path);
     nh_.getParam("/orb_slam/tracker/vocabulary_path", vocabulary_path);
+    vocabulary_path = pkg_path + "/" + vocabulary_path;
+    ROS_DEBUG_STREAM("vocabulary_path:" << vocabulary_path);
     try {
-        orb_vocabulary_->loadFromTextFile(
-            "/home/sai/visual_slam/orb_slam_ws/src/orb_slam/vocabulary/orb_vocabulary.txt");
+        orb_vocabulary_->loadFromTextFile(vocabulary_path);
     } catch (std::exception& e) {
         ROS_FATAL_STREAM(e.what());
         ROS_FATAL_STREAM(
@@ -87,9 +92,9 @@ Tracker::Tracker(const ros::NodeHandle& nh, const int& camera_type) : nh_(nh)
     motion_model_ = MotionModelPtr<float>(new MotionModel<float>());
 
     ROS_DEBUG("Initializing viewer...");
-    viewer_ = ViewerPtr(new Viewer(map_));
-    viewer_->setup();
-    viewer_->startThread();
+    //viewer_ = ViewerPtr(new Viewer(map_));
+    //viewer_->setup();
+    //viewer_->startThread();
 
     ROS_DEBUG("Initializing pose optimizer...");
     local_mapper_ = LocalMapperPtr(new LocalMapper(map_));
@@ -118,6 +123,7 @@ std::unique_ptr<Tracker> Tracker::createTracker(
 
 void Tracker::trackFrame()
 {
+    ROS_DEBUG_STREAM("In track frame...");
     if (state_ == TrackingState::LOST) {
         ROS_DEBUG_STREAM("Tracking lost...");
         exit(1);
@@ -138,8 +144,6 @@ void Tracker::trackFrame()
     if(state_ == NOT_INITIALIZED) {
         ROS_DEBUG_STREAM("Initializing tracking...");
         initializeTracking();
-        if(state_ != OK)
-            return;
     } else {
         bool tracking_good = false;
         // initialization done, starting tracking...
@@ -170,8 +174,8 @@ void Tracker::trackFrame()
             auto current_pose = current_frame_->worldInCameraT();
             motion_model_->updateModel(current_pose, current_frame_->timeStamp());
 
-            viewer_->addFrame(current_frame_);
-            viewer_->updateMap();
+            //viewer_->addFrame(current_frame_);
+            //viewer_->updateMap();
 
             // checking if we need to insert a new keyframe
             ROS_DEBUG_STREAM("Checking if we need to insert a new keyframe...");
@@ -203,6 +207,9 @@ void Tracker::trackFrame()
 
         last_frame_ = current_frame_;
     }
+    //ROS_DEBUG("HERE");
+    //current_frame_->showImageWithFeatures("Current Frame");
+    //cv::waitKey(0);
 }
 
 bool Tracker::trackReferenceKeyFrame()
