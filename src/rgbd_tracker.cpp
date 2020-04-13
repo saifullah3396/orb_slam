@@ -36,16 +36,23 @@ RGBDTracker::RGBDTracker(
 
 void RGBDTracker::update()
 {
+    ROS_DEBUG_STREAM("Getting image...");
     auto image = camera_->image();
     auto depth = camera_->imageDepth();
 
-    if (!image)
+    if (!image) {
+        ROS_DEBUG_STREAM("No image received");
         return;
+    }
 
     if (last_image_ && last_image_->header.seq == image->header.seq) {
         // no new images
+        ROS_DEBUG_STREAM("No new image received");
         return;
     }
+
+    ROS_DEBUG_STREAM("Image received with time stamp;" << image->header.stamp);
+    ROS_DEBUG_STREAM("Image received with seq;" << image->header.seq);
 
     // create a frame from the image
     ROS_DEBUG("Creating frame...");
@@ -60,6 +67,8 @@ void RGBDTracker::update()
 
     // track the frame
     trackFrame();
+
+    ROS_DEBUG_STREAM("Outside track frame...");
 
     last_image_ = image;
     last_depth_ = depth;
@@ -131,13 +140,16 @@ void RGBDTracker::initializeTracking()
         ROS_DEBUG_STREAM(
             "New map created with " << map_->nMapPoints() << " points.");
 
+        ROS_DEBUG_STREAM("Updating motion model...");
         // initialize the motion model
         auto current_pose = current_frame_->worldInCameraT();
         motion_model_->updateModel(current_pose, current_frame_->timeStamp());
 
         // add the frame to viewer
-        viewer_->addFrame(current_frame_);
+        //viewer_->addFrame(current_frame_);
         //mpLocalMapper->InsertKeyFrame(pKFini);
+
+        ROS_DEBUG_STREAM("Setting key frame...");
 
         last_frame_ = current_frame_;
         last_key_frame_ = ref_key_frame_;
@@ -145,6 +157,7 @@ void RGBDTracker::initializeTracking()
         camera_pose_history_.push_back(current_frame_->cameraInWorldT());
 
         state_ = TrackingState::OK;
+        ROS_DEBUG_STREAM("state_: OK");
     }
 }
 
