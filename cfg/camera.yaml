@@ -2,6 +2,7 @@
 # freiburg #1
 orb_slam:
   camera:
+    input_type: "tum_dataset"
     preprocess: False
     rgb_topic: "/camera/rgb/image_color"
     fps: 30
@@ -22,6 +23,7 @@ orb_slam:
     ]
 
   depth_camera:
+    dataset_dir: "/dataset/rgbd_dataset_freiburg1_xyz/"
     rgb_topic: "/camera/rgb/image_color"
     rgb_info_topic: "/camera/rgb/camera_info"
     depth_topic: "/camera/depth/image"
