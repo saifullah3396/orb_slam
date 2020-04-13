@@ -21,21 +21,19 @@ namespace geometry
 template <typename T>
 Camera<T>::Camera(const ros::NodeHandle& nh): nh_(nh)
 {
-    readParams();
-    setup();
-    setupCameraStream();
 }
 
 template <typename T>
 Camera<T>::~Camera()
 {
 }
+
 template <typename T>
 CameraPtr<T> Camera<T>::makeCamera(
     const ros::NodeHandle& nh, const geometry::CameraType& type) {
     std::string prefix = "/orb_slam/camera/";
     std::string input_type;
-    nh.param<std::string>("input_type", input_type, "ros");
+    nh.param<std::string>(prefix + "input_type", input_type, "ros");
 
     if (type == geometry::CameraType::MONO) {
         return geometry::MonoCamera<T>::makeCamera(nh, input_type);
