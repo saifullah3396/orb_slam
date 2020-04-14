@@ -96,7 +96,7 @@ Tracker::Tracker(const ros::NodeHandle& nh, const int& camera_type) : nh_(nh)
     //viewer_->setup();
     //viewer_->startThread();
 
-    ROS_DEBUG("Initializing pose optimizer...");
+    ROS_DEBUG("Initializing local mapper...");
     local_mapper_ = LocalMapperPtr(new LocalMapper(map_));
 
     state_ = NO_IMAGES_YET;
@@ -144,6 +144,7 @@ void Tracker::trackFrame()
     if(state_ == NOT_INITIALIZED) {
         ROS_DEBUG_STREAM("Initializing tracking...");
         initializeTracking();
+        ROS_DEBUG_STREAM("last_key_frame_:" << last_key_frame_);
     } else {
         bool tracking_good = false;
         // initialization done, starting tracking...
@@ -472,6 +473,8 @@ void Tracker::updateLocalMapKeyFrames()
     for (const auto& kf_counter: key_frame_counter)
     {
         auto& key_frame = kf_counter.first;
+        ROS_DEBUG_STREAM("key_frame.id():" <<key_frame->id());
+        ROS_DEBUG_STREAM("key_frame.observed points:" << kf_counter.second);
         if(key_frame->isBad()) // ignore if bad
             continue;
         if(kf_counter.second > max) { // find max observations
@@ -502,7 +505,7 @@ void Tracker::updateLocalMapKeyFrames()
             // if it is not bad frame and is not already in local map
             if (!c_kf->isBad() && !c_kf->isInLocalMapOf(current_frame_->id())) {
                 key_frames_local_map_.push_back(c_kf); // add to map
-                c_kf->setIsInLocalMapOf(c_kf->id());
+                c_kf->setIsInLocalMapOf(current_frame_->id());
                 break; // why break? dunno yet. maybe to limit the number of neighbours to 1?
             }
         }
@@ -807,7 +810,9 @@ bool Tracker::needNewKeyFrame()
     int n_min_obs = 3;
     if (n_key_frames <= 2)
         n_min_obs = 2;
+    ROS_DEBUG_STREAM("Checking number of tracked points...");
     int n_tracked_in_ref = ref_key_frame_->nTrackedPoints(n_min_obs);
+    ROS_DEBUG_STREAM("n_tracked_in_ref:" << n_tracked_in_ref);
 
     // is local mapper not busy?
     auto local_mapper_idle = !local_mapper_->isBusy();
@@ -817,6 +822,7 @@ bool Tracker::needNewKeyFrame()
     int n_not_tracked_close = 0;
     int n_tracked_close = 0;
 
+    ROS_DEBUG_STREAM("Checking points that are within track and are also close...");
     const auto map_points = current_frame_->obsMapPoints();
     const auto& outliers = current_frame_->outliers();
     const auto& depths = current_frame_->featureDepthsUndist();
@@ -840,6 +846,13 @@ bool Tracker::needNewKeyFrame()
     if (camera_->type() == geometry::CameraType::MONO)
         ref_ratio_threshold = 0.9f;
 
+    ROS_DEBUG_STREAM("Checking conditions...");
+    ROS_DEBUG_STREAM("last_key_frame_:" << last_key_frame_);
+    ROS_DEBUG_STREAM("current_frame_->id():" << current_frame_->id());
+    ROS_DEBUG_STREAM("last_key_frame_->id():" << last_key_frame_->id());
+    ROS_DEBUG_STREAM("local_mapper_idle:" << local_mapper_idle);
+    ROS_DEBUG_STREAM("need_to_insert_close:" << need_to_insert_close);
+
     // condition 1a: more than n_max_frames have passed since
     // last keyframe insertion
     const bool c1a =
@@ -862,13 +875,20 @@ bool Tracker::needNewKeyFrame()
             need_to_insert_close) &&
         local_map_matches_ > 15);
 
+    ROS_DEBUG_STREAM("c1:" << c1a);
+    ROS_DEBUG_STREAM("c1:" << c1b);
+    ROS_DEBUG_STREAM("c1:" << c1c);
+    ROS_DEBUG_STREAM("c2:" << c2);
     if((c1a || c1b || c1c) && c2)
     {
+        ROS_DEBUG_STREAM("Need new key frame...");
         // if the local mapper is not busy, insert keyframe.
         // otherwise send a signal to interrupt bundle adjustmnet
         if(local_mapper_idle) {
+            ROS_DEBUG_STREAM("Local mapper is idle...");
             return true;
         } else {
+            ROS_DEBUG_STREAM("Aborting local mapper BA...");
             local_mapper_->abortBA();
             if(camera_->type() != geometry::CameraType::MONO) {
                 if (local_mapper_->nKeyFramesInQueue() < 3)
@@ -880,6 +900,7 @@ bool Tracker::needNewKeyFrame()
             }
         }
     } else {
+        ROS_DEBUG_STREAM("Key frame not needed...");
         return false;
     }
 }
