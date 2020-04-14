@@ -32,7 +32,6 @@ public:
 private:
     cv_bridge::CvImageConstPtr last_image_;
     cv_bridge::CvImageConstPtr last_depth_;
-    KeyFramePtr last_key_frame_;
 
     float depth_map_scale_; // for some datasets depth maps are scaled
 };
