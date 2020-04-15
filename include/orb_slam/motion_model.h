@@ -54,18 +54,14 @@ public:
      * @param time: Timestamp of the current pose
      */
     void updateModel(const Sophus::SE3<T>& current_pose, const ros::Time& time) {
-        if (!initialized_) {
-            initialized_ = true;
-        } else {
+        if (!last_time_.isZero()) {
             // this makes c_T_w * last_T_w
             time_diff_ = time - last_time_;
             velocity_ =
                 (current_pose * last_pose_.inverse()).log() /
                 time_diff_.toSec();
-            //std::cout << "time_diff:" << time_diff_ << std::endl;
-            //std::cout << "velocity_:" << velocity_ << std::endl;
-            //std::cout << "current_pose:" << current_pose.log() << std::endl;
-            //std::cout << "last_pose_:" << last_pose_.log() << std::endl;
+
+            initialized_ = true;
         }
         last_pose_ = current_pose;
         last_time_ = time;
@@ -89,7 +85,7 @@ public:
     const bool& initialized() const { return initialized_; }
 
 private:
-    ros::Time last_time_; // time stamp of last frame
+    ros::Time last_time_ = ros::Time(0); // time stamp of last frame
     // time stamp difference of current frame and last frame
     ros::Duration time_diff_;
     // pose velocity from latest frame to previous frame
