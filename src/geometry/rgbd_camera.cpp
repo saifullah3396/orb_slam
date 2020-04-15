@@ -207,6 +207,9 @@ template <typename T>
 TUMRGBDCamera<T>::TUMRGBDCamera(const ros::NodeHandle& nh) : RGBDCamera<T>(nh)
 {
     ROS_DEBUG_STREAM("Created TUMRGBDCamera...");
+    // 255 is for normalizing 8bit image input OPENCV TYPE #16
+    // 0.0002 = 1 / 5000.0 the scale of TUM dataset
+    this->depth_scale_ = 255*0.0002; // for TUM dataset
 }
 
 template <typename T>
