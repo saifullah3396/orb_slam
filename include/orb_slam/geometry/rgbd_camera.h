@@ -224,9 +224,9 @@ public:
             cv_image->header.seq = depth_count_++;
             cv_image->header.stamp = ros::Time(time_stamps_[depth_count_]);
             cv_image->image =
-                cv::imread(
-                    dataset_dir_ + depth_files_[depth_count_],
-                    CV_LOAD_IMAGE_UNCHANGED);
+                cv::imread(dataset_dir_ + depth_files_[depth_count_]);
+            cv_image->image.convertTo(
+                cv_image->image, CV_32F, this->depth_scale_);
             return
                 boost::static_pointer_cast<const cv_bridge::CvImage>(cv_image);
         } else {
