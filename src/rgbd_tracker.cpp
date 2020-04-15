@@ -51,9 +51,6 @@ void RGBDTracker::update()
         return;
     }
 
-    ROS_DEBUG_STREAM("Image received with time stamp;" << image->header.stamp);
-    ROS_DEBUG_STREAM("Image received with seq;" << image->header.seq);
-
     // create a frame from the image
     ROS_DEBUG("Creating frame...");
     current_frame_ =
