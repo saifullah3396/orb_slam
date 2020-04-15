@@ -132,7 +132,6 @@ public:
             const auto& kp = key_points[idx];
             const auto& depth = depths[idx];
             if (mp) { // if point exists
-                //features.push_back(frame_->features_left_[i]);
                 // get world position of point in eigen
                 Eigen::Vector3d world_pos;
                 cv::cv2eigen<double>(mp->worldPos(), world_pos);
@@ -148,8 +147,8 @@ public:
                 // use scale variance to determine information matrix
                 // remember information matrix is the opposite of covariance
                 // matrix
-                Eigen::Matrix3d info =
-                    Eigen::Matrix3d::Identity() * inv_scale_sigmas[kp.octave];
+                Eigen::Matrix3d info = Eigen::Matrix3d::Identity();
+                info.block<2, 2>(0, 0) *= inv_scale_sigmas[kp.octave];
                 edge->setInformation(info);
                 // set robust loss function as huber loss
                 // this is done for outlier rejection
@@ -207,7 +206,7 @@ public:
         const double chi2_th = 5.991;
         int cnt_outlier = 0;
         const auto& outliers = frame->outliers();
-        //optimizer->setVerbose(true);
+        optimizer->setVerbose(true);
         for (int iteration = 0; iteration < 4; ++iteration) {
             // first three iterations, the robust kernel is used which is used
             // to give more weight to inliers as explained in g2o docs.
