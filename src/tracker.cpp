@@ -171,8 +171,8 @@ void Tracker::trackFrame()
             auto current_pose = current_frame_->worldInCameraT();
             motion_model_->updateModel(current_pose, current_frame_->timeStamp());
 
-            //viewer_->addFrame(current_frame_);
-            //viewer_->updateMap();
+            viewer_->addFrame(current_frame_);
+            viewer_->updateMap();
 
             // checking if we need to insert a new keyframe
             ROS_DEBUG_STREAM("Checking if we need to insert a new keyframe...");
