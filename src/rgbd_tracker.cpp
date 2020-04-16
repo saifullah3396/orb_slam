@@ -143,7 +143,7 @@ void RGBDTracker::initializeTracking()
         motion_model_->updateModel(current_pose, current_frame_->timeStamp());
 
         // add the frame to viewer
-        //viewer_->addFrame(current_frame_);
+        viewer_->addFrame(current_frame_);
         //mpLocalMapper->InsertKeyFrame(pKFini);
 
         ROS_DEBUG_STREAM("Setting key frame...");
