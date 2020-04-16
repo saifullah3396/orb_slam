@@ -53,7 +53,7 @@ public:
     void close();
 
 private:
-    bool close_; // whether to close the viewer
+    bool close_ = {false}; // whether to close the viewer
 
     pangolin::View vis_display_;
     pangolin::OpenGlRenderState vis_camera_;
