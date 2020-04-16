@@ -2,7 +2,7 @@
 # freiburg #1
 orb_slam:
   orb_extractor:
-    n_key_points: 8000
+    n_key_points: 1000
     scale_factor: 1.2
     level_pyramid: 8
     edge_threshold: 31
