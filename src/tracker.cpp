@@ -297,6 +297,8 @@ bool Tracker::trackWithMotionModel()
     current_frame_->setWorldInCam(predicted_pose);
     current_frame_->resetMap();
 
+    //ROS_DEBUG_STREAM("Camera in world:" << current_frame_->cameraInWorldT());
+
     // project points seen in previous frame to current frame//
     int radius; // match search radius
     if(camera_->type() == geometry::CameraType::MONO)
@@ -313,8 +315,8 @@ bool Tracker::trackWithMotionModel()
         current_frame_->matchByProjection(last_frame_, true, radius);
     }
 
-    current_frame_->showMatchesWithRef("Matched points.");
-    cv::waitKey(0);
+    //current_frame_->showMatchesWithRef("Matched points.");
+    //cv::waitKey(0);
 
     if (matches.size() < MIN_REQ_MATCHES_PROJ) {
         return false;
@@ -334,7 +336,7 @@ bool Tracker::trackWithMotionModel()
 
     // discard outliers
     ROS_DEBUG_STREAM("Discarding outliers points...");
-    int map_matches = 0;
+    int inlier = 0;
     const auto map_points = current_frame_->obsMapPoints();
     const auto& outliers = current_frame_->outliers();
     for (int i = 0; i < map_points.size(); i++) {
@@ -349,11 +351,11 @@ bool Tracker::trackWithMotionModel()
             //mp->setTrackInView(false); used in orb_slam
             //mp->setLastSeenFrame(current_frame_->id()); used in orb_slam
         } else if (mp->nObservations() > 0) {
-            map_matches++;
+            inlier++;
         }
     }
-    ROS_DEBUG_STREAM("map_matches:" << map_matches);
-    return map_matches >= 10;
+    ROS_DEBUG_STREAM("inliers:" << inlier);
+    return inlier >= 10;
 }
 
 bool Tracker::updateLocalMap()
@@ -382,7 +384,7 @@ bool Tracker::updateLocalMap()
 
     // update map point stats, we don't discard them here to keep them for
     // bundle adjustment
-    const auto map_points = current_frame_->obsMapPoints();
+    const auto& map_points = current_frame_->obsMapPoints();
     const auto& outliers = current_frame_->outliers();
 
     // We copy the map points currently found to store them for usage in bundle
@@ -469,8 +471,6 @@ void Tracker::updateLocalMapKeyFrames()
     for (const auto& kf_counter: key_frame_counter)
     {
         auto& key_frame = kf_counter.first;
-        ROS_DEBUG_STREAM("key_frame.id():" <<key_frame->id());
-        ROS_DEBUG_STREAM("key_frame.observed points:" << kf_counter.second);
         if(key_frame->isBad()) // ignore if bad
             continue;
         if(kf_counter.second > max) { // find max observations
@@ -491,6 +491,7 @@ void Tracker::updateLocalMapKeyFrames()
 
     // include some not-already-included keyframes that are neighbors to
     // already-included keyframes
+    const auto& current_frame_id = current_frame_->id();
     for(const auto& kf: key_frames_local_map_)
     {
         // Limit the number of keyframes
@@ -499,9 +500,9 @@ void Tracker::updateLocalMapKeyFrames()
         const auto covisible_kfs = kf->getBestCovisibles(10);
         for (const auto& c_kf: covisible_kfs) {
             // if it is not bad frame and is not already in local map
-            if (!c_kf->isBad() && !c_kf->isInLocalMapOf(current_frame_->id())) {
+            if (!c_kf->isBad() && !c_kf->isInLocalMapOf(current_frame_id)) {
                 key_frames_local_map_.push_back(c_kf); // add to map
-                c_kf->setIsInLocalMapOf(current_frame_->id());
+                c_kf->setIsInLocalMapOf(current_frame_id);
                 break; // why break? dunno yet. maybe to limit the number of neighbours to 1?
             }
         }
@@ -509,22 +510,25 @@ void Tracker::updateLocalMapKeyFrames()
         // get chlids of this frame
         for(const auto& child: kf->children()) {
             // if it is not bad frame and is not already in local map
-            if (!child->isBad() && !child->isInLocalMapOf(current_frame_->id())) {
+            if (!child->isBad() && !child->isInLocalMapOf(current_frame_id)) {
                 key_frames_local_map_.push_back(child); // add to map
-                child->setIsInLocalMapOf(child->id());
+                child->setIsInLocalMapOf(current_frame_id);
                 break; // why break? dunno yet. maybe to limit the number of children to 1?
             }
         }
 
+        // if parent exists, add it as well
         const auto& parent = kf->parent();
         if(parent) {
-            if (!parent->isBad() && !parent->isInLocalMapOf(current_frame_->id())) {
+            if (!parent->isBad() && !parent->isInLocalMapOf(current_frame_id)) {
                 key_frames_local_map_.push_back(parent); // add to map
-                parent->setIsInLocalMapOf(parent->id());
+                parent->setIsInLocalMapOf(current_frame_id);
                 break; // why break? dunno yet
             }
         }
     }
+
+    ROS_DEBUG_STREAM("Key frames in local map:" << key_frames_local_map_.size());
 }
 
 void Tracker::updateLocalMapPoints()
@@ -547,7 +551,7 @@ void Tracker::updateLocalMapPoints()
 bool Tracker::projectLocalPoints()
 {
     // set flag for already seen points in this frame
-    const auto map_points = current_frame_->obsMapPoints();
+    const auto& map_points = current_frame_->obsMapPoints();
     for (int idx = 0; idx < map_points.size(); ++idx) {
         const auto& mp = map_points[idx];
         if (mp) {
