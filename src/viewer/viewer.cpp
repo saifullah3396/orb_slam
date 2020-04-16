@@ -24,6 +24,7 @@ void Viewer::startThread() {
 }
 
 void Viewer::threadCall() {
+    setup();
     while (!pangolin::ShouldQuit() && !close_) {
         draw();
         usleep(5000);
