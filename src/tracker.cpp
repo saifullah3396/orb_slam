@@ -92,9 +92,8 @@ Tracker::Tracker(const ros::NodeHandle& nh, const int& camera_type) : nh_(nh)
     motion_model_ = MotionModelPtr<float>(new MotionModel<float>());
 
     ROS_DEBUG("Initializing viewer...");
-    //viewer_ = ViewerPtr(new Viewer(map_));
-    //viewer_->setup();
-    //viewer_->startThread();
+    viewer_ = ViewerPtr(new Viewer(map_));
+    viewer_->startThread();
 
     ROS_DEBUG("Initializing local mapper...");
     local_mapper_ = LocalMapperPtr(new LocalMapper(map_));
