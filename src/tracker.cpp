@@ -122,7 +122,6 @@ std::unique_ptr<Tracker> Tracker::createTracker(
 
 void Tracker::trackFrame()
 {
-    ROS_DEBUG_STREAM("In track frame...");
     if (state_ == TrackingState::LOST) {
         ROS_DEBUG_STREAM("Tracking lost...");
         exit(1);
@@ -141,9 +140,7 @@ void Tracker::trackFrame()
     local_map_matches_ = 0;
 
     if(state_ == NOT_INITIALIZED) {
-        ROS_DEBUG_STREAM("Initializing tracking...");
         initializeTracking();
-        ROS_DEBUG_STREAM("last_key_frame_:" << last_key_frame_);
     } else {
         bool tracking_good = false;
         // initialization done, starting tracking...
