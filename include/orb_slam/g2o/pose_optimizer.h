@@ -6,6 +6,7 @@
 #include <opencv2/core/eigen.hpp>
 #include <orb_slam/g2o/g2o_types.h>
 #include <orb_slam/frame.h>
+//#include <chrono>
 
 namespace orb_slam
 {
@@ -174,6 +175,8 @@ public:
      *     optimization
      */
     int solve(const FramePtr& frame, cv::Mat& opt_pose) {
+        //using namespace std::chrono;
+        //auto t_start = high_resolution_clock::now();
         optimizer->clear(); // reset optimizer
 
         // create the vertex for camera pose
@@ -206,7 +209,7 @@ public:
         const double chi2_th = 5.991;
         int cnt_outlier = 0;
         const auto& outliers = frame->outliers();
-        optimizer->setVerbose(true);
+        //optimizer->setVerbose(true);
         for (int iteration = 0; iteration < 4; ++iteration) {
             // first three iterations, the robust kernel is used which is used
             // to give more weight to inliers as explained in g2o docs.
@@ -246,7 +249,8 @@ public:
                 }
             }
         }
-
+        //ROS_DEBUG_STREAM(
+            //"Time in pose optimization: " << duration<double>(high_resolution_clock::now() - t_start));
         ROS_DEBUG_STREAM("Mean error over number of points:" <<
             (float) optimizer->activeChi2() / (float) optimizer->activeEdges().size());
 
