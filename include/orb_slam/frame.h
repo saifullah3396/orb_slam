@@ -39,7 +39,7 @@ public:
     {
         // 1_R_2 = 1_R_w * w_R_2
         auto this_R_frame = from_c_R_w * to_w_R_c;
-        auto this_t_frame = from_c_R_w * to_w_R_c + from_c_t_w;
+        auto this_t_frame = from_c_R_w * to_w_t_c + from_c_t_w;
 
         // K^-T t[x] R K^-1
         f_mat =
@@ -537,6 +537,8 @@ protected:
     // a flag that is set to true when the frame is supposed
     // to be thread safe
     bool thread_safe_ = {false};
+
+    std::string name_tag_ = {"Frame"};
 };
 
 //! pointer alias

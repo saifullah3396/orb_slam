@@ -91,6 +91,8 @@ struct MatcherBase {
             }
         }
     }
+
+    std::string name_tag_ = {"Matcher"};
 };
 
 /**
@@ -480,6 +482,7 @@ private:
     const int hist_length_ = 30;
     const int low_threshold_ = 50;
     const int high_threshold_ = 100;
+    std::string name_tag_ = {"ORBMatcher"};
 };
 
 using ORBMatcherPtr = std::shared_ptr<ORBMatcher>;

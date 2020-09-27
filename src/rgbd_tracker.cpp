@@ -19,6 +19,7 @@
 #include "orb_slam/geometry/camera.h"
 #include "orb_slam/geometry/orb_extractor.h"
 #include "orb_slam/geometry/orb_matcher.h"
+#include "orb_slam/local_mapping/local_mapper.h"
 #include "orb_slam/viewer/viewer.h"
 
 namespace orb_slam
@@ -30,42 +31,42 @@ RGBDTracker::RGBDTracker(
     const ros::NodeHandle& nh, const int& camera_type) :
     Tracker(nh, camera_type)
 {
-    ROS_DEBUG("Initializing pose optimizer...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Initializing pose optimizer...");
     pose_optimizer_ = PoseOptimizerRGBDPtr(new PoseOptimizerRGBD());
 }
 
 void RGBDTracker::update()
 {
-    ROS_DEBUG_STREAM("Getting image...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Getting image...");
     auto image = camera_->image();
     auto depth = camera_->imageDepth();
 
     if (!image) {
-        ROS_DEBUG_STREAM("No image received");
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "No image received");
         return;
     }
 
     if (last_image_ && last_image_->header.seq == image->header.seq) {
         // no new images
-        ROS_DEBUG_STREAM("No new image received");
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "No new image received");
         return;
     }
 
     // create a frame from the image
-    ROS_DEBUG("Creating frame...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Creating frame...");
     current_frame_ =
         FramePtr(new RGBDFrame(image, depth, image->header.stamp));
 
-    ROS_DEBUG("Extracting features from frame...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Extracting features from frame...");
     // extract features from the frame
     current_frame_->extractFeatures();
 
-    ROS_DEBUG("Tracking frame...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Tracking frame...");
 
     // track the frame
     trackFrame();
 
-    ROS_DEBUG_STREAM("Outside track frame...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Outside track frame...");
 
     last_image_ = image;
     last_depth_ = depth;
@@ -73,10 +74,10 @@ void RGBDTracker::update()
 
 void RGBDTracker::initializeTracking()
 {
-    ROS_DEBUG_STREAM("Initializing tracking...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Initializing tracking...");
     const auto& n_key_points = current_frame_->nFeaturesUndist();
     if(n_key_points > MIN_REQ_FEATURES) {
-        ROS_DEBUG_STREAM("Number of features found: " << n_key_points);
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "Number of features found: " << n_key_points);
 
         // find bow for ref frame
         current_frame_->computeBow();
@@ -134,19 +135,21 @@ void RGBDTracker::initializeTracking()
             map_->addMapPoint(mp);
             map_->addRefMapPoint(mp);
         }
-        ROS_DEBUG_STREAM(
-            "New map created with " << map_->nMapPoints() << " points.");
+        //ROS_DEBUG_STREAM_NAMED(name_tag_,
+        //    "New map created with " << map_->nMapPoints() << " points.");
 
-        ROS_DEBUG_STREAM("Updating motion model...");
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "Updating motion model...");
         // initialize the motion model
         auto current_pose = current_frame_->worldInCameraT();
         motion_model_->updateModel(current_pose, current_frame_->timeStamp());
 
         // add the frame to viewer
         viewer_->addFrame(current_frame_);
-        //mpLocalMapper->InsertKeyFrame(pKFini);
 
-        ROS_DEBUG_STREAM("Setting key frame...");
+        // add the key frame to local mapper
+        this->local_mapper_->addKeyFrameToQueue(ref_key_frame_);
+
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "Setting key frame...");
 
         last_frame_ = current_frame_;
         last_key_frame_ = ref_key_frame_;
@@ -154,7 +157,7 @@ void RGBDTracker::initializeTracking()
         camera_pose_history_.push_back(current_frame_->cameraInWorldT());
 
         state_ = TrackingState::OK;
-        ROS_DEBUG_STREAM("state_: OK");
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "state_: OK");
     }
 }
 

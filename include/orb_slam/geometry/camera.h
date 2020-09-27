@@ -164,6 +164,7 @@ protected:
 
     // ROS node handle for image streaming
     ros::NodeHandle nh_;
+    std::string name_tag_ = {"Camera"};
 };
 
 template <typename T = float>

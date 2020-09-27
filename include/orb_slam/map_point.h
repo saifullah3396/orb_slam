@@ -239,6 +239,8 @@ private:
     // Orb matcher for descriptor distances
     static geometry::ORBMatcherConstPtr orb_matcher_;
     static geometry::ORBExtractorConstPtr orb_extractor_;
+
+    std::string name_tag_ = {"MapPoint"};
 };
 
 } // namespace orb_slam

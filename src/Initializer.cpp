@@ -52,12 +52,12 @@ bool Initializer::tryToInitialize(
         points_[i] = undist_key_points[matches[i].queryIdx].pt;
     }
 
-    ROS_DEBUG_STREAM("Finding Fundamental/Homography matrices...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Finding Fundamental/Homography matrices...");
     findFundamentalAndHomography();
 
     // compute ratio of scores
     float r_score = h_score_/(h_score_ + f_score_);
-    ROS_DEBUG_STREAM("Fundamental/Homography score ratio: " << r_score);
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Fundamental/Homography score ratio: " << r_score);
 
     // try to reconstruct from homography or fundamental depending
     // on the ratio (0.40-0.45)
@@ -91,7 +91,7 @@ bool Initializer::tryToInitialize(
         }
     }
 
-    ROS_DEBUG_STREAM("Triangulating points...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Triangulating points...");
     if (!triangulatePoints(
         inlier_points,
         inlier_ref_points,
@@ -116,8 +116,8 @@ bool Initializer::findRtWithHomography(
     cv::Mat& t)
 {
     const auto n = inlier_points.size();
-    ROS_DEBUG_STREAM("Finding R-t with Homography matrix.");
-    ROS_DEBUG_STREAM("Number of inlier points: " << inlier_points.size());
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Finding R-t with Homography matrix.");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Number of inlier points: " << inlier_points.size());
 
     // find R-t from homography matrix
     std::vector<cv::Mat> rot_mats, trans_mats, normals;
@@ -168,8 +168,8 @@ bool Initializer::findRtWithFundamental(
     cv::Mat& R,
     cv::Mat& t)
 {
-    ROS_DEBUG_STREAM("Finding R-t with fundamental matrix...");
-    ROS_DEBUG_STREAM("Number of inlier points: " << inlier_points.size());
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Finding R-t with fundamental matrix...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Number of inlier points: " << inlier_points.size());
 
     const cv::Mat& K = camera_->intrinsicMatrix();
     auto principal_point =
@@ -213,7 +213,7 @@ bool Initializer::triangulatePoints(
             0, 0, 1, 0);
     cv::Mat extrinsic;
     cv::hconcat(R, t, extrinsic);
-    ROS_DEBUG_STREAM("extrinsic:\n" << extrinsic);
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "extrinsic:\n" << extrinsic);
 
     cv::Mat K = camera_->intrinsicMatrix();
     K.convertTo(K, CV_64F); // convert to double
@@ -221,8 +221,8 @@ bool Initializer::triangulatePoints(
     // find projection matrices
     cv::Mat projection_ref = K * extrinsic_ref;
     cv::Mat projection = K * extrinsic;
-    ROS_DEBUG_STREAM("projection_ref:\n" << projection_ref);
-    ROS_DEBUG_STREAM("projection:\n" << projection);
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "projection_ref:\n" << projection_ref);
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "projection:\n" << projection);
 
     try {
         cv::Mat points_4d;
@@ -264,7 +264,7 @@ void Initializer::findFundamentalAndHomography()
         all_indices[i] = i;
     }
 
-    ROS_DEBUG("Generating 8-point sets for RANSAC iterations...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Generating 8-point sets for RANSAC iterations...");
     ransac_sets_ = std::vector<std::vector<size_t>>(iterations_);
 
     for (int it = 0; it < iterations_; it++) {
@@ -279,14 +279,14 @@ void Initializer::findFundamentalAndHomography()
     // see http://www.cs.cmu.edu/~16385/s17/Slides/12.4_8Point_Algorithm.pdf
     // for details on fundamental matrix computation
 
-    ROS_DEBUG("Normalizing points and reference points...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Normalizing points and reference points...");
     // normalize the points
     std::vector<cv::Point2f> points_norm, ref_points_norm;
     cv::Mat T, ref_T;
     geometry::normalizePoints(points_, points_norm, T);
     geometry::normalizePoints(ref_points_, ref_points_norm, ref_T);
 
-    ROS_DEBUG("Computing fundamental and homography matrices...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Computing fundamental and homography matrices...");
     // find fundamental matrix using RANSAC
     std::thread computeF(
         [&] {
@@ -363,7 +363,7 @@ void Initializer::findFundamentalMat(
             fabsf(cv::Mat(cv::Mat(cv::Point3f(points[i].x, points[i].y, 1.0)).t() *   f_mat       *
             cv::Mat(cv::Point3f(points[i].x, points[i].y, 1.0))).at<float>(0, 0));
     }
-    ROS_DEBUG_STREAM("Fundamental matrix error:" << error / n);
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Fundamental matrix error:" << error / n);
 }
 
 double Initializer::checkFundamentalScore(

@@ -67,6 +67,8 @@ protected:
     const ORBVocabularyPtr vocabulary_; // Associated vocabulary
     std::vector<list<KeyFramePtr>> inverted_idxs_; // Inverted database indices
     std::mutex access_mutex_; // Mutex for database access
+
+    std::string name_tag_ = {"KeyFrameDatabase"};
 };
 
 } //namespace orb_slam

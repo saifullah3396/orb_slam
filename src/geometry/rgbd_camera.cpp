@@ -206,7 +206,7 @@ void ROSRGBDCamera<T>::setupCameraStream()
 template <typename T>
 TUMRGBDCamera<T>::TUMRGBDCamera(const ros::NodeHandle& nh) : RGBDCamera<T>(nh)
 {
-    ROS_DEBUG_STREAM("Created TUMRGBDCamera...");
+    //ROS_DEBUG_STREAM_NAMED(this->name_tag_, "Created TUMRGBDCamera...");
     // 255 is for normalizing 8bit image input OPENCV TYPE #16
     // 0.0002 = 1 / 5000.0 the scale of TUM dataset
     this->depth_scale_ = 255*0.0002; // for TUM dataset
@@ -220,7 +220,7 @@ TUMRGBDCamera<T>::~TUMRGBDCamera()
 template <typename T>
 void TUMRGBDCamera<T>::setupCameraStream()
 {
-    ROS_DEBUG_STREAM("Created TUMRGBDCamera setupCameraStream...");
+    //ROS_DEBUG_STREAM_NAMED(this->name_tag_, "Created TUMRGBDCamera setupCameraStream...");
 
     std::string prefix = "/orb_slam/depth_camera/";
     std::string path = ros::package::getPath("orb_slam");

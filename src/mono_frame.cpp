@@ -74,7 +74,7 @@ void MonoFrame::extractFeatures()
     // find orb features in the image
     orb_extractor_->detect(image_->image, key_points_);
     #ifdef HARD_DEBUG
-    ROS_DEBUG_STREAM("Number of features extracted: " << key_points_.size());
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Number of features extracted: " << key_points_.size());
     showImageWithFeatures("key_points_");
     #endif
 
@@ -86,7 +86,7 @@ void MonoFrame::extractFeatures()
         key_points_, undist_key_points_);
 
     #ifdef HARD_DEBUG
-    ROS_DEBUG_STREAM(
+    //ROS_DEBUG_STREAM_NAMED(name_tag_,
         "Number of undistorted features: " << undist_key_points_.size());
     showImageWithFeatures("undist_key_points_");
     #endif
@@ -96,13 +96,13 @@ void MonoFrame::extractFeatures()
     // within non-black region of the undisorted image.
     assignFeaturesToGrid(undist_key_points_, grid_);
 
-    ROS_DEBUG_STREAM("Finding orb features...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Finding orb features...");
 
     // find the orb descriptors for undistorted points
     orb_extractor_->compute(
         image_->image, undist_key_points_, undist_descriptors_);
 
-    ROS_DEBUG_STREAM("Resizing frame obs map and outliers");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Resizing frame obs map and outliers");
     // resize the map equal to the feature points
     const auto n = undist_key_points_.size();
     resizeMap(n);

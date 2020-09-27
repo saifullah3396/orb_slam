@@ -146,6 +146,7 @@ private:
     //! opencv orb extractors
     cv::Ptr<cv::ORB> cv_orb_detector_;
     cv::Ptr<cv::ORB> cv_orb_descriptor_;
+    std::string name_tag_ = {"ORBExtractor"};
 };
 
 using ORBExtractorPtr = std::shared_ptr<ORBExtractor>;

@@ -122,6 +122,8 @@ private:
 
     // for freezing map state between different threads
     std::mutex map_update_mutex_;
+
+    std::string name_tag_ = {"Map"};
 };
 
 using MapPtr = std::shared_ptr<Map>;

@@ -29,6 +29,6 @@
         file="$(find orb_slam)/cfg/tracker.yaml" />
 
     <node
-        pkg="orb_slam" name="tracker_node" type="tracker_node" output="screen"/>
+        pkg="orb_slam" name="tracker_node" type="tracker_node" output="screen" launch-prefix="xterm -e /usr/bin/gdb -args"/>
         <!-- launch-prefix="xterm -e /usr/bin/gdb -args" -->
 </launch>

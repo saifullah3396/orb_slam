@@ -29,7 +29,7 @@ namespace orb_slam
 Tracker::Tracker(const ros::NodeHandle& nh, const int& camera_type) : nh_(nh)
 {
     // initialize the camera
-    ROS_DEBUG("Initializing camera...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Initializing camera...");
     camera_ =
         geometry::Camera<float>::makeCamera(
             nh_,
@@ -41,14 +41,14 @@ Tracker::Tracker(const ros::NodeHandle& nh, const int& camera_type) : nh_(nh)
     n_min_frames_ = 0;
     n_max_frames_ = camera_->fps();
 
-    ROS_DEBUG("Initializing orb features vocabulary...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Initializing orb features vocabulary...");
     auto pkg_path = ros::package::getPath("orb_slam");
     orb_vocabulary_ = ORBVocabularyPtr(new ORBVocabulary());
     std::string vocabulary_path;
-    ROS_DEBUG_STREAM("pkg_path:" << pkg_path);
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "pkg_path:" << pkg_path);
     nh_.getParam("/orb_slam/tracker/vocabulary_path", vocabulary_path);
     vocabulary_path = pkg_path + "/" + vocabulary_path;
-    ROS_DEBUG_STREAM("vocabulary_path:" << vocabulary_path);
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "vocabulary_path:" << vocabulary_path);
     try {
         orb_vocabulary_->loadFromTextFile(vocabulary_path);
     } catch (std::exception& e) {
@@ -58,17 +58,17 @@ Tracker::Tracker(const ros::NodeHandle& nh, const int& camera_type) : nh_(nh)
                 pkg_path + "/" + vocabulary_path);
         exit(-1);
     }
-    ROS_DEBUG("ORB vocabulary successfully loaded...");
+    // ROS_DEBUG_NAMED(name_tag_,,"ORB vocabulary successfully loaded...");
 
-    ROS_DEBUG("Initializing orb features extractor...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Initializing orb features extractor...");
     orb_extractor_ =
         geometry::ORBExtractorPtr(new geometry::ORBExtractor(nh_));
 
-    ROS_DEBUG("Initializing orb features matcher...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Initializing orb features matcher...");
     orb_matcher_ =
         geometry::ORBMatcherPtr(new geometry::ORBMatcher(nh_));
 
-    ROS_DEBUG("Initializing frame base variables...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Initializing frame base variables...");
     Frame::setCamera(
         std::const_pointer_cast<const geometry::Camera<float>>(camera_));
     Frame::setORBExtractor(
@@ -79,27 +79,31 @@ Tracker::Tracker(const ros::NodeHandle& nh, const int& camera_type) : nh_(nh)
         std::const_pointer_cast<const ORBVocabulary>(orb_vocabulary_));
     Frame::setupGrid(nh_);
 
-    ROS_DEBUG("Initializing the global map...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Initializing the global map...");
     map_ = MapPtr(new Map());
 
-    ROS_DEBUG("Setting orb extractors and matchers...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Setting orb extractors and matchers...");
     MapPoint::setORBExtractor(
         std::const_pointer_cast<const geometry::ORBExtractor>(orb_extractor_));
     MapPoint::setORBMatcher(
         std::const_pointer_cast<const geometry::ORBMatcher>(orb_matcher_));
 
-    ROS_DEBUG("Initializing motion model...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Initializing motion model...");
     motion_model_ = MotionModelPtr<float>(new MotionModel<float>());
 
-    ROS_DEBUG("Initializing viewer...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Initializing viewer...");
     viewer_ = ViewerPtr(new Viewer(map_));
     viewer_->startThread();
 
-    ROS_DEBUG("Initializing local mapper...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Initializing local mapper...");
     local_mapper_ = LocalMapperPtr(new LocalMapper(map_));
+    local_mapper_->startThread();
 
     state_ = NO_IMAGES_YET;
-    ROS_DEBUG("Tracker node successfully initialized...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Tracker node successfully initialized...");
+
+    nh_.getParam(
+        "/orb_slam/tracker/close_depth_threshold", close_depth_threshold_);
 }
 
 Tracker::~Tracker()
@@ -123,7 +127,7 @@ std::unique_ptr<Tracker> Tracker::createTracker(
 void Tracker::trackFrame()
 {
     if (state_ == TrackingState::LOST) {
-        ROS_DEBUG_STREAM("Tracking lost...");
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "Tracking lost...");
         exit(1);
     }
 
@@ -146,20 +150,20 @@ void Tracker::trackFrame()
         // initialization done, starting tracking...
         if(state_ == OK) {
             if (motion_model_ && motion_model_->initialized()) {
-                ROS_DEBUG_STREAM("Motion model initialized. Tracking with motion model.");
+                //ROS_DEBUG_STREAM_NAMED(name_tag_, "Motion model initialized. Tracking with motion model.");
                 tracking_good = trackWithMotionModel();
             } else {
-                ROS_DEBUG_STREAM("Tracking the reference key frame");
+                //ROS_DEBUG_STREAM_NAMED(name_tag_, "Tracking the reference key frame");
                 tracking_good = trackReferenceKeyFrame();
             }
         } else {
-            ROS_DEBUG_STREAM("Tracking bad. Relocalizing...");
+            //ROS_DEBUG_STREAM_NAMED(name_tag_, "Tracking bad. Relocalizing...");
             tracking_good = relocalize();
             tracking_good = false;
         }
 
         if (tracking_good) {
-            ROS_DEBUG_STREAM("Tracking good. updating local map...");
+            //ROS_DEBUG_STREAM_NAMED(name_tag_, "Tracking good. updating local map...");
             // update the local map of this frame...
             tracking_good = updateLocalMap();
         }
@@ -167,7 +171,7 @@ void Tracker::trackFrame()
         if (tracking_good) {
             state_ = TrackingState::OK;
 
-            ROS_DEBUG_STREAM("Tracking good. updating motion model...");
+            //ROS_DEBUG_STREAM_NAMED(name_tag_, "Tracking good. updating motion model...");
             auto current_pose = current_frame_->worldInCameraT();
             motion_model_->updateModel(current_pose, current_frame_->timeStamp());
 
@@ -175,13 +179,13 @@ void Tracker::trackFrame()
             viewer_->updateMap();
 
             // checking if we need to insert a new keyframe
-            ROS_DEBUG_STREAM("Checking if we need to insert a new keyframe...");
+            //ROS_DEBUG_STREAM_NAMED(name_tag_, "Checking if we need to insert a new keyframe...");
             if (needNewKeyFrame()) {
-                ROS_DEBUG_STREAM("Creating new keyframe...");
+                //ROS_DEBUG_STREAM_NAMED(name_tag_, "Creating new keyframe...");
                 createNewKeyFrame();
             }
         } else {
-            ROS_DEBUG_STREAM("Tracking bad...");
+            //ROS_DEBUG_STREAM_NAMED(name_tag_, "Tracking bad...");
             state_ = TrackingState::LOST;
 
             if(map_->nKeyFrames() <= MIN_REQ_KEY_FRAMES_RELOC) {
@@ -193,10 +197,10 @@ void Tracker::trackFrame()
             }
         }
 
-        if (current_frame_->refKeyFrame())
-            ROS_DEBUG_STREAM(
-                "current_frame_->refKeyFrame():" <<
-                current_frame_->refKeyFrame()->id());
+        //if (current_frame_->refKeyFrame())
+        //    ROS_DEBUG_STREAM_NAMED(name_tag_,
+        //        "current_frame_->refKeyFrame():" <<
+        //        current_frame_->refKeyFrame()->id());
 
         // if no reference frame exists for this frame
         if(!current_frame_->refKeyFrame()) // why do this?
@@ -204,37 +208,34 @@ void Tracker::trackFrame()
 
         last_frame_ = current_frame_;
     }
-    //ROS_DEBUG("HERE");
-    //current_frame_->showImageWithFeatures("Current Frame");
-    //cv::waitKey(0);
 }
 
 bool Tracker::trackReferenceKeyFrame()
 {
-    ROS_DEBUG_STREAM("Reference key frame: " << ref_key_frame_->id());
-    ROS_DEBUG_STREAM("Current frame: " << current_frame_->id());
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Reference key frame: " << ref_key_frame_->id());
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Current frame: " << current_frame_->id());
 
-    ROS_DEBUG_STREAM("Computing orb bow features...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Computing orb bow features...");
     // compute bag of words vector for current frame
     current_frame_->computeBow();
-    ROS_DEBUG_STREAM("Bow: " << current_frame_->bow().size());
-    ROS_DEBUG_STREAM("Bow Features: " << current_frame_->bowFeatures().size());
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Bow: " << current_frame_->bow().size());
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Bow Features: " << current_frame_->bowFeatures().size());
 
     // find matches between current and reference frame.
-    ROS_DEBUG_STREAM("Matching bow features between frames...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Matching bow features between frames...");
 
     // 0.7 taken from original orb slam code
     current_frame_->matchByBowFeatures(ref_key_frame_, true, 0.7);
     const auto& matches = current_frame_->matches();
 
-    ROS_DEBUG_STREAM("Matches: " << matches.size());
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Matches: " << matches.size());
 
     if (matches.size() < MIN_REQ_MATCHES)
         return false;
 
     //current_frame_->showMatchesWithRef("Matched points.");
     //cv::waitKey(0);
-    //ROS_DEBUG_STREAM("Adding resultant map points to map.");
+    ////ROS_DEBUG_STREAM_NAMED(name_tag_, "Adding resultant map points to map.");
 
     const auto ref_map_points = ref_key_frame_->frame()->obsMapPoints();
     for (const auto& m: matches) {
@@ -242,7 +243,7 @@ bool Tracker::trackReferenceKeyFrame()
         current_frame_->setMapPointAt(ref_map_points[m.trainIdx], m.queryIdx);
     }
 
-    ROS_DEBUG_STREAM("Optimizing current frame pose...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Optimizing current frame pose...");
     // set initial pose of this frame to last frame. This acts as starting point
     // for pose optimization using graph
     current_frame_->setWorldInCam(ref_key_frame_->frame()->worldInCameraT());
@@ -251,7 +252,7 @@ bool Tracker::trackReferenceKeyFrame()
     current_frame_->setWorldInCam(opt_pose);
 
     // discard outliers
-    ROS_DEBUG_STREAM("Discarding outliers points...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Discarding outliers points...");
     int map_matches = 0;
     const auto map_points = current_frame_->obsMapPoints();
     const auto& outliers = current_frame_->outliers();
@@ -278,15 +279,15 @@ bool Tracker::trackReferenceKeyFrame()
             map_matches++;
         }
     }
-    ROS_DEBUG_STREAM("map_matches:" << map_matches);
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "map_matches:" << map_matches);
     return map_matches >= 10;
 }
 
 bool Tracker::trackWithMotionModel()
 {
-    ROS_DEBUG_STREAM("Tracking with motion model...");
-    ROS_DEBUG_STREAM("Last frame:" << last_frame_->id());
-    ROS_DEBUG_STREAM("Current frame:" << current_frame_->id());
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Tracking with motion model...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Last frame:" << last_frame_->id());
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Current frame:" << current_frame_->id());
     // compute predicted camera pose...
     cv::Mat predicted_pose;
     // predict the pose at this time stamp
@@ -297,7 +298,7 @@ bool Tracker::trackWithMotionModel()
     current_frame_->setWorldInCam(predicted_pose);
     current_frame_->resetMap();
 
-    //ROS_DEBUG_STREAM("Camera in world:" << current_frame_->cameraInWorldT());
+    ////ROS_DEBUG_STREAM_NAMED(name_tag_, "Camera in world:" << current_frame_->cameraInWorldT());
 
     // project points seen in previous frame to current frame//
     int radius; // match search radius
@@ -308,7 +309,7 @@ bool Tracker::trackWithMotionModel()
 
     current_frame_->matchByProjection(last_frame_, true, radius);
     const auto& matches = current_frame_->matches();
-    ROS_DEBUG_STREAM("Matches: " << matches.size());
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Matches: " << matches.size());
     if (matches.size() < MIN_REQ_MATCHES_PROJ) {
         radius *= 2.0;
         current_frame_->resetMap();
@@ -329,13 +330,13 @@ bool Tracker::trackWithMotionModel()
             last_map_points[m.trainIdx], m.queryIdx);
     }
 
-    ROS_DEBUG_STREAM("Optimizing current frame pose...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Optimizing current frame pose...");
     cv::Mat opt_pose;
     pose_optimizer_->solve(current_frame_, opt_pose);
     current_frame_->setWorldInCam(opt_pose);
 
     // discard outliers
-    ROS_DEBUG_STREAM("Discarding outliers points...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Discarding outliers points...");
     int inlier = 0;
     const auto map_points = current_frame_->obsMapPoints();
     const auto& outliers = current_frame_->outliers();
@@ -354,28 +355,28 @@ bool Tracker::trackWithMotionModel()
             inlier++;
         }
     }
-    ROS_DEBUG_STREAM("inliers:" << inlier);
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "inliers:" << inlier);
     return inlier >= 10;
 }
 
 bool Tracker::updateLocalMap()
 {
     // add all key frames that observe points in current frame to local map
-    ROS_DEBUG("Updating local map key frames...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Updating local map key frames...");
     updateLocalMapKeyFrames();
 
     // add all points that are observed in newly added local map key frames
     // to local map
-    ROS_DEBUG("Updating local map points...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Updating local map points...");
     updateLocalMapPoints();
 
     // project local points to current frame, those other than already found in
     // the current frame
-    ROS_DEBUG("Projecting local map points...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Projecting local map points...");
     if (!projectLocalPoints())
         return false;
 
-    ROS_DEBUG_STREAM("Optimizing current frame pose with local map...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Optimizing current frame pose with local map...");
 
     // optimize the frame pose with newly added map points
     cv::Mat opt_pose; // initial pose for optimization is already set
@@ -389,10 +390,10 @@ bool Tracker::updateLocalMap()
 
     // We copy the map points currently found to store them for usage in bundle
     // adjusment
-    ROS_DEBUG_STREAM("Storing map points for bundle adjustment...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Storing map points for bundle adjustment...");
     current_frame_->copyMapPointsForBA();
 
-    ROS_DEBUG_STREAM("Discarding outliers for current frame...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Discarding outliers for current frame...");
     for (int i = 0; i < current_frame_->nFeaturesUndist(); i++) {
         const auto& mp = map_points[i];
         if(!mp) continue;
@@ -414,7 +415,7 @@ bool Tracker::updateLocalMap()
     //if (current_frame_->id() < last_reloc_frame_id_ + max_frames_ && map_matches < 50) /////// from orb_slam 2
     //    return false;
 
-    ROS_DEBUG_STREAM("map_matches: " << local_map_matches_);
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "map_matches: " << local_map_matches_);
     if (local_map_matches_ < 30)
         return false;
     else
@@ -452,7 +453,7 @@ void Tracker::updateLocalMapKeyFrames()
     // find the key frames that observe points and the number of points each
     // key frame observes...
     map<KeyFramePtr, int> key_frame_counter;
-    ROS_DEBUG("Finding key frames that observe current_frame_ points...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Finding key frames that observe current_frame_ points...");
     findObservingKeyFrames(current_frame_, key_frame_counter);
     if(key_frame_counter.empty()) {
         // no map point of current_frame_ is observed in any frame...
@@ -528,7 +529,7 @@ void Tracker::updateLocalMapKeyFrames()
         }
     }
 
-    ROS_DEBUG_STREAM("Key frames in local map:" << key_frames_local_map_.size());
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Key frames in local map:" << key_frames_local_map_.size());
 }
 
 void Tracker::updateLocalMapPoints()
@@ -587,7 +588,7 @@ bool Tracker::projectLocalPoints()
         }
     }
 
-    ROS_DEBUG_STREAM("n_mp_in_view:" << n_mp_in_view);
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "n_mp_in_view:" << n_mp_in_view);
     if (n_mp_in_view > 0) {
         int radius = 1;
         if (camera_->type() == geometry::CameraType::RGBD) {
@@ -596,7 +597,7 @@ bool Tracker::projectLocalPoints()
 
         // project points found in camera view to image and match them using
         // orb features
-        ROS_DEBUG("Matching frame with local map points by projection...");
+        // ROS_DEBUG_NAMED(name_tag_,,"Matching frame with local map points by projection...");
 
         // use_track_info here means the points are already projected on image
         // and so TrackProperties of the map point should be used.
@@ -605,13 +606,13 @@ bool Tracker::projectLocalPoints()
         current_frame_->matchByProjection(
             map_points_local_map_, compute_track_info, 0.8, radius);
         const auto& matches = current_frame_->localMatches();
-        ROS_DEBUG_STREAM("Matches with local map: " << matches.size());
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "Matches with local map: " << matches.size());
         if (matches.size() < MIN_REQ_MATCHES)
             return false;
 
         //current_frame_->showMatchesWithRef("Matched points.");
         //cv::waitKey(0);
-        //ROS_DEBUG_STREAM("Adding resultant map points to map.");
+        ////ROS_DEBUG_STREAM_NAMED(name_tag_, "Adding resultant map points to map.");
 
         for (const auto& m: matches) {
             // add matched map points from reference to current frame
@@ -626,11 +627,11 @@ bool Tracker::projectLocalPoints()
 
 bool Tracker::relocalize()
 {
-    /*ROS_DEBUG_STREAM("Computing orb bow features...");
+    /*//ROS_DEBUG_STREAM_NAMED(name_tag_, "Computing orb bow features...");
     // compute bag of words vector for current frame
     current_frame_->computeBow();
-    ROS_DEBUG_STREAM("Bow: " << current_frame_->bow().size());
-    ROS_DEBUG_STREAM("Bow Features: " << current_frame_->bowFeatures().size());
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Bow: " << current_frame_->bow().size());
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Bow Features: " << current_frame_->bowFeatures().size());
 
     // relocalization is performed when tracking is lost
     // query key frame database to find keyframe candidates for relocalization
@@ -810,9 +811,7 @@ bool Tracker::needNewKeyFrame()
     int n_min_obs = 3;
     if (n_key_frames <= 2)
         n_min_obs = 2;
-    ROS_DEBUG_STREAM("Checking number of tracked points...");
     int n_tracked_in_ref = ref_key_frame_->nTrackedPoints(n_min_obs);
-    ROS_DEBUG_STREAM("n_tracked_in_ref:" << n_tracked_in_ref);
 
     // is local mapper not busy?
     auto local_mapper_idle = !local_mapper_->isBusy();
@@ -822,13 +821,13 @@ bool Tracker::needNewKeyFrame()
     int n_not_tracked_close = 0;
     int n_tracked_close = 0;
 
-    ROS_DEBUG_STREAM("Checking points that are within track and are also close...");
-    const auto map_points = current_frame_->obsMapPoints();
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Checking points that are within track and are also close...");
+    const auto& map_points = current_frame_->obsMapPoints();
     const auto& outliers = current_frame_->outliers();
     const auto& depths = current_frame_->featureDepthsUndist();
     if (camera_->type() != geometry::CameraType::MONO)  {
         for (int i = 0; i < depths.size(); ++i) {
-            if (depths[i] > 0 && depths[i] < close_depth_threshold) {
+            if (depths[i] > 0 && depths[i] < close_depth_threshold_) {
                 if (map_points[i] && !outliers[i]) n_tracked_close++;
                 else n_not_tracked_close++;
             }
@@ -846,12 +845,13 @@ bool Tracker::needNewKeyFrame()
     if (camera_->type() == geometry::CameraType::MONO)
         ref_ratio_threshold = 0.9f;
 
-    ROS_DEBUG_STREAM("Checking conditions...");
-    ROS_DEBUG_STREAM("last_key_frame_:" << last_key_frame_);
-    ROS_DEBUG_STREAM("current_frame_->id():" << current_frame_->id());
-    ROS_DEBUG_STREAM("last_key_frame_->id():" << last_key_frame_->id());
-    ROS_DEBUG_STREAM("local_mapper_idle:" << local_mapper_idle);
-    ROS_DEBUG_STREAM("need_to_insert_close:" << need_to_insert_close);
+    // ROS_DEBUG_STREAM_NAMED(name_tag_, "Checking conditions...");
+    // ROS_DEBUG_STREAM_NAMED(name_tag_, "close_depth_threshold_:" << close_depth_threshold_);
+    // ROS_DEBUG_STREAM_NAMED(name_tag_, "n_tracked_in_ref:" << n_tracked_in_ref);
+    // ROS_DEBUG_STREAM_NAMED(name_tag_, "local_map_matches_:" << local_map_matches_);
+    // ROS_DEBUG_STREAM_NAMED(name_tag_, "need_to_insert_close:" << need_to_insert_close);
+    // ROS_DEBUG_STREAM_NAMED(name_tag_, "n_tracked_close:" << n_tracked_close);
+    // ROS_DEBUG_STREAM_NAMED(name_tag_, "n_not_tracked_close:" << n_not_tracked_close);
 
     // condition 1a: more than n_max_frames have passed since
     // last keyframe insertion
@@ -875,20 +875,17 @@ bool Tracker::needNewKeyFrame()
             need_to_insert_close) &&
         local_map_matches_ > 15);
 
-    ROS_DEBUG_STREAM("c1:" << c1a);
-    ROS_DEBUG_STREAM("c1:" << c1b);
-    ROS_DEBUG_STREAM("c1:" << c1c);
-    ROS_DEBUG_STREAM("c2:" << c2);
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "c2:" << c2);
     if((c1a || c1b || c1c) && c2)
     {
-        ROS_DEBUG_STREAM("Need new key frame...");
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "Need new key frame...");
         // if the local mapper is not busy, insert keyframe.
         // otherwise send a signal to interrupt bundle adjustmnet
         if(local_mapper_idle) {
-            ROS_DEBUG_STREAM("Local mapper is idle...");
+            //ROS_DEBUG_STREAM_NAMED(name_tag_, "Local mapper is idle...");
             return true;
         } else {
-            ROS_DEBUG_STREAM("Aborting local mapper BA...");
+            //ROS_DEBUG_STREAM_NAMED(name_tag_, "Aborting local mapper BA...");
             local_mapper_->abortBA();
             if(camera_->type() != geometry::CameraType::MONO) {
                 if (local_mapper_->nKeyFramesInQueue() < 3)
@@ -900,7 +897,7 @@ bool Tracker::needNewKeyFrame()
             }
         }
     } else {
-        ROS_DEBUG_STREAM("Key frame not needed...");
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "Key frame not needed...");
         return false;
     }
 }
@@ -993,7 +990,7 @@ void Tracker::createNewKeyFrame()
                 // if the depth is over minimum depth threshold and 100 points
                 // are added then stop adding new points, otherwise keep adding
                 // more points until a minimum depth threshold is reached
-                if(depth_idx.first > close_depth_threshold && n_points > 100)
+                if(depth_idx.first > close_depth_threshold_ && n_points > 100)
                     break;
             }
         }

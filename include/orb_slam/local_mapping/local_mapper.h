@@ -9,6 +9,7 @@
 #include <mutex>
 #include <memory>
 #include <queue>
+#include <thread>
 #include <opencv2/core/core.hpp>
 
 #define LOCK_BUSY std::unique_lock<std::mutex> lock_busy(busy_mutex_)
@@ -34,10 +35,22 @@ class LocalMapper : public std::enable_shared_from_this<LocalMapper>
 {
 public:
     LocalMapper(const MapPtr& map);
-    ~LocalMapper() {}
+    ~LocalMapper() {
+        local_mapper_thread_.join();
+    }
 
-    void update();
+    /**
+     * Starts the thread for main local mapping operation
+     */
+    void startThread() {
+        local_mapper_thread_ =
+            std::thread(std::bind(&LocalMapper::threadCall, this));
+    }
 
+    /**
+     * The main loop of the local mapper
+     */
+    void threadCall();
 
     /**
      * Processes a new key frame found in new_key_frames_ queue.
@@ -178,7 +191,7 @@ private:
     mutable std::mutex new_key_frames_mutex_;
 
     // whether the mapper is currently busy processing new frames
-    bool busy_ = {true};
+    bool busy_ = {false};
     mutable std::mutex busy_mutex_; // mutex of accessing busy_ variable
 
     bool stoppable_ = {true}; // whether the mapper can be stopped or not
@@ -194,6 +207,9 @@ private:
     mutable std::mutex reset_mutex_; // mutex of accessing reset variables
 
     bool abort_ba_ = {false}; // toggle for bundle adjustment
+    std::thread local_mapper_thread_;
+
+    std::string name_tag_ = {"LocalMapper"};
 };
 
 } // namespace orb_slam

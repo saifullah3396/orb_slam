@@ -30,7 +30,7 @@ MonoTracker::MonoTracker(
     nh_.getParam(
         "/orb_slam/tracker/initializer_iterations", initializer_iterations_);
 
-    ROS_DEBUG("Initializing pose optimizer...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Initializing pose optimizer...");
     pose_optimizer_ = PoseOptimizerMonoPtr(new PoseOptimizerMono());
 }
 
@@ -45,18 +45,18 @@ void MonoTracker::update()
         return;
     }
 
-    ROS_DEBUG("Updating tracking...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Updating tracking...");
 
     // create a frame from the image
-    ROS_DEBUG("Creating frame...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Creating frame...");
     current_frame_ =
         FramePtr(new MonoFrame(image, ros::Time::now()));
 
-    ROS_DEBUG("Extracting features from frame...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Extracting features from frame...");
     // extract features from the frame
     current_frame_->extractFeatures();
 
-    ROS_DEBUG("Tracking frame...");
+    // ROS_DEBUG_NAMED(name_tag_,,"Tracking frame...");
     // track the frame
     trackFrame();
     camera_pose_history_.push_back(current_frame_->cameraInWorldT());
@@ -67,7 +67,7 @@ void MonoTracker::update()
 void MonoTracker::initializeTracking()
 {
     if(!initializer_) { // if no initializer, set the frame as reference
-        ROS_DEBUG("Initializing the SLAM system with monocular camera...");
+        // ROS_DEBUG_NAMED(name_tag_,,"Initializing the SLAM system with monocular camera...");
         // if enough features are available
         if(current_frame_->nFeatures() > MIN_REQ_MATCHES_INIT)
         {
@@ -102,7 +102,7 @@ void MonoTracker::initializeTracking()
             return;
         }
 
-        ROS_DEBUG("Matching first frame with the reference frame...");
+        // ROS_DEBUG_NAMED(name_tag_,,"Matching first frame with the reference frame...");
         //ref_frame_->showImageWithFeatures("ref_frame");
         //cv::waitKey(0);
         //current_frame_->showImageWithFeatures("current_frame");
@@ -114,7 +114,7 @@ void MonoTracker::initializeTracking()
         // check if there are enough matches
         if(current_frame_->nMatches() < MIN_REQ_MATCHES_INIT)
         {
-            ROS_DEBUG("Not enough matches between first and reference frame");
+            // ROS_DEBUG_NAMED(name_tag_,,"Not enough matches between first and reference frame");
 
             // not enough matches, retry
             initializer_.reset();
@@ -123,7 +123,7 @@ void MonoTracker::initializeTracking()
 
         // try to initialize the monocular slam with current frame and already
         // assigned reference frame
-        ROS_DEBUG("Trying to initialize between first and reference frame...");
+        // ROS_DEBUG_NAMED(name_tag_,,"Trying to initialize between first and reference frame...");
         if (initializer_->tryToInitialize(
             current_frame_,
             best_rot_mat,
@@ -133,8 +133,8 @@ void MonoTracker::initializeTracking()
             inlier_points_3d,
             inliers_idxs))
         {
-            ROS_DEBUG_STREAM("R from current to reference:\n" << best_rot_mat);
-            ROS_DEBUG_STREAM("t from current to reference:\n" << best_trans_mat);
+            //ROS_DEBUG_STREAM_NAMED(name_tag_, "R from current to reference:\n" << best_rot_mat);
+            //ROS_DEBUG_STREAM_NAMED(name_tag_, "t from current to reference:\n" << best_trans_mat);
             //current_frame_->showMatchesWithRef("current_frame");
             //cv::waitKey(0);
 
@@ -145,7 +145,7 @@ void MonoTracker::initializeTracking()
 
             // set pose to the current frame. This pose is up-to-scale since
             // we do not have any depth information yet.
-            ROS_DEBUG_STREAM("Setting frame pose...");
+            //ROS_DEBUG_STREAM_NAMED(name_tag_, "Setting frame pose...");
             cv::Mat c_T_w = cv::Mat::eye(4, 4, CV_32F); // for current frame
             best_rot_mat.copyTo(c_T_w.rowRange(0,3).colRange(0,3));
             best_trans_mat.copyTo(c_T_w.rowRange(0,3).col(3));
@@ -165,14 +165,14 @@ void MonoTracker::createInitialMonocularMap(
     const std::vector<cv::Point3d>& inlier_points_3d,
     const std::vector<size_t>& inliers_idxs)
 {
-    ROS_DEBUG_STREAM("Creating initial monocular map...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Creating initial monocular map...");
     // compute bag of word features for reference and current frames
-    ROS_DEBUG_STREAM("Computing frame bag of words...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Computing frame bag of words...");
     ref_frame_->computeBow();
     current_frame_->computeBow();
 
     // create key frames from frames
-    ROS_DEBUG_STREAM("Defining key frames...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Defining key frames...");
     auto ref_key_frame =
         KeyFramePtr(
             new KeyFrame(ref_frame_, map_));
@@ -181,7 +181,7 @@ void MonoTracker::createInitialMonocularMap(
         KeyFramePtr(
             new KeyFrame(current_frame_, map_));
 
-    ROS_DEBUG_STREAM("Adding key frames to map...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Adding key frames to map...");
     // add key frames to map
     map_->addKeyFrame(ref_key_frame);
     map_->addKeyFrame(key_frame);
@@ -189,35 +189,35 @@ void MonoTracker::createInitialMonocularMap(
     const auto n = inlier_points.size();
 
     // create MapPoints and assign associated key frames
-    ROS_DEBUG_STREAM("Creating map points and assigning to frames...");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Creating map points and assigning to frames...");
     for(size_t i = 0; i < n; ++i) { // only add inliers in map
         cv::Mat world_pos(inlier_points_3d[i]);
         // The key_frame acts as reference for map point, not to be confused
         // with ref_key_frame which is the reference for transformation of
         // key_frame.
-        ROS_DEBUG_STREAM("Creating map point...");
-        ROS_DEBUG_STREAM("world_pos:" << world_pos);
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "Creating map point...");
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "world_pos:" << world_pos);
         auto mp = MapPointPtr(new MapPoint(world_pos, key_frame, map_));
 
-        ROS_DEBUG_STREAM("Adding point to frames...");
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "Adding point to frames...");
         // add the map point to both key frames
         ref_key_frame->setMapPointAt(mp, i);
         key_frame->setMapPointAt(mp, i);
 
-        ROS_DEBUG_STREAM("Adding frames to point...");
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "Adding frames to point...");
         // add both key frames as observers to the map point
-        ROS_DEBUG_STREAM("inliers_idxs[" << i << "]: " << inliers_idxs[i]);
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "inliers_idxs[" << i << "]: " << inliers_idxs[i]);
         mp->addObservation(ref_key_frame, inliers_idxs[i]);
         mp->addObservation(key_frame, inliers_idxs[i]);
 
-        ROS_DEBUG_STREAM("Computing map point best descriptor...");
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "Computing map point best descriptor...");
         // compute map point parameters
         mp->computeBestDescriptor();
 
-        ROS_DEBUG_STREAM("Computing map point normal...");
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "Computing map point normal...");
         mp->updateNormalAndScale();
 
-        ROS_DEBUG_STREAM("Adding map point to map...");
+        //ROS_DEBUG_STREAM_NAMED(name_tag_, "Adding map point to map...");
         // add map point to map
         map_->addMapPoint(mp);
     }

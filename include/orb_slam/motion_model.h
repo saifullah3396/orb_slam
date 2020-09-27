@@ -26,7 +26,7 @@ public:
      */
     bool predict(Sophus::SE3<T>& predicted_pose, const ros::Time& time) {
         if (!initialized_) {
-            ROS_DEBUG_STREAM("Motion model uninitilized. Cannot predict.");
+            //ROS_DEBUG_STREAM_NAMED(name_tag_, "Motion model uninitilized. Cannot predict.");
             return false;
         }
         auto time_diff = time - last_time_;
@@ -92,6 +92,8 @@ private:
     Eigen::Matrix<T, 6, 1> velocity_;
     Sophus::SE3<T> last_pose_; // last pose of world in camera
     bool initialized_ = {false};
+
+    std::string name_tag_ = {"MotionModel"};
 };
 
 template <typename T = float>

@@ -29,7 +29,7 @@ void Viewer::threadCall() {
         draw();
         usleep(5000);
     }
-    ROS_DEBUG_STREAM("Viewer stopped!");
+    //ROS_DEBUG_STREAM_NAMED(name_tag_, "Viewer stopped!");
 }
 
 void Viewer::setup() {

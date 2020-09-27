@@ -313,6 +313,8 @@ private:
     g2o::SparseOptimizer* optimizer;
 
     MapPtr map_;
+
+    std::string name_tag_ = {"LocalBundleAdjuster"};
 };
 
 using LocalBundleAdjusterPtr = std::shared_ptr<LocalBundleAdjuster>;

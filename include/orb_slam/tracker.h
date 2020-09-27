@@ -121,6 +121,8 @@ protected:
     // relocalization
     bool relocalize();
 
+    std::string name_tag_ = {"Tracker"};
+
     // latest frame
     FramePtr current_frame_;
     std::vector<cv::Mat> camera_pose_history_; // vector of poses
@@ -137,7 +139,7 @@ protected:
     std::vector<KeyFramePtr> key_frames_local_map_;
     std::vector<MapPointPtr> map_points_local_map_;
     // The depth range within which points are considered close to frame
-    float close_depth_threshold;
+    float close_depth_threshold_;
     LocalMapperPtr local_mapper_;
 
     // motion model

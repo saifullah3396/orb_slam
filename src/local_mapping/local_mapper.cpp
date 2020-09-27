@@ -15,7 +15,7 @@ LocalMapper::LocalMapper(const MapPtr& map) : map_(map) {
     local_ba_ = LocalBundleAdjusterPtr(new LocalBundleAdjuster(map));
 }
 
-void LocalMapper::update()
+void LocalMapper::threadCall()
 {
     finished_ = false;
 
@@ -25,15 +25,19 @@ void LocalMapper::update()
         // check if new key frames exist for processing
         if (newKeyFramesExist()) {
             // bow conversion and insertion in map
+            ROS_DEBUG_STREAM("Processing new key frame...");
             processNewKeyFrame();
 
             // map points culling
+            ROS_DEBUG_STREAM("Culling map points...");
             mapPointCulling();
 
             // triangulate new map points from covisible key frames
+            ROS_DEBUG_STREAM("Triangulating new points...");
             createNewMapPoints();
 
             if (!newKeyFramesExist()) {
+                ROS_DEBUG_STREAM("Searching in neighbors...");
                 // if no more key frames then also search neighbors
                 searchInNeighbors();
             }
@@ -43,10 +47,13 @@ void LocalMapper::update()
             if (!newKeyFramesExist() && !stopRequested()) {
                 // perform local bundle adjustments if no more key frames
                 // are available and if stop is not requested
-                if (map_->nKeyFrames() > 2) // minimum 2 key frames for ba
+                if (map_->nKeyFrames() > 2) { // minimum 2 key frames for ba
+                    ROS_DEBUG_STREAM("Performing local bundle adjustment...");
                     local_ba_->solve(key_frame_in_process_, &abort_ba_);
+                }
 
                 // check redundant local Keyframes
+                ROS_DEBUG_STREAM("Culling key frames...");
                 keyFramesCulling();
             }
         } else if (stop()) { // stopped if required
@@ -76,7 +83,7 @@ bool LocalMapper::stop()
     LOCK_STOPPABLE;
     if(stop_requested_ && stoppable_) { // stop if possible and requested
         stopped_ = true;
-        ROS_DEBUG_STREAM("Local mapper stopped.");
+        ROS_DEBUG_STREAM_NAMED(name_tag_, "Local mapper stopped.");
         return true;
     }
 

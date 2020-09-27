@@ -67,6 +67,8 @@ private:
     FrameConstPtr frame_; // Pointer to current frame
     std::thread viewer_thread_; // Thread of this class
     std::mutex viewer_mutex_; // Thread access mutex
+
+    std::string name_tag_ = {"Viewer"};
 };
 
 } // namespace orb_slam

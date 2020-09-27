@@ -249,15 +249,15 @@ public:
                 }
             }
         }
-        //ROS_DEBUG_STREAM(
+        //ROS_DEBUG_STREAM_NAMED(name_tag_,
             //"Time in pose optimization: " << duration<double>(high_resolution_clock::now() - t_start));
-        ROS_DEBUG_STREAM("Mean error over number of points:" <<
-            (float) optimizer->activeChi2() / (float) optimizer->activeEdges().size());
+        //name_tag_, "Mean error over number of points:" <<
+        //    (float) optimizer->activeChi2() / (float) optimizer->activeEdges().size());
 
         const auto& n = frame->nFeaturesUndist();
-        ROS_DEBUG_STREAM(
-            "Outlier/Inlier in pose estimating: "
-            << cnt_outlier << "/" << n - cnt_outlier);
+        //ROS_DEBUG_STREAM_NAMED(name_tag_,
+        //    "Outlier/Inlier in pose estimating: "
+        //    << cnt_outlier << "/" << n - cnt_outlier);
 
         // set optimized pose to the output
         cv::eigen2cv(camera_pose->estimate().matrix(), opt_pose);
@@ -265,6 +265,9 @@ public:
 
         return n - cnt_outlier;
     }
+
+private:
+    std::string name_tag_;
 };
 
 template class PoseOptimizer<EdgeProjectionPoseOnlyMono>;

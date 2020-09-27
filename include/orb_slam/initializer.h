@@ -218,6 +218,8 @@ private:
     double h_score_; // homography matrix score as in orb-slam paper
 
     geometry::CameraPtr<float> camera_;
+
+    std::string name_tag_ = {"Initializer"};
 };
 
 class Initializer;

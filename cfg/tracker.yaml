@@ -6,3 +6,4 @@ orb_slam:
     initializer_sigma: 1
     initializer_iterations: 500
     camera_type: 1
+    close_depth_threshold: 3.0

@@ -293,6 +293,8 @@ private:
     // flags for removal of this frame
     bool erasable_ = {false};
     bool to_be_erased_ = {false};
+
+    std::string name_tag_ = {"KeyFrame"};
 };
 
 } // namespace orb_slam
