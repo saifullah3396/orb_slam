@@ -4,13 +4,14 @@
 
 #include <opencv2/highgui/highgui.hpp>
 #include <orb_slam/frame.h>
+#include <orb_slam/key_frame.h>
 #include <orb_slam/map_point.h>
 #include <thread>
 
 namespace orb_slam {
 
 //! static variable definitions
-int Frame::id_global_ = 0;
+long unsigned int Frame::id_global_ = 0;
 geometry::CameraConstPtr<float> Frame::camera_;
 geometry::ORBExtractorConstPtr Frame::orb_extractor_;
 geometry::ORBMatcherConstPtr Frame::orb_matcher_;
@@ -33,34 +34,45 @@ Frame::~Frame()
 {
 }
 
-std::vector<MapPointPtr> Frame::obsMapPoints() const {
-    std::unique_lock<std::mutex> (mutex_map_points_);
+void Frame::setRefKeyFrame(const KeyFramePtr& ref_key_frame) {
+    ref_key_frame_ = ref_key_frame;
+}
+
+const std::vector<MapPointPtr>& Frame::obsMapPoints() const {
     return obs_map_points_;
+}
+
+const std::vector<MapPointPtr>& Frame::unmatchedMapPoints() const {
+    return unmatched_map_points_;
 }
 
 void Frame::resizeMap(const size_t& n)
 {
-    std::unique_lock<std::mutex> lock(mutex_map_points_);
     obs_map_points_.resize(n);
 }
 
 void Frame::resetMap()
 {
-    std::unique_lock<std::mutex> lock(mutex_map_points_);
     for (auto& mp: obs_map_points_) {
         mp.reset();
     }
 }
 
-void Frame::addMapPoint(const MapPointPtr& mp, const size_t& idx)
+void Frame::setMapPointAt(const MapPointPtr& mp, const size_t& idx)
 {
-    std::unique_lock<std::mutex> lock(mutex_map_points_);
     obs_map_points_[idx] = mp;
 }
 
 void Frame::removeMapPointAt(const unsigned long& idx) {
-    std::unique_lock<std::mutex> lock(mutex_map_points_);
     obs_map_points_[idx].reset();
+}
+
+void Frame::copyMapPointsForBA() {
+    obs_map_points_ba_ = obs_map_points_;
+}
+
+void Frame::addUnmatchedMapPoint(const MapPointPtr& mp) {
+    unmatched_map_points_.push_back(mp);
 }
 
 bool Frame::pointWithinBounds(const cv::Point2f& p)
@@ -78,26 +90,27 @@ bool Frame::getBoxAroundPoint(
 {
     left =
         std::max( //
-            0, (int)(p.x - camera_->minX() - box_radius) / grid_size_x_);
+            0, (int) floor(p.x - camera_->minX() - box_radius) / grid_size_x_);
     if (left >= grid_cols_) return false;
 
     right =
-        std::max(
-            (int)(p.x - camera_->minX() + box_radius) / grid_size_x_,
-            grid_cols_ - 1);
+        std::min(
+            grid_cols_ - 1,
+            (int) ceil(p.x - camera_->minX() + box_radius) / grid_size_x_);
     if (right < 0) return false;
 
     up =
         std::max( //
-            0, (int)(p.y - camera_->minY() - box_radius) / grid_size_y_);
+            0, (int) floor(p.y - camera_->minY() - box_radius) / grid_size_y_);
     if (up >= grid_rows_) return false;
 
     down =
-        std::max(
-            (int)(p.y - camera_->minY() + box_radius) / grid_size_y_,
-            grid_rows_ - 1);
+        std::min(
+            grid_rows_ - 1,
+            (int) ceil(p.y - camera_->minY() + box_radius) / grid_size_y_);
     if (down < 0) return false;
 }
+
 
 bool Frame::getFeaturesAroundPoint(
     const cv::Point2f& p,
@@ -185,11 +198,10 @@ bool Frame::getFeaturesAroundPoint(
                 if (cell.empty()) continue;
                 for (size_t i = 0; i < cell.size(); ++i) {
                     const auto& key_point = undist_key_points_[cell[i]];
-                    const auto& scale_level = key_point.octave;
-                    if (scale_level < min_level ||
-                        scale_level >= max_level) continue;
-                    const auto diff_x = fabsf(key_point.pt.x - x);
-                    const auto diff_y = fabsf(key_point.pt.y - y);
+                    if (key_point.octave < min_level || // octave = scale level
+                        key_point.octave > max_level) continue;
+                    const auto diff_x = fabsf(key_point.pt.x - p.x);
+                    const auto diff_y = fabsf(key_point.pt.y - p.y);
                     if (diff_x < radius && diff_y < radius)
                         matches.push_back(cell[i]);
                 }
@@ -198,6 +210,84 @@ bool Frame::getFeaturesAroundPoint(
         return true;
     }
     return false;
+}
+
+bool Frame::isInCameraView(
+    const MapPointPtr& mp,
+    TrackProperties& track_res,
+    const float view_cos_limit = 0.5)
+{
+    // get 3d position of map point
+    auto pos = worldToCamera<float>(mp->worldPos());
+
+    // check depth to see if the point is in front or not
+    if (pos.z < 0.0f)
+        return false;
+
+    // project the point to image to see if it lies inside the bounds
+    auto img = cameraToFrame<float, float>(pos);
+
+    if (!pointWithinBounds(img))
+        return false;
+
+    // check point distance is within the scale invariance region
+    const auto& max_dist = mp->maxScaleInvDist();
+    const auto& min_dist = mp->minScaleInvDist();
+    const float dist = cv::norm(pos);
+
+    // return false if out of range
+    if(dist < min_dist || dist > max_dist)
+        return false;
+
+    // check viewing angle
+    cv::Mat view_vec =  mp->viewVector();
+
+    // view_vec is already norm 1
+    // cos (angle) = a.b / |a| |b|
+    const float cosine = (cv::Mat(pos) - w_t_c_).dot(view_vec) / dist;
+    if(cosine < view_cos_limit) // outside angle range...
+        return false;
+
+    // predict the scale of this point in this image
+    const int predicted_scale_level = mp->predictScale(dist);
+
+    // Data used by the tracking
+    track_res.in_view_ = true;
+    track_res.proj_xy_ = img;
+    //if (camera_->type() == geometry::CameraType::STEREO)
+        //track_properties.proj_xr = toRightCam(img.x);
+    track_res.pred_scale_level_ = predicted_scale_level;
+    track_res.view_cosine_ = cosine;
+
+    return true;
+}
+
+void Frame::computeFundamentalMat(
+    cv::Mat& f_mat,
+    const FramePtr& frame)
+{
+    computeFundamentalMat(
+        f_mat,
+        worldInCameraR(),
+        worldInCamerat(),
+        frame->cameraInWorldR(),
+        frame->cameraInWorldt(),
+        this->camera()->intrinsicMatrix(),
+        frame->camera()->intrinsicMatrix());
+}
+
+void Frame::computeFundamentalMat(
+    cv::Mat& f_mat,
+    const KeyFramePtr& key_frame)
+{
+    computeFundamentalMat(
+        f_mat,
+        worldInCameraR(),
+        worldInCamerat(),
+        key_frame->cameraInWorldR(),
+        key_frame->cameraInWorldt(),
+        this->camera()->intrinsicMatrix(),
+        key_frame->frame()->camera()->intrinsicMatrix());
 }
 
 void Frame::setupFirstFrame() {
@@ -215,9 +305,6 @@ void Frame::setupGrid(const ros::NodeHandle& nh)
     grid_size_y_ = camera_->undistHeight() / grid_rows_;
 }
 
-/**
- * Computes the bag of words from orb vocabulary and frame features
- */
 void Frame::computeBow() {
     if(bow_vec_.empty() || feature_vec_.empty()) {
         std::vector<cv::Mat> vec_descriptors;
@@ -304,6 +391,7 @@ void Frame::matchByProjection(
     const float radius,
     const bool filter_matches)
 {
+    ref_frame_ = prev_frame;
     orb_matcher_->matchByProjection(
         shared_from_this(),
         prev_frame,
@@ -311,6 +399,21 @@ void Frame::matchByProjection(
         check_orientation,
         radius,
         filter_matches);
+}
+
+void Frame::matchByProjection(
+    const std::vector<MapPointPtr>& map_points,
+    const bool compute_track_info,
+    const float nn_ratio,
+    const float radius,
+    const bool filter_matches)
+{
+    orb_matcher_->matchByProjection(
+        shared_from_this(),
+        map_points,
+        local_matches_,
+        nn_ratio,
+        radius);
 }
 
 MonoFrame::MonoFrame(
@@ -328,9 +431,8 @@ MonoFrame::~MonoFrame()
 {
 }
 
-void MonoFrame::drawFeatures(cv::Mat& image)
+void MonoFrame::drawFeatures(cv::Mat& image) const
 {
-    ROS_DEBUG_STREAM("Number of features extracted: " << key_points_.size());
     cv::drawKeypoints(
         image,
         key_points_,
@@ -340,14 +442,14 @@ void MonoFrame::drawFeatures(cv::Mat& image)
 }
 
 void MonoFrame::showImageWithFeatures(
-    const std::string& name)
+    const std::string& name) const
 {
     cv::Mat draw_image = image_->image.clone();
     drawFeatures(draw_image);
     cv::imshow(name, draw_image);
 }
 
-void MonoFrame::showMatchesWithRef(const std::string& name, const size_t n)
+void MonoFrame::showMatchesWithRef(const std::string& name, const size_t n) const
 {
     if (!ref_frame_ || matches_.empty()) {
         return;
@@ -435,7 +537,7 @@ RGBDFrame::~RGBDFrame()
 {
 }
 
-void RGBDFrame::drawFeatures(cv::Mat& image)
+void RGBDFrame::drawFeatures(cv::Mat& image) const
 {
     ROS_DEBUG_STREAM("Number of features extracted: " << key_points_.size());
     cv::drawKeypoints(
@@ -447,14 +549,14 @@ void RGBDFrame::drawFeatures(cv::Mat& image)
 }
 
 void RGBDFrame::showImageWithFeatures(
-    const std::string& name)
+    const std::string& name) const
 {
     cv::Mat draw_image = image_->image.clone();
     drawFeatures(draw_image);
     cv::imshow(name, draw_image);
 }
 
-void RGBDFrame::showMatchesWithRef(const std::string& name, const size_t n)
+void RGBDFrame::showMatchesWithRef(const std::string& name, const size_t n) const
 {
     if (!ref_frame_ || matches_.empty()) {
         return;

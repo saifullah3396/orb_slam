@@ -23,8 +23,31 @@ using Grid = std::vector<std::vector<T>>;
 class MapPoint;
 using MapPointPtr = std::shared_ptr<MapPoint>;
 
+struct TrackProperties;
+
 class Frame : public std::enable_shared_from_this<Frame> {
 public:
+    static void computeFundamentalMat(
+        cv::Mat& f_mat,
+        const cv::Mat& from_c_R_w,
+        const cv::Mat& from_c_t_w,
+        const cv::Mat& to_w_R_c,
+        const cv::Mat& to_w_t_c,
+        const cv::Mat& from_K,
+        const cv::Mat& to_K)
+    {
+        // 1_R_2 = 1_R_w * w_R_2
+        auto this_R_frame = from_c_R_w * to_w_R_c;
+        auto this_t_frame = from_c_R_w * to_w_R_c + from_c_t_w;
+
+        // K^-T t[x] R K^-1
+        f_mat =
+            from_K.t().inv() *
+            utils::skew(this_t_frame) *
+            this_R_frame *
+            to_K.inv();
+    }
+
     /**
      * Constructor
      *
@@ -95,22 +118,39 @@ public:
         const bool filter_matches = false);
 
     /**
+     * Matches the frame with the previous frame using map points projection
+     *
+     * @param prev_frame: Frame to match with
+     * @param compute_track_info: Whether to compute map points track info for
+     *     processing or should consider it to be already computed
+     * @param nn_ratio: First to second best match ratio
+     * @param radius: Window size multiplier for search
+     * @param filter_matches: Whether to filter matches afterwards
+     */
+    void matchByProjection(
+        const std::vector<MapPointPtr>& map_points,
+        const bool compute_track_info,
+        const float nn_ratio = 0.6,
+        const float radius = 1.0,
+        const bool filter_matches = false);
+
+    /**
      * Draws the extracted features on the given image
      * @param image: Drawing image
      */
-    virtual void drawFeatures(cv::Mat& image) {}
+    virtual void drawFeatures(cv::Mat& image) const {}
 
     /**
      * Draws the extracted features on a copy image and shows it
      * @param name: Image output name while showing
      */
-    virtual void showImageWithFeatures(const std::string& name) {}
+    virtual void showImageWithFeatures(const std::string& name) const {}
 
     /**
      * Shows the matches between this frame and reference frame.
      * @param name: Image output name while showing
      */
-    virtual void showMatchesWithRef(const std::string& name, const size_t n = 0) {}
+    virtual void showMatchesWithRef(const std::string& name, const size_t n = 0) const {}
 
     /**
      * @brief Checks whether a given point is within the image bounds
@@ -198,6 +238,21 @@ public:
     }
 
     /**
+     * Converts a point from frame camera coordinates to pixel coordinates
+     *
+     * @param p: Point in camera coordinates
+     */
+    template <typename U, typename V>
+    cv::Point_<U> cameraToFrame(const cv::Mat_<V>& p) {
+        return cv::Point_<U>(
+                camera_->focalX() * p.at(0, 0) /
+                    p.at(2, 0) + camera_->centerX(),
+                camera_->focalY() * p.at(1, 0) /
+                    p.at(2, 0) + camera_->centerY()
+        );
+    }
+
+    /**
      * Converts a point from pixel oordinates to frame camera coordinates
      */
     template <typename U, typename V>
@@ -210,77 +265,47 @@ public:
     }
 
     /**
-     * Converts a point from camera coordinates to world coordinates
+     * Converts a point from pixel oordinates to frame camera coordinates
      */
+    template <typename U, typename V>
+    cv::Point3_<U> frameToCamera(const cv::Mat_<V>& p, const float& depth) {
+        return cv::Point3_<U>(
+                (p(0, 0) - camera_->centerX()) * depth * camera_->invFocalX(),
+                (p(1, 0) - camera_->centerY()) * depth * camera_->invFocalY(),
+                depth
+        );
+    }
+
     template <typename T>
     cv::Point3_<T> cameraToWorld(const cv::Point3_<T>& p) {
         return cv::Point3_<T>(cv::Mat(w_R_c_ * cv::Mat(p) + w_t_c_));
     }
 
-    /**
-     * Converts a point from world coordinates to camera coordinates
-     */
+    template <typename T>
+    cv::Point3_<T> cameraToWorld(const cv::Mat_<T>& p) {
+        return cv::Point3_<T>(cv::Mat(w_R_c_ * p + w_t_c_));
+    }
+
     template <typename T>
     cv::Point3_<T> worldToCamera(const cv::Point3_<T>& p) {
         return cv::Point3_<T>(cv::Mat(c_R_w_ * cv::Mat(p) + c_t_w_));
     }
 
-    /**
-     * Converts a point from pixel coordinates to world coordinates
-     */
+    template <typename T>
+    cv::Point3_<T> worldToCamera(const cv::Mat_<T>& p) {
+        return cv::Point3_<T>(cv::Mat(c_R_w_ * p + c_t_w_));
+    }
+
     template <typename U, typename V>
     cv::Point3_<U> frameToWorld(const cv::Point_<V>& p, const float& depth) {
         return cameraToWorld<U>(frameToCamera<U, V>(p, depth));
     }
 
-    /**
-     * Converts a point from pixel coordinates to world coordinates
-     */
     template <typename U, typename V>
     cv::Point3_<U> worldToFrame(const cv::Point3_<V>& p) {
         return cameraToFrame<U, V>(worldToCamera<V>(p));
     }
 
-    /**
-     * Getters
-     */
-    std::vector<MapPointPtr> obsMapPoints() const;
-    const cv::Mat& getCamInWorldT() const { return w_T_c_; }
-    const cv::Mat& getCamInWorldR() const { return w_R_c_; }
-    const cv::Mat& getCamInWorldt() const { return w_t_c_; }
-    const cv::Mat& getWorldInCamT() const { return c_T_w_; }
-    const cv::Mat& getWorldInCamR() const { return c_R_w_; }
-    const cv::Mat& getWorldInCamt() const { return c_t_w_; }
-    const vector<bool>& outliers() const { return outliers_; }
-    const int nFeatures() const { return key_points_.size(); }
-    const std::vector<cv::KeyPoint>& features() const
-        { return key_points_; }
-    const int nFeaturesUndist() const { return undist_key_points_.size(); }
-    const std::vector<cv::KeyPoint>& featuresUndist() const
-        { return undist_key_points_; }
-    virtual const std::vector<float>& featureDepthsUndist() const {
-        throw std::runtime_error("Not implemented for this frame type.");
-    }
-    const cv::Mat& descriptorsUndist() const { return undist_descriptors_; }
-    const int nDescriptorsUnDist() const { return undist_descriptors_.rows; }
-    const std::vector<cv::DMatch> matches() const { return matches_; }
-    const int nMatches() const { return matches_.size(); }
-    const DBoW2::BowVector& bow() const { return bow_vec_; }
-    const DBoW2::FeatureVector& bowFeatures() const { return feature_vec_; }
-    virtual const cv_bridge::CvImageConstPtr& image() = 0;
-
-    static const geometry::CameraConstPtr<float>& camera()
-        { return camera_; }
-    static const geometry::ORBExtractorConstPtr& orbExtractor()
-        { return orb_extractor_; }
-    static const geometry::ORBMatcherConstPtr& orbMatcher()
-        { return orb_matcher_; }
-    static const ORBVocabularyConstPtr& orbVocabulary()
-        { return orb_vocabulary_;}
-
-    /**
-     * Setters
-     */
     void setCamInWorld(const cv::Mat& w_T_c) {
         w_T_c_ = w_T_c.clone(); // camera in world or world to camera
         w_R_c_ = w_T_c_.rowRange(0, 3).colRange(0, 3);
@@ -289,7 +314,7 @@ public:
         c_R_w_ = w_R_c_.t(); // transposed = inverse
         c_t_w_ = -c_R_w_ * w_t_c_; // -R.t() * t = translation inverse
 
-         // world in camera or camera to world
+            // world in camera or camera to world
         c_T_w_ = cv::Mat::eye(4, 4, CV_32F);
         c_R_w_.copyTo(c_T_w_.rowRange(0, 3).colRange(0, 3));
         c_t_w_.copyTo(c_T_w_.rowRange(0, 3).col(3));
@@ -308,6 +333,100 @@ public:
         w_R_c_.copyTo(w_T_c_.rowRange(0, 3).colRange(0, 3));
         w_t_c_.copyTo(w_T_c_.rowRange(0, 3).col(3));
     }
+
+    /**
+     * Finds the relative transformation of this frame in given frame
+     * @param ref_frame: Frame in which relative transformation is found
+     * @returns cv::Mat: The relative transformation matrix ref_T_f
+     */
+    cv::Mat transFromFrame(const FramePtr& ref_frame) const {
+        // ref_T_c = ref_T_w * w_T_c;
+        return ref_frame->worldInCameraT() * w_T_c_;
+    }
+
+    cv::Mat transFromFrame(const KeyFramePtr& ref_key_frame) const {
+        // ref_T_c = ref_T_w * w_T_c;
+        return ref_key_frame->worldInCameraT() * w_T_c_;
+    }
+
+    cv::Mat transFromFrameStatic(const KeyFramePtr& ref_key_frame) const {
+        // ref_T_c = ref_T_w * w_T_c;
+        return ref_key_frame->worldInCameraTStatic() * w_T_c_;
+    }
+
+    /**
+     * Returns true if the map point in 3d space lies in the view or frustum of
+     * current frame.
+     * @param mp: Map point to check
+     * @param view_cos_limit: Angle limit
+     * @param track_res: Tracking resulting info
+     * @returns boolean
+     */
+    bool isInCameraView(
+        const MapPointPtr& mp,
+        TrackProperties& track_res,
+        const float view_cos_limit = 0.5);
+
+    /**
+     * Computes the fundamental matrix from this frame to another
+     */
+    void computeFundamentalMat(
+        cv::Mat& f_mat,
+        const FramePtr& frame);
+
+    /**
+     * Computes the fundamental matrix from this frame to another key frame
+     */
+    void computeFundamentalMat(
+        cv::Mat& f_mat,
+        const KeyFramePtr& key_frame);
+
+    /**
+     * Getters
+     */
+    const long unsigned int& id() const { return id_; }
+    const ros::Time& timeStamp() const { return time_stamp_; }
+    const cv::Mat& cameraInWorldT() const { return w_T_c_; }
+    const cv::Mat& cameraInWorldR() const { return w_R_c_; }
+    const cv::Mat& cameraInWorldt() const { return w_t_c_; }
+    const cv::Mat& worldInCameraT() const { return c_T_w_; }
+    const cv::Mat& worldInCameraR() const { return c_R_w_; }
+    const cv::Mat& worldInCamerat() const { return c_t_w_; }
+
+    // from frame a const refernce is returned since frame map points are
+    // accessed from other threads until a key frame from it is formed
+    // this allows not copying obs_map_points when used by frame
+    const std::vector<MapPointPtr>& obsMapPoints() const;
+    const std::vector<MapPointPtr>& unmatchedMapPoints() const;
+    const vector<bool>& outliers() const { return outliers_; }
+    const int nFeatures() const { return key_points_.size(); }
+    const std::vector<cv::KeyPoint>& features() const
+        { return key_points_; }
+    const int nFeaturesUndist() const { return undist_key_points_.size(); }
+    const std::vector<cv::KeyPoint>& featuresUndist() const
+        { return undist_key_points_; }
+    virtual const std::vector<float>& featureDepthsUndist() const {
+        throw std::runtime_error("Not implemented for this frame type.");
+    }
+    const cv::Mat& descriptorsUndist() const { return undist_descriptors_; }
+    const int& nDescriptorsUnDist() const { return undist_descriptors_.rows; }
+    const std::vector<cv::DMatch>& matches() const { return matches_; }
+    const std::vector<cv::DMatch>& localMatches() const { return local_matches_; }
+    const int nMatches() const { return matches_.size(); }
+    const DBoW2::BowVector& bow() const { return bow_vec_; }
+    const DBoW2::FeatureVector& bowFeatures() const { return feature_vec_; }
+    const KeyFramePtr& refKeyFrame() const { return ref_key_frame_; }
+    virtual const cv_bridge::CvImageConstPtr& image() const = 0;
+
+    static const geometry::CameraConstPtr<float>& camera()
+        { return camera_; }
+    static const geometry::ORBExtractorConstPtr& orbExtractor()
+        { return orb_extractor_; }
+    static const geometry::ORBMatcherConstPtr& orbMatcher()
+        { return orb_matcher_; }
+    static const ORBVocabularyConstPtr& orbVocabulary()
+        { return orb_vocabulary_;}
+
     static void setCamera(const geometry::CameraConstPtr<float>& camera)
         { camera_ = camera; }
     static void setORBExtractor(const geometry::ORBExtractorConstPtr& orb_extractor)
@@ -318,10 +437,13 @@ public:
         const ORBVocabularyConstPtr& orb_vocabulary)
         { orb_vocabulary_ = orb_vocabulary; }
 
+    void setRefKeyFrame(const KeyFramePtr& ref_key_frame);
     void resizeMap(const size_t& n);
     void resetMap();
-    void addMapPoint(const MapPointPtr& mp, const size_t& idx);
+    void setMapPointAt(const MapPointPtr& mp, const size_t& idx);
     void removeMapPointAt(const unsigned long& idx);
+    void copyMapPointsForBA();
+    void addUnmatchedMapPoint(const MapPointPtr& mp);
 
     void setOutlier(const size_t& idx, const bool is_outlier) {
         outliers_[idx] = is_outlier;
@@ -354,7 +476,7 @@ protected:
         const cv::KeyPoint& key_point, int& pos_x, int& pos_y);
 
     // frame info
-    int id_; // frame id
+    long unsigned int id_; // frame id
     ros::Time time_stamp_; // frame time stamp
     cv::Mat w_T_c_; // camera in world transformation matrix
     cv::Mat w_R_c_; // camera in world rotation
@@ -362,6 +484,7 @@ protected:
     cv::Mat c_T_w_; // world in camera transformation matrix
     cv::Mat c_R_w_; // world in camera rotation
     cv::Mat c_t_w_; // world in camera translation
+
     std::vector<cv::KeyPoint> key_points_;
     std::vector<cv::KeyPoint> undist_key_points_;
     std::vector<bool> outliers_;
@@ -374,10 +497,21 @@ protected:
 
     // frame matching info
     std::shared_ptr<Frame> ref_frame_;
-    std::vector<cv::DMatch> matches_;
+    std::vector<cv::DMatch> matches_; // matches with reference frame
+    std::vector<cv::DMatch> local_matches_; // matches with local map points
+
+    // local map matching info
+    KeyFramePtr ref_key_frame_;
 
     // map points associated with frame
     std::vector<MapPointPtr> obs_map_points_;
+
+    // all the points that are not matched but added as observed
+    // map points in the key frame because they are close (within a certain)
+    // depth threshold
+    std::vector<MapPointPtr> unmatched_map_points_;
+    // map points used in bundle adjustment
+    std::vector<MapPointPtr> obs_map_points_ba_;
 
     // static class pointers
     static geometry::CameraConstPtr<float> camera_; // camera info
@@ -392,102 +526,10 @@ protected:
     static int grid_rows_;
     static int grid_cols_;
 
-    static int id_global_; // global ids accumulator
-
-    // map points access mutex
-    std::mutex mutex_map_points_;
+    static long unsigned int id_global_; // global ids accumulator
 
     // define key frame as friend for access
     friend class KeyFrame;
-};
-
-class MonoFrame : public Frame {
-public:
-    /**
-     * Constructor
-     *
-     * @param image: Image assigned to this frame
-     * @param time_stamp: Frame time stamp on creation
-     */
-    MonoFrame(
-        const cv_bridge::CvImageConstPtr& image, const ros::Time& time_stamp);
-
-    /**
-     * Destructor
-     */
-    ~MonoFrame();
-
-    /**
-     * Extracts orb features from the frame image
-     */
-    virtual void extractFeatures();
-
-    void drawFeatures(cv::Mat& image);
-    void showImageWithFeatures(const std::string& name);
-    void showMatchesWithRef(const std::string& name, const size_t n = 0);
-
-    /**
-     * Getters
-     */
-    const cv_bridge::CvImageConstPtr& image() { return image_; }
-
-private:
-    /**
-     * Returns the derived camera class
-     */
-    geometry::MonoCameraConstPtr<float> camera();
-
-    cv_bridge::CvImageConstPtr image_; // Frame image
-};
-
-class RGBDFrame : public Frame {
-public:
-    /**
-     * Constructor
-     *
-     * @param image: Image assigned to this frame
-     * @param depth: Image depth assigned to this frame
-     * @param time_stamp: Frame time stamp on creation
-     */
-    RGBDFrame(
-        const cv_bridge::CvImageConstPtr& image,
-        const cv_bridge::CvImageConstPtr& depth,
-        const ros::Time& time_stamp);
-
-    /**
-     * Destructor
-     */
-    ~RGBDFrame();
-
-    /**
-     * Extracts orb features from the frame image
-     */
-    virtual void extractFeatures();
-
-    void drawFeatures(cv::Mat& image);
-    void showImageWithFeatures(const std::string& name);
-    void showMatchesWithRef(const std::string& name, const size_t n = 0);
-
-    /**
-     * Getters
-     */
-    const cv_bridge::CvImageConstPtr& image() { return image_; }
-    const cv_bridge::CvImageConstPtr& depth() { return depth_; }
-    const std::vector<float>& featureDepthsUndist() const {
-        return undist_key_point_depths_;
-    }
-
-private:
-    /**
-     * Returns the derived camera class
-     */
-    geometry::RGBDCameraConstPtr<float> camera();
-
-    cv_bridge::CvImageConstPtr image_; // Frame image
-    cv_bridge::CvImageConstPtr depth_; // Frame image depth
-    cv::Mat gray_image_; // gray_scale image
-    bool rgb_ = {false};
-    std::vector<float> undist_key_point_depths_;
 };
 
 //! pointer alias

@@ -12,6 +12,11 @@
 #include <orb_slam/geometry/orb_extractor.h>
 #include <orb_slam/geometry/orb_matcher.h>
 
+#define LOCK_OBSERVATIONS \
+    std::unique_lock<std::mutex> observations_lock(observations_mutex_);
+#define LOCK_POS \
+    std::unique_lock<std::mutex> pos_lock(pos_mutex_);
+
 namespace orb_slam
 {
 
@@ -21,6 +26,19 @@ class KeyFrame;
 using KeyFramePtr = std::shared_ptr<KeyFrame>;
 class Map;
 using MapPtr = std::shared_ptr<Map>;
+
+struct TrackProperties {
+    void reset() {
+        in_view_ = false;
+    }
+
+    bool in_view_; // whether this point is in view or not
+    cv::Point2f proj_xy_; // projection x-y in frame
+    int proj_xr_; // projection x in right camera for stereo
+    // predicted scale level in which this point is tracked
+    int pred_scale_level_;
+    float view_cosine_; // cosine of angle
+};
 
 class MapPoint : public std::enable_shared_from_this<MapPoint>
 {
@@ -37,10 +55,43 @@ public:
      * Getters
      */
     const size_t nObservations();
-    const bool& isBad() { return bad_point_; }
-    const cv::Mat& worldPos() const { return world_pos_; }
-    const cv::Mat& viewVector() const { return view_vector_; }
-    const cv::Mat& bestDescriptor() const { return best_descriptor_; }
+    const bool isBad() {
+        LOCK_OBSERVATIONS;
+        LOCK_POS;
+        return bad_point_;
+    }
+    const bool isInLocalMapOf(const long unsigned int& id) const
+        { return this->is_in_local_map_of_ == id; }
+    const bool trackedInFrame(const long unsigned int& id) const
+        { return this->tracked_in_frame_ == id; }
+    const cv::Mat worldPos() const {
+        LOCK_POS;
+        return world_pos_.clone(); // return a copy
+    }
+    const cv::Mat viewVector() const {
+        LOCK_POS;
+        return view_vector_.clone(); // return a copy
+    }
+    const cv::Mat bestDescriptor() const {
+        LOCK_OBSERVATIONS;
+        return best_descriptor_.clone();
+    }
+    const float maxScaleInvDist() {
+        LOCK_POS;
+        return 1.2f * max_scale_distance_;
+    }
+    const float minScaleInvDist() {
+        LOCK_POS;
+        return 0.8f * min_scale_distance_;
+    }
+    const TrackProperties& trackProperties() const { return track_properties_; }
+    const KeyFramePtr refKeyFrame() {
+        LOCK_OBSERVATIONS;
+        return ref_key_frame_;
+    }
+    const int found() {
+        return found_;
+    }
 
     /**
      * Setters
@@ -49,6 +100,25 @@ public:
         { orb_matcher_ = orb_matcher; }
     static void setORBExtractor(const geometry::ORBExtractorConstPtr& orb_extractor)
         { orb_extractor_ = orb_extractor; }
+    void resetTrackProperties() { track_properties_.reset(); }
+    void setTrackProperties(const TrackProperties& track_properties)
+        { track_properties_ = track_properties; }
+    void setTrackedInFrame(const long unsigned int& id)
+        { tracked_in_frame_ = id; }
+    void setIsInLocalMapOf(const long unsigned int& id)
+        { is_in_local_map_of_ = id; }
+    void setWorldPos(const cv::Mat& world_pos) {
+        LOCK_POS;
+        world_pos.copyTo(world_pos_);
+    }
+    void increaseVisibility(const int& n = 1) {
+        LOCK_OBSERVATIONS;
+        visibility_ += n;
+    }
+    void increaseFound(const int& n = 1) {
+        LOCK_OBSERVATIONS;
+        found_ += n;
+    }
 
     /**
      * Adds an observation for this point.
@@ -63,6 +133,13 @@ public:
      * @param key_frame: The key frame in which the point is observed
      */
     void removeObservation(const KeyFramePtr& key_frame);
+
+    /**
+     * Returns true if this map point is observed in the given key frame.
+     * @param key_frame: Key frame to check the point in
+     * @returns boolean
+     */
+    bool isObservedInKeyFrame(const KeyFramePtr& key_frame);
 
     /**
      * Removes this point from the map
@@ -84,7 +161,21 @@ public:
      * Based on original orb-slam repository
      */
     void updateNormalAndScale();
+
+    int predictScale(const float& dist);
+
+    float foundRatio() {
+        LOCK_OBSERVATIONS;
+        return static_cast<float>(found_) / static_cast<float>(visibility_);
+    }
 private:
+    // Properties of map point related to tracking in a frame
+    TrackProperties track_properties_;
+    // id of frame whose local map this map point is in
+    long int is_in_local_map_of_;
+    // id of the frame in which it is last seen
+    long int tracked_in_frame_;
+
     // Map point details
     cv::Mat world_pos_; // Point position in world coordinates
     cv::Mat view_vector_; // Mean viewing direction
@@ -94,6 +185,10 @@ private:
     // Scale invariance distances
     float min_scale_distance_;
     float max_scale_distance_;
+
+    // Number of times it is seen
+    int visibility_ = 1;
+    int found_ = 1;
 
     long unsigned int id_; // Point id
     static std::atomic_uint64_t global_id_; // Thread safe points id accumulator
@@ -110,8 +205,8 @@ private:
     MapPtr map_;
 
     // Mutexes
-    std::mutex pos_mutex_;
-    std::mutex observations_mutex_;
+    mutable std::mutex pos_mutex_;
+    mutable std::mutex observations_mutex_;
 
     // Orb matcher for descriptor distances
     static geometry::ORBMatcherConstPtr orb_matcher_;

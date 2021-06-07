@@ -36,6 +36,12 @@ using KeyFramePtr = std::shared_ptr<KeyFrame>;
 class Map;
 using MapPtr = std::shared_ptr<Map>;
 
+class MapPoint;
+using MapPointPtr = std::shared_ptr<MapPoint>;
+
+class LocalMapper;
+using LocalMapperPtr = std::shared_ptr<LocalMapper>;
+
 template <typename T>
 class MotionModel;
 template <typename T>
@@ -45,6 +51,9 @@ using MotionModelConstPtr = std::shared_ptr<const MotionModel<T>>;
 
 class PoseOptimizer;
 using PoseOptimizerPtr = std::shared_ptr<PoseOptimizer>;
+
+class Viewer;
+using ViewerPtr = std::shared_ptr<Viewer>;
 
 #define MIN_REQ_MATCHES_INIT 100
 #define MIN_REQ_MATCHES 15
@@ -90,13 +99,46 @@ protected:
     virtual bool trackReferenceKeyFrame();
     virtual bool trackWithMotionModel();
 
+    /**
+     * Counts key frames that are observing map points found in frame.
+     * @param frame: Frame from which map points are taken from
+     * @param obs_key_frame_map: A mapping from key_frame to how many map points
+     *     each key frame observes.
+     */
+    void findObservingKeyFrames(
+        const FramePtr& frame, map<KeyFramePtr, int>& obs_key_frame_map) const;
+
+    // local mapping of frame
+    bool updateLocalMap();
+    void updateLocalMapKeyFrames();
+    void updateLocalMapPoints();
+    bool projectLocalPoints();
+
+    // addition of key frame to local map
+    bool needNewKeyFrame();
+    void createNewKeyFrame();
+
+    // relocalization
+    bool relocalize();
+
     // latest frame
     FramePtr current_frame_;
     std::vector<cv::Mat> camera_pose_history_; // vector of poses
 
     // initialization
     FramePtr last_frame_;
+
+    // local mapping
     KeyFramePtr ref_key_frame_;
+    KeyFramePtr last_key_frame_;
+    int n_min_frames_; // minimum frames passed before new key frame insertion
+    int n_max_frames_; // maximum frames passed before new key frame insertion
+    int local_map_matches_; // matches of points with local map in current frame
+    std::vector<KeyFramePtr> key_frames_local_map_;
+    std::vector<MapPointPtr> map_points_local_map_;
+    // The depth range within which points are considered close to frame
+    float close_depth_threshold;
+    LocalMapperPtr local_mapper_;
 
     // motion model
     MotionModelPtr<float> motion_model_;
@@ -120,6 +162,9 @@ protected:
 
     // g2o optimization
     PoseOptimizerPtr pose_optimizer_;
+
+    // viewer
+    ViewerPtr viewer_;
 
     // Tracking states same as in original orb slam package
     enum TrackingState {

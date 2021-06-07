@@ -34,7 +34,7 @@ public:
      *
      * @param frame: Frame pose to optimize
      * @param opt_pose: Output optimized pose of the frame
-     * @returns The number of features key points - the outliers found by
+     * @returns The number of feature inliers found by
      *     optimization
      */
     int solve(const FramePtr& frame, cv::Mat& opt_pose) {
@@ -48,9 +48,14 @@ public:
         Eigen::Matrix3d R;
         Eigen::Vector3d t;
         // get eigen pose from cv pose
-        cv::cv2eigen<double>(frame->getWorldInCamR(), R);
-        cv::cv2eigen<double>(frame->getWorldInCamt(), t);
-        vertex_pose->setEstimate(Sophus::SE3d(R, t));
+        cv::cv2eigen<double>(frame->worldInCameraR(), R);
+        cv::cv2eigen<double>(frame->worldInCamerat(), t);
+
+        // reinforce orthogonality
+        R = Eigen::AngleAxisd(R).toRotationMatrix();
+
+        auto init_pose_se3 = Sophus::SE3d(R, t);
+        vertex_pose->setEstimate(init_pose_se3);
 
         // add camera pose as first vertex in graph
         optimizer->addVertex(vertex_pose);
@@ -65,19 +70,20 @@ public:
 
         // create edges for all the observed 3d points from this frame
         const auto& key_points = frame->featuresUndist();
-        const auto map_points = frame->obsMapPoints();
+        const auto& map_points = frame->obsMapPoints();
         const auto n = key_points.size();
 
         // create edges
-        int index = 1;
+        int node_idx = 1;
         std::vector<EdgeProjectionPoseOnly*> edges;
         // Indices of edges corresponding to frame key points
         std::vector<size_t> edge_to_key_point;
         edges.reserve(n);
         edge_to_key_point.reserve(n);
 
-        for (size_t i = 0; i < n; ++i) {
-            const auto& mp = map_points[i];
+        for (size_t idx = 0; idx < n; ++idx) {
+            const auto& mp = map_points[idx];
+            const auto& kp = key_points[idx];
             if (mp) { // if point exists
                 //features.push_back(frame_->features_left_[i]);
                 // get world position of point in eigen
@@ -85,20 +91,18 @@ public:
                 cv::cv2eigen<double>(mp->worldPos(), world_pos);
                 EdgeProjectionPoseOnly* edge = // create an edge for point pose
                     new EdgeProjectionPoseOnly(world_pos, K);
-                edge->setId(index);
+                edge->setId(node_idx);
                 // set vertex start point as camera pose vertex
                 edge->setVertex(0, vertex_pose);
                 // get point image position in eigen
-                Eigen::Vector2d key_point_eigen(
-                    key_points[i].pt.x, key_points[i].pt.y);
+                Eigen::Vector2d key_point_eigen(kp.pt.x, kp.pt.y);
                 // set point seen in camera as measured or observed position
                 edge->setMeasurement(key_point_eigen);
                 // use scale variance to determine information matrix
                 // remember information matrix is the opposite of covariance
                 // matrix
                 Eigen::Matrix2d info =
-                    Eigen::Matrix2d::Identity() *
-                    inv_scale_sigmas[key_points[i].octave];
+                    Eigen::Matrix2d::Identity() * inv_scale_sigmas[kp.octave];
                 edge->setInformation(info);
                 // set robust loss function as huber loss
                 // this is done for outlier rejection
@@ -106,9 +110,9 @@ public:
                 // git/raw/master/slam/g2o-details.pdf for details
                 edge->setRobustKernel(new g2o::RobustKernelHuber);
                 edges.push_back(edge); // add edge to vector
-                edge_to_key_point.push_back(i);
+                edge_to_key_point.push_back(idx);
                 optimizer->addEdge(edge); // add edge to graph
-                index++;
+                node_idx++;
             }
         }
 
@@ -116,13 +120,14 @@ public:
         const double chi2_th = 5.991;
         int cnt_outlier = 0;
         const auto& outliers = frame->outliers();
-        optimizer->setVerbose(true);
+        //optimizer->setVerbose(true);
         for (int iteration = 0; iteration < 4; ++iteration) {
-            // get eigen pose from cv pose
-            cv::cv2eigen<double>(frame->getWorldInCamR(), R);
-            cv::cv2eigen<double>(frame->getWorldInCamt(), t);
-            // reset the initial pose and optimize
-            vertex_pose->setEstimate(Sophus::SE3d(R, t));
+            // first three iterations, the robust kernel is used which is used
+            // to give more weight to inliers as explained in g2o docs.
+            // the last iteration the kernel is removed to find the real error.
+
+            // reset the initial pose and optimize each iteration from start
+            vertex_pose->setEstimate(init_pose_se3);
             optimizer->initializeOptimization();
             optimizer->optimize(10);
             cnt_outlier = 0;
@@ -156,12 +161,15 @@ public:
             }
         }
 
+        ROS_DEBUG_STREAM("Mean error over number of points:" <<
+            (float) optimizer->activeChi2() / (float) optimizer->activeEdges().size());
         ROS_DEBUG_STREAM(
             "Outlier/Inlier in pose estimating: "
             << cnt_outlier << "/" << key_points.size() - cnt_outlier);
 
         // set optimized pose to the output
         cv::eigen2cv(vertex_pose->estimate().matrix(), opt_pose);
+        opt_pose.convertTo(opt_pose, CV_32F); // convert to float
 
         return key_points.size() - cnt_outlier;
     }

@@ -36,6 +36,7 @@ public:
         nh_.param<int>(prefix + "patch_size", patch_size_, 31);
         nh_.param<int>(prefix + "score_threshold", score_threshold_, 20);
 
+        log_scale_factor_ = log(scale_factor_);
         scale_factors_.resize(level_pyramid_);
         scale_sigma_sqrd_.resize(level_pyramid_);
         inv_scale_factors_.resize(level_pyramid_);
@@ -82,6 +83,8 @@ public:
     /**
      * Getters
      */
+    const float& scaleFactor() const { return scale_factor_;}
+    const float& logScaleFactor() const { return log_scale_factor_;}
     const std::vector<float>& scaleFactors() const { return scale_factors_; }
     const int& levels() const { return level_pyramid_; }
     const std::vector<float>& scaleSigmas() const { return scale_sigma_sqrd_; }
@@ -125,6 +128,7 @@ private:
 
     //! orb extractor parameters
     int n_key_points_; // number of key points to extract
+    float log_scale_factor_; // log of scale factor
     float scale_factor_; // feature scale factor
     int level_pyramid_; // image pyramid level
     int edge_threshold_ = {31}; // edge threshold

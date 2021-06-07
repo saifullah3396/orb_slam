@@ -19,6 +19,15 @@ namespace orb_slam
 class Frame;
 using FramePtr = std::shared_ptr<Frame>;
 
+class ThreadSafeFrame;
+class ThreadUnsafeFrame;
+
+using ThreadSafeFramePtr = std::shared_ptr<ThreadSafeFrame>;
+using ThreadUnsafeFramePtr = std::shared_ptr<ThreadUnsafeFrame>;
+
+class MapPoint;
+using MapPointPtr = std::shared_ptr<MapPoint>;
+
 namespace geometry
 {
 
@@ -27,6 +36,7 @@ enum OrbMatcherTypes {
     BF_WITH_RADIUS,
     BF_WITH_PROJ,
     BOW_ORB,
+    EPIPOLAR_CONSTRAINT,
     CV_ORB,
     MATCHER_TYPES
 };
@@ -88,11 +98,139 @@ struct BruteForceWithProjectionMatcher : public MatcherBase {
      * @param matches: Output features that are matched
      */
     void match(
-        const FramePtr& frame,
-        const FramePtr& ref_frame,
+        const ThreadUnsafeFramePtr& frame,
+        const ThreadUnsafeFramePtr& ref_frame,
         std::vector<cv::DMatch>& matches);
 
+    /**
+     * @brief Finds the closest feature in ref_frame for a feature in frame by
+     *     iterating over all the pixels that lie within a tolerance of feature
+     *     in ref_frame and matching their descriptors
+     * @param frame: Input frame to match
+     * @param ref_frane: Reference frame to match with
+     * @param matches: Output features that are matched
+     */
+    void match(
+        const ThreadUnsafeFramePtr& frame,
+        const ThreadUnsafeFramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches);
+
+    /**
+     * Overloaded
+     */
+    void match(
+        const ThreadUnsafeFramePtr& frame,
+        const ThreadSafeFramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches);
+
+    /**
+     * Overloaded
+     */
+    void match(
+        const ThreadSafeFramePtr& frame,
+        const ThreadUnsafeFramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches);
+
+    /**
+     * Overloaded
+     */
+    void match(
+        const ThreadSafeFramePtr& frame,
+        const ThreadSafeFramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches);
+
+    /**
+     * Overloaded
+     */
+    void match(
+        const FramePtr& frame,
+        const FramePtr& ref_frame,
+        const std::function<cv::Point3_<float>(cv::Mat)>& conversion_func,
+        const cv::Mat& ref_T_f,
+        const std::vector<MapPointPtr>& ref_map_points,
+        std::vector<cv::DMatch>& matches);
+
+    /**
+     * @brief Finds the closest point in points_3d for a feature in frame by
+     *     iterating over all the pixels that lie within a tolerance of projected
+     *     point in frame and matching their descriptors
+     * @param frame: Input frame to match
+     * @param points_3d: Reference frame to match with
+     * @param matches: Output features that are matched
+     */
+    void match(
+        const ThreadUnsafeFramePtr& frame,
+        const std::vector<MapPointPtr>& points_3d,
+        std::vector<cv::DMatch>& matches);
+
+    void match(
+        const ThreadSafeFramePtr& frame,
+        const std::vector<MapPointPtr>& points_3d,
+        std::vector<cv::DMatch>& matches);
+
+    void match(
+        const FramePtr& frame,
+        const std::function<bool(
+            const MapPointPtr& mp,
+            TrackProperties& track_res,
+            const float view_cos_limit)> camera_view_func,
+        const std::vector<MapPointPtr>& points_3d,
+        std::vector<cv::DMatch>& matches);
+
+    /**
+     * Returns radius to use based on cosine of angle between vector from frame
+     * to the 3d point and global view vector of point.
+     */
+    float radiusByViewCosine(const float& view_cosine) {
+        if (view_cosine > 0.998)
+            return 2.5;
+        else
+            return 4.0;
+    }
+
+    void applyRotationConstraint(
+        std::vector<int>* rot_hist,
+        std::vector<int>& matched)
+    {
+        // apply rotation consistency
+        if(check_orientation_)
+        {
+            int ind1 = -1;
+            int ind2 = -1;
+            int ind3 = -1;
+
+            // take the 3 top most histograms
+            geometry::computeThreeMaxima(rot_hist, hist_length_, ind1, ind2, ind3);
+
+            // remove all the points that have rotation difference other than the
+            // top 3 histogram bins.
+            for (int i = 0; i < hist_length_; i++) {
+                if (i != ind1 && i != ind2 && i != ind3) {
+                    for (size_t j = 0, jend = rot_hist[i].size(); j < jend; j++) {
+                        matched[rot_hist[i][j]] = false;
+                    }
+                }
+            }
+        }
+    }
+
+    void createMatches(
+        const std::vector<int>& matched,
+        const std::vector<int>& feature_dists,
+        std::vector<cv::DMatch>& matches) {
+        // create matches
+        for (size_t i = 0; i < matched.size(); ++i) {
+            if (matched[i] > 0) { // matches from frame to reference frame
+                matches.push_back(
+                    cv::DMatch(
+                        i, matched[i], static_cast<float>(feature_dists[i])));
+            }
+        }
+    }
+
     float radius_ = 1.0;
+    float nn_ratio_ = 0.6;
+    bool compute_track_info_ = true;
     bool check_orientation_ = false;
     const int hist_length_ = 30;
     const int low_threshold_ = 50;
@@ -119,12 +257,93 @@ struct BowOrbMatcher : public MatcherBase {
      * @param matches: Output features that are matched
      */
     void match(
+        const ThreadUnsafeFramePtr& frame,
+        const ThreadUnsafeFramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches);
+
+    void match(
+        const ThreadSafeFramePtr& frame,
+        const ThreadSafeFramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches);
+
+    void match(
+        const ThreadUnsafeFramePtr& frame,
+        const ThreadSafeFramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches);
+
+    void match(
+        const ThreadSafeFramePtr& frame,
+        const ThreadUnsafeFramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches);
+
+    void match(
         const FramePtr& frame,
         const FramePtr& ref_frame,
+        const std::vector<MapPointPtr>& map_points,
+        const std::vector<MapPointPtr>& ref_map_points,
         std::vector<cv::DMatch>& matches);
 
     bool check_orientation_ = false;
     float nn_ratio_ = 0.6;
+    const int hist_length_ = 30;
+    const int low_threshold_ = 50;
+    const int high_threshold_ = 100;
+};
+
+/**
+ * Defines a matcher for matching features between two frames based on epipolar
+ * constraint and speed-up based on bow features.
+ */
+struct EpipolarConstraintWithBowMatcher : public MatcherBase {
+    /**
+     * @brief Constructor
+     * @param nh: ROS node handle for reading parameters
+     */
+    EpipolarConstraintWithBowMatcher(const ros::NodeHandle& nh) {}
+
+    /**
+     * @brief Finds the closest feature in ref_frame for a feature in frame by
+     *     iterating over all features within the same orb vocabulary word and
+     *     with minimum distance to epipolar lines.
+     * @param frame: Input frame to match
+     * @param ref_frane: Reference frame to match with
+     * @param matches: Output features that are matched
+     */
+    void match(
+        const ThreadUnsafeFramePtr& frame,
+        const ThreadUnsafeFramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches);
+
+    void match(
+        const ThreadSafeFramePtr& frame,
+        const ThreadSafeFramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches);
+
+    void match(
+        const ThreadUnsafeFramePtr& frame,
+        const ThreadSafeFramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches);
+
+    void match(
+        const ThreadSafeFramePtr& frame,
+        const ThreadUnsafeFramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches);
+
+    void match(
+        const FramePtr& frame,
+        const FramePtr& ref_frame,
+        const cv::Mat& fundamental_mat,
+        const std::vector<MapPointPtr>& map_points,
+        const std::vector<MapPointPtr>& ref_map_points,
+        std::vector<cv::DMatch>& matches);
+
+    bool check_epipolar_dist(
+        const cv::KeyPoint& kp1,
+        const cv::KeyPoint& kp2,
+        const cv::Mat& f_mat,
+        const FramePtr& ref_frame) const;
+
+    bool check_orientation_ = false;
     const int hist_length_ = 30;
     const int low_threshold_ = 50;
     const int high_threshold_ = 100;
@@ -222,7 +441,7 @@ public:
      * @param check_orientation: Also checks orb feature orientations while
      *   matching if true
      * @param nn_ratio: Best to second best match ratio threshold. Best match
-     *   distance should be at least smaller than nn_ratio * second best match.
+     *   distance should be at least smaller than nn_ratio.
      * @param filter_matches: Matches are filtered if true
      */
     void matchByBowFeatures(
@@ -252,6 +471,47 @@ public:
         const bool check_orientation = true,
         const float radius = 1.0,
         const bool filter_matches = false) const;
+
+    /**
+     * Matches the input key points with output points using 3d to 2d
+     * projection from reference frame over frame
+     *
+     * @param frame: Input frame to match
+     * @param ponits_3d: Points to project and match
+     * @param matches: Output features that are matched
+     * @param compute_track_info: Whether to compute map points track info for
+     *     processing or should consider it to be already computed
+     * @param nn_ratio: Best to second best match ratio threshold. Best match
+     *   distance should be at least smaller than nn_ratio.
+     * @param radius: Window size multiplier for search
+     * @param filter_matches: Matches are filtered if true
+     */
+    void matchByProjection(
+        const FramePtr& frame,
+        const std::vector<MapPointPtr>& points_3d,
+        std::vector<cv::DMatch>& matches,
+        const bool compute_track_info,
+        const float nn_ratio = 0.6,
+        const float radius = 1.0,
+        const bool filter_matches = false) const;
+
+    /**
+     * Matches the features of one frame by another using the epipolar
+     * constraint.
+     * @param frame: Input frame to match
+     * @param ref_frame: Reference frame to match with
+     * @param matches: Output features that are matched
+     * @param check_orientation: Also checks orb feature orientations while
+     *   matching if true
+     * @param filter_matches: Matches are filtered if true
+     */
+    void matchByEpipolarConstraint(
+        const FramePtr& frame,
+        const FramePtr& ref_frame,
+        std::vector<cv::DMatch>& matches,
+        const bool check_orientation = true,
+        const bool filter_matches = false
+    ) const;
 
     /**
      * Filters out the matched points based on min/max distance threshold

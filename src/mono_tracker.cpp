@@ -54,7 +54,7 @@ void MonoTracker::update()
     ROS_DEBUG("Tracking frame...");
     // track the frame
     trackFrame();
-    camera_pose_history_.push_back(current_frame_->getCamInWorldT().clone());
+    camera_pose_history_.push_back(current_frame_->cameraInWorldT());
 
     last_image_ = image;
 }
@@ -198,8 +198,8 @@ void MonoTracker::createInitialMonocularMap(
 
         ROS_DEBUG_STREAM("Adding point to frames...");
         // add the map point to both key frames
-        ref_key_frame->addMapPoint(mp, i);
-        key_frame->addMapPoint(mp, i);
+        ref_key_frame->setMapPointAt(mp, i);
+        key_frame->setMapPointAt(mp, i);
 
         ROS_DEBUG_STREAM("Adding frames to point...");
         // add both key frames as observers to the map point

@@ -26,6 +26,7 @@ find_package(CSparse REQUIRED) # used by g2o
 find_package(OpenCV 3.4.9 REQUIRED
     COMPONENTS core calib3d features2d imgproc highgui rgbd)
 find_package(DBoW2 REQUIRED)
+find_package(Pangolin REQUIRED)
 
 # fix g2o dependencies
 find_package(G2O REQUIRED)
@@ -138,6 +139,7 @@ include
   ${EIGEN3_INCLUDE_DIRS}
   ${CSPARSE_INCLUDE_DIR}
   ${g2o_INCLUDE_DIRS}
+  ${Pangolin_INCLUDE_DIRS}
 )
 
 FILE(GLOB SRC
@@ -150,7 +152,9 @@ FILE(GLOB SRC
     src/map_point.cpp
     src/key_frame.cpp
     src/mono_tracker.cpp
-    src/rgbd_tracker.cpp)
+    src/rgbd_tracker.cpp
+    src/viewer/viewer.cpp
+    src/local_mapping/local_mapper.cpp)
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME} ${SRC})
@@ -176,8 +180,8 @@ add_executable(tracker_node ${SRC})
 ## add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${DBoW2_LIBRARIES} ${g2o_LIBRARIES})
-target_link_libraries(tracker_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${DBoW2_LIBRARIES} ${g2o_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${DBoW2_LIBRARIES} ${g2o_LIBRARIES} ${Pangolin_LIBRARIES})
+target_link_libraries(tracker_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${DBoW2_LIBRARIES} ${g2o_LIBRARIES} ${Pangolin_LIBRARIES})
 
 #############
 ## Install ##
